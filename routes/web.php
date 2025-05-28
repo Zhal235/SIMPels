@@ -9,6 +9,7 @@ use App\Http\Controllers\KelasAnggotaController;
 use App\Http\Controllers\AsramaController;
 use App\Http\Controllers\AsramaAnggotaController;
 use App\Http\Controllers\MutasiSantriController;
+use App\Http\Controllers\RfidTagController;
 
 // Redirect root ke data santri
 Route::get('/', fn() => redirect()->route('santris.index'));
@@ -69,6 +70,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('anggota', [AsramaAnggotaController::class, 'store'])->name('anggota.store');
         Route::delete('anggota/{santri}', [AsramaAnggotaController::class, 'destroy'])->name('anggota.destroy');
     });
+
+    Route::resource('rfid-tags', RfidTagController::class)->middleware('auth');
 
 });
 

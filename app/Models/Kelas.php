@@ -28,9 +28,13 @@ public function santris()
  // app/Models/Kelas.php
 public function siswa()
 {
-    return $this->hasMany(\App\Models\Santri::class, 'kelas_id');
-}
-public function anggota()
+    return $this->belongsToMany(
+        \App\Models\Santri::class,
+        'kelas_anggota',   // nama tabel pivot
+        'kelas_id',        // FK ke kelas
+        'santri_id'        // FK ke santri
+    );
+}public function anggota()
 {
     return $this->hasMany(KelasAnggota::class, 'kelas_id');
 }

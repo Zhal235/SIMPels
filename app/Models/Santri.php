@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Pekerjaan; // ← WAJIB agar relasi tidak error
+use App\Models\Kelas;
+use App\Models\KelasAnggota;
 
 class Santri extends Model
 {
@@ -57,6 +59,23 @@ public function scopeBelumMutasi($query)
 {
     return $query->whereDoesntHave('mutasi');
 }
+/**
+ * Relasi: santri bisa punya satu UID RFID
+ */
+public function rfidTag()
+{
+    return $this->hasOne(RfidTag::class);
+}
+
+ public function kelasRelasi()
+    {
+        return $this->belongsToMany(
+            \App\Models\Kelas::class,
+            'kelas_anggota',  // nama tabel pivot yang benar
+            'santri_id',      // FK pada pivot ke santri
+            'kelas_id'        // FK pada pivot ke kelas
+        );
+    }
 
 
 

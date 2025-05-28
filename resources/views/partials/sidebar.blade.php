@@ -46,10 +46,13 @@
                     <span class="material-icons text-base">chevron_right</span>
                     <span class="menu-label">Asrama</span>
                 </a>
-                <a href="/rfid" class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('rfid*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-                    <span class="material-icons text-base">chevron_right</span>
-                    <span class="menu-label">RFID</span>
-                </a>
+               <a href="{{ route('rfid-tags.index') }}"
+   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition
+          {{ request()->is('rfid-tags*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
+  <span class="material-icons text-base">qr_code_2</span>
+  <span class="menu-label">RFID Tags</span>
+</a>
+
                 <a href="{{ route('mutasi_santri.index') }}"
                    class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('mutasi-santri*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
                     <span class="material-icons text-base">swap_horiz</span>
