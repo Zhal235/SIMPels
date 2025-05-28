@@ -19,7 +19,7 @@ class Santri extends Model
         'desa', 'kode_pos', 'no_kk', 'nama_ayah', 'nik_ayah', 'pendidikan_ayah',
         'pekerjaan_ayah', 'hp_ayah', 'nama_ibu', 'nik_ibu', 'pendidikan_ibu',
         'pekerjaan_ibu', 'hp_ibu', 'no_bpjs', 'no_pkh', 'no_kip',
-        'npsn_sekolah', 'no_blanko_skhu', 'no_seri_ijazah',
+        'npsn_sekolah', 'no_blanko_skhu', 'no_seri_ijazah', 'status',
         'total_nilai_un', 'tanggal_kelulusan', 'foto',// ← WAJIB
     ];
 

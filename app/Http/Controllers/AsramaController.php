@@ -10,7 +10,9 @@ class AsramaController extends Controller
 {
     public function index()
 {
-    $asrama = Asrama::withCount('santris')->paginate(10);
+    $asrama = Asrama::withCount(['santris' => function($query) {
+        $query->where('status', 'aktif');
+    }])->paginate(10);
     return view('asrama.index', compact('asrama'));
 }
 

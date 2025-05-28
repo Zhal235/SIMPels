@@ -54,7 +54,7 @@
                             <td class="p-3">{{ $kls->nama ?? '-' }}</td>
                             <td class="p-3">{{ $kls->tingkat ?? '-' }}</td>
                             <td class="p-3">{{ $kls->wali_kelas ?? '-' }}</td>
-                            <td class="p-3">{{ $kls->siswa_count ?? 0 }}</td>
+                            <td class="p-3">{{ $kls->anggota_count ?? 0 }}</td>
                             <td class="p-3">
                                 <a href="{{ route('kelas.edit', $kls->id) }}" class="inline-flex items-center px-2 py-1 rounded bg-yellow-400 text-xs text-white hover:bg-yellow-500 mr-1">
                                     ✏️ Edit

@@ -12,10 +12,12 @@ class KelasAnggotaController extends Controller
     public function index(Kelas $kelas)
     {
         // Anggota kelas (pivot)
-        $anggota = $kelas->siswa()->get();
+        $anggota = $kelas->siswa()->where('status', 'aktif')->get();
 
         // Santri yang belum punya kelas (tidak ada di pivot)
-        $santriNotIn = Santri::whereDoesntHave('kelasRelasi')->get();
+        $santriNotIn = Santri::whereDoesntHave('kelasRelasi')
+                             ->where('status', 'aktif')
+                             ->get();
 
         return view('kelas.anggota', compact('kelas', 'anggota', 'santriNotIn'));
     }

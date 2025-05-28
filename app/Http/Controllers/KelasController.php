@@ -11,7 +11,11 @@ class KelasController extends Controller
     // List Kelas
     public function index()
     {
-        $kelas = Kelas::withCount('siswa')->paginate(10);
+        $kelas = Kelas::withCount(['anggota' => function($query) {
+            $query->whereHas('santri', function($q) {
+                $q->where('status', 'aktif');
+            });
+        }])->paginate(10);
         return view('kelas.index', compact('kelas'));
     }
 

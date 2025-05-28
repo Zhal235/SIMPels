@@ -77,6 +77,70 @@
                 </a>
             </div>
         </div>
+
+        <!-- Keuangan Menu -->
+        <div x-data="{ open: false }" class="space-y-1">
+            <button @click="open = !open"
+                    class="w-full flex items-center justify-between px-3 py-2 text-sm font-semibold uppercase tracking-wider hover:bg-gray-800 rounded-md text-white">
+                <div class="flex items-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span class="menu-label">Keuangan</span>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform transition-transform duration-200"
+                    :class="{ 'rotate-90': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+            <div x-show="open" class="pl-8 space-y-1">
+                <a href="{{ route('pembayaran-santri.index') }}"
+                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('pembayaran-santri*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
+                    <span class="material-icons text-base">payments</span>
+                    <span class="menu-label">Pembayaran Santri</span>
+                </a>
+                <a href="{{ route('setting-pembayaran.index') }}"
+                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('setting-pembayaran*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
+                    <span class="material-icons text-base">settings</span>
+                    <span class="menu-label">Setting Pembayaran</span>
+                </a>
+                <a href="{{ route('bukti-transfer-wali-murid.index') }}"
+                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('bukti-transfer-wali-murid*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
+                    <span class="material-icons text-base">receipt_long</span>
+                    <span class="menu-label">Bukti Transfer Wali Murid</span>
+                </a>
+                <a href="{{ route('limit-tarik-tabungan.index') }}"
+                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('limit-tarik-tabungan*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
+                    <span class="material-icons text-base">account_balance_wallet</span>
+                    <span class="menu-label">Limit Tarik Tabungan</span>
+                </a>
+                <a href="{{ route('tabungan-santri.index') }}"
+                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('tabungan-santri*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
+                    <span class="material-icons text-base">savings</span>
+                    <span class="menu-label">Tabungan Santri</span>
+                </a>
+                <a href="{{ route('kas-bank.index') }}"
+                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('kas-bank*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
+                    <span class="material-icons text-base">account_balance</span>
+                    <span class="menu-label">Kas & Bank</span>
+                </a>
+                <a href="{{ route('penggajian.index') }}"
+                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('penggajian*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
+                    <span class="material-icons text-base">paid</span>
+                    <span class="menu-label">Penggajian</span>
+                </a>
+                <a href="{{ route('hutang.index') }}"
+                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('hutang*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
+                    <span class="material-icons text-base">money_off</span>
+                    <span class="menu-label">Hutang</span>
+                </a>
+                <a href="{{ route('kirim-tagihan.index') }}"
+                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('kirim-tagihan*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
+                    <span class="material-icons text-base">send</span>
+                    <span class="menu-label">Kirim Tagihan</span>
+                </a>
+            </div>
+        </div>
     </nav>
     <!-- Logout fixed bottom -->
     <div class="mt-auto p-4">

@@ -14,12 +14,12 @@ class AsramaAnggotaController extends Controller
 
         // Anggota asrama dengan status bukan mutasi
         $anggota = Santri::where('asrama_id', $asrama_id)
-                         ->where('status', '!=', 'mutasi')
+                         ->where('status', '<>', 'mutasi')
                          ->get();
 
         // Santri yang belum punya asrama dan status bukan mutasi
         $santriNotIn = Santri::whereNull('asrama_id')
-                             ->where('status', '!=', 'mutasi')
+                             ->where('status', '<>', 'mutasi')
                              ->get();
 
         return view('asrama.anggota', compact('asrama', 'anggota', 'santriNotIn'));

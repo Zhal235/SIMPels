@@ -27,7 +27,7 @@ class MutasiSantriController extends Controller
     ]);
 
     $santri = Santri::findOrFail($id);
-
+    
     MutasiSantri::create([
         'santri_id'      => $id,
         'nama'           => $santri->nama_siswa,
@@ -35,10 +35,20 @@ class MutasiSantriController extends Controller
         'tujuan_mutasi'  => $request->tujuan_mutasi,
         'tanggal_mutasi' => now(),
     ]);
-
+    
     // Update status santri jadi mutasi
-    $santri->update(['status' => 'mutasi']);
+    $santri->status = 'mutasi';
+    $santri->save();
 
+    
+    // dd($santri); 
+    
+    // Remove student from dormitory and class
+    // $santri->update([
+    //     'asrama_id' => null,
+    //     'kelas_id' => null
+    // ]);
+   
     return redirect()->route('mutasi_santri.index')->with('success', 'Mutasi berhasil!');
 }
 
