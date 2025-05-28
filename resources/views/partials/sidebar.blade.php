@@ -94,11 +94,11 @@
                 </svg>
             </button>
             <div x-show="open" class="pl-8 space-y-1">
-                <!-- <a href="{{ route('pembayaran-santri.index') }}"
+                <a href="{{ route('pembayaran-santri.index') }}"
                    class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('pembayaran-santri*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
                     <span class="material-icons text-base">payments</span>
                     <span class="menu-label">Pembayaran Santri</span>
-                </a> -->
+                </a>
                 <a href="{{ route('setting-pembayaran.index') }}"
                    class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('setting-pembayaran*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
                     <span class="material-icons text-base">settings</span>
@@ -142,6 +142,21 @@
             </div>
         </div>
     </nav>
+        <!-- User Management -->
+        @if(Auth::check() && Auth::user()->role === 'admin')
+        <div class="space-y-1">
+            <a href="{{ route('users.index') }}"
+               class="flex items-center space-x-2 px-3 py-2 rounded-md transition {{ request()->is('users*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
+                <span class="material-icons text-base">manage_accounts</span>
+                <span class="menu-label">User Management</span>
+            </a>
+            <a href="{{ route('roles.index') }}"
+               class="flex items-center space-x-2 px-3 py-2 rounded-md transition {{ request()->is('roles*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
+                <span class="material-icons text-base">assignment_ind</span>
+                <span class="menu-label">Role Management</span>
+            </a>
+        </div>
+        @endif
     <!-- Logout fixed bottom -->
     <div class="mt-auto p-4">
         <form method="POST" action="{{ route('logout') }}">

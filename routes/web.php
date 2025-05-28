@@ -26,11 +26,11 @@ Route::get('/', fn() => redirect()->route('santris.index'));
 Route::middleware(['auth'])->group(function () {
 
     // Modul Santri
-    Route::resource('santris', SantriController::class);
-    Route::get('santris-export', [SantriController::class, 'export'])->name('santris.export');
-    Route::get('santris-template', [SantriController::class, 'template'])->name('santris.template');
-    Route::get('santris-import', [SantriController::class, 'importForm'])->name('santris.import.form');
-    Route::post('santris-import', [SantriController::class, 'import'])->name('santris.import');
+    Route::resource('santris', SantriController::class)->middleware(['role:admin']);
+    Route::get('santris-export', [SantriController::class, 'export'])->name('santris.export')->middleware(['role:admin']);
+    Route::get('santris-template', [SantriController::class, 'template'])->name('santris.template')->middleware(['role:admin']);
+    Route::get('santris-import', [SantriController::class, 'importForm'])->name('santris.import.form')->middleware(['role:admin']);
+    Route::post('santris-import', [SantriController::class, 'import'])->name('santris.import')->middleware(['role:admin']);
 
     // Proses mutasi (submit dari modal/popup)
     Route::post('/santris/{id}/mutasi', [MutasiSantriController::class, 'mutasiProses'])->name('santris.mutasi.proses');
@@ -94,5 +94,10 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('kirim-tagihan', KirimTagihanController::class);
 
 });
+
+
+    // User Management
+    Route::resource('users', \App\Http\Controllers\UserController::class)->middleware(['role:admin']);
+    Route::resource('roles', \App\Http\Controllers\RoleController::class)->middleware(['role:admin']);
 
 require __DIR__.'/auth.php';
