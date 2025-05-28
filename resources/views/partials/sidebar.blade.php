@@ -32,20 +32,37 @@
                     :class="{ 'rotate-90': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
-            </button>
-            <div x-show="open" class="pl-8 space-y-1">
-                <a href="/santris" class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('santris*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-                    <span class="material-icons text-base">chevron_right</span>
-                    <span class="menu-label">Data Santri</span>
-                </a>
-                <a href="/kelas" class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('kelas*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-                    <span class="material-icons text-base">chevron_right</span>
-                    <span class="menu-label">Kelas</span>
-                </a>
-                <a href="/asrama" class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('asrama*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-                    <span class="material-icons text-base">chevron_right</span>
-                    <span class="menu-label">Asrama</span>
-                </a>
+           </button>
+<div x-show="open" class="pl-8 space-y-1">
+    <!-- Data Santri -->
+    <a href="/santris" class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('santris*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
+        <!-- Icon Users -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 18v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <circle cx="17" cy="7" r="4"/>
+        </svg>
+        <span class="menu-label">Data Santri</span>
+    </a>
+    <!-- Kelas -->
+    <a href="/kelas" class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('kelas*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
+        <!-- Icon Layers -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+            <polyline points="2 17 12 22 22 17"/>
+            <polyline points="2 12 12 17 22 12"/>
+        </svg>
+        <span class="menu-label">Kelas</span>
+    </a>
+    <!-- Asrama -->
+    <a href="/asrama" class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('asrama*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
+        <!-- Icon Home -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path d="M3 9.5V22h7v-6h4v6h7V9.5"/>
+            <path d="M22 9.5 12 2 2 9.5"/>
+        </svg>
+        <span class="menu-label">Asrama</span>
+    </a>
                <a href="{{ route('rfid-tags.index') }}"
    class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition
           {{ request()->is('rfid-tags*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
