@@ -94,11 +94,11 @@
                 </svg>
             </button>
             <div x-show="open" class="pl-8 space-y-1">
-                <a href="{{ route('pembayaran-santri.index') }}"
+                <!-- <a href="{{ route('pembayaran-santri.index') }}"
                    class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('pembayaran-santri*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
                     <span class="material-icons text-base">payments</span>
                     <span class="menu-label">Pembayaran Santri</span>
-                </a>
+                </a> -->
                 <a href="{{ route('setting-pembayaran.index') }}"
                    class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('setting-pembayaran*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
                     <span class="material-icons text-base">settings</span>
