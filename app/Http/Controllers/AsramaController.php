@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Asrama;
 use App\Models\Santri;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\AsramaImport;
 
 class AsramaController extends Controller
 {
@@ -85,5 +87,36 @@ class AsramaController extends Controller
         Santri::whereIn('id', $request->santri_id)->update(['asrama_id' => $request->asrama_id]);
 
         return redirect()->route('asrama.pindah.form')->with('success', 'Santri berhasil dipindahkan ke asrama baru.');
+    }
+
+    public function importForm()
+    {
+        return view('asrama.import');
+    }
+
+    public function import(Request $request)
+    {
+        $file = $request->file('file');
+        if (!$file) {
+            return back()->with('error', 'File tidak ditemukan');
+        }
+        $data = Excel::toArray(new AsramaImport, $file)[0];
+        unset($data[0]);
+        foreach ($data as $row) {
+            // Pastikan kolom urutan: kode, nama, wali_asrama
+            if (count($row) >= 2 && $row[0] && $row[1]) {
+                \App\Models\Asrama::create([
+                    'kode' => $row[0],
+                    'nama' => $row[1],
+                    'wali_asrama' => $row[2] ?? null,
+                ]);
+            }
+        }
+        return back()->with('success', 'Data asrama berhasil diimport.');
+    }
+
+    public function template()
+    {
+        return response()->download(public_path('templates/asrama_template.xlsx'));
     }
 }

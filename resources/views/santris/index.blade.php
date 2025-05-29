@@ -12,28 +12,36 @@
 >
 
     {{-- Header + Actions --}}
-    <div class="flex items-center justify-between mb-4">
-        <h2 class="text-2xl font-bold text-blue-800 flex items-center gap-2">📋 Daftar Santri</h2>
-        <div class="flex items-center gap-2">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 pb-4 border-b border-gray-200">
+        <div class="mb-4 sm:mb-0">
+            <h1 class="text-3xl font-bold text-gray-800 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                </svg>
+                Manajemen Santri
+            </h1>
+            <p class="text-sm text-gray-500 mt-1">Kelola data santri, impor, ekspor, dan filter data.</p>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto">
             <button @click="openDataModal = true"
-                    class="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 flex items-center gap-2">
-                <!-- 👁 Icon Opsi Data -->
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" />
+                    class="w-full sm:w-auto bg-white text-blue-600 border border-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition duration-150 ease-in-out flex items-center justify-center gap-2 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
                 </svg>
                 Opsi Data
             </button>
             <a href="{{ route('santris.create') }}"
-               class="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 flex items-center gap-2">
-                ➕ Tambah Santri
+               class="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-150 ease-in-out flex items-center justify-center gap-2 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                Tambah Santri
             </a>
             <button @click="openFilter = true"
-                    class="bg-white border px-2 py-2 rounded-full shadow hover:bg-blue-100 transition">
-                <!-- 🔍 Filter Icon -->
-                <svg class="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    class="w-full sm:w-auto bg-white border border-gray-300 px-3 py-2 rounded-lg shadow-sm hover:bg-gray-50 transition duration-150 ease-in-out flex items-center justify-center">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M3 4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2l-6 6v7l-4-2v-5L3 6V4z"/>
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2l-6 6v7l-4-2v-5L3 6V4z"/>
                 </svg>
             </button>
         </div>
@@ -119,104 +127,156 @@
       </div>
     </div>
 
-    {{-- Search --}}
-    <div class="flex justify-end mb-4">
-      <form id="formCariSantri" method="GET" action="{{ route('santris.index') }}" class="flex gap-2">
-        <div class="relative">
-          <input id="searchBox" name="search" value="{{ request('search') }}"
-                 placeholder="Cari Nama / NIS"
-                 class="form-input border border-blue-200 rounded-lg px-3 py-2 pl-8 focus:ring-blue-400 focus:border-blue-400 shadow-sm transition"/>
-          <span class="absolute left-2 top-1/2 -translate-y-1/2 text-blue-300">
-            <!-- 🔍 -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1016.65 16.65z"/>
-            </svg>
-          </span>
-        </div>
-      </form>
+    {{-- Search and Per Page Selector --}}
+    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <form id="formCariSantri" method="GET" action="{{ route('santris.index') }}" class="w-full sm:w-auto flex-grow sm:flex-grow-0">
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <input id="searchBox" name="search" value="{{ request('search') }}"
+                       placeholder="Cari Nama / NIS Santri..."
+                       class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm transition duration-150 ease-in-out"/>
+            </div>
+            {{-- Hidden fields for existing filters --}}
+            @if(request('kelas'))
+                <input type="hidden" name="kelas" value="{{ request('kelas') }}">
+            @endif
+            @if(request('jenis_kelamin'))
+                <input type="hidden" name="jenis_kelamin" value="{{ request('jenis_kelamin') }}">
+            @endif
+            @if(request('status'))
+                <input type="hidden" name="status" value="{{ request('status') }}">
+            @endif
+        </form>
+
+        <form method="GET" action="{{ route('santris.index') }}" id="perPageForm" class="flex items-center gap-2 w-full sm:w-auto">
+            <label for="per_page" class="text-sm font-medium text-gray-700">Tampilkan:</label>
+            <select name="per_page" id="per_page" onchange="document.getElementById('perPageForm').submit()"
+                    class="form-select block w-auto pl-3 pr-8 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg shadow-sm transition duration-150 ease-in-out">
+                <option value="10" {{ request('per_page', $santris->perPage()) == 10 ? 'selected' : '' }}>10</option>
+                <option value="15" {{ request('per_page', $santris->perPage()) == 15 ? 'selected' : '' }}>15</option>
+                <option value="25" {{ request('per_page', $santris->perPage()) == 25 ? 'selected' : '' }}>25</option>
+                <option value="50" {{ request('per_page', $santris->perPage()) == 50 ? 'selected' : '' }}>50</option>
+                <option value="100" {{ request('per_page', $santris->perPage()) == 100 ? 'selected' : '' }}>100</option>
+            </select>
+            <span class="text-sm text-gray-700">data</span>
+            {{-- Hidden fields for existing filters and search --}}
+            @if(request('search'))
+                <input type="hidden" name="search" value="{{ request('search') }}">
+            @endif
+            @if(request('kelas'))
+                <input type="hidden" name="kelas" value="{{ request('kelas') }}">
+            @endif
+            @if(request('jenis_kelamin'))
+                <input type="hidden" name="jenis_kelamin" value="{{ request('jenis_kelamin') }}">
+            @endif
+            @if(request('status'))
+                <input type="hidden" name="status" value="{{ request('status') }}">
+            @endif
+        </form>
     </div>
 
     {{-- Data Table --}}
-    <div class="overflow-x-auto bg-white rounded-xl shadow-lg border mt-2">
-      <table class="min-w-full text-sm text-left">
-        <thead class="bg-blue-100 text-xs font-bold uppercase sticky top-0 z-10">
+    <div class="overflow-x-auto bg-white rounded-xl shadow-lg border border-gray-200 mt-2">
+      <table class="min-w-full text-sm text-left text-gray-700">
+        <thead class="bg-gray-50 text-xs font-semibold uppercase text-gray-600 sticky top-0 z-10">
           <tr>
-            <th class="p-3">NIS</th>
-            <th class="p-3">Nama</th>
-            <th class="p-3">NISN</th>
-            <th class="p-3">TTL</th>
-            <th class="p-3">JK</th>
-            <th class="p-3 text-center">Aksi</th>
+            <th class="px-4 py-3 text-center">No</th>
+            <th class="px-4 py-3 text-center">NIS</th>
+            <th class="px-4 py-3 text-left">Nama</th>
+            <th class="px-4 py-3 text-center">NISN</th>
+            <th class="px-4 py-3 text-left">TTL</th>
+            <th class="px-4 py-3 text-center">Jenis Kelamin</th>
+            <th class="px-4 py-3 text-center">Aksi</th>
           </tr>
         </thead>
-        <tbody>
-          @foreach($santris as $santri)
-            <tr class="hover:bg-blue-50 border-t">
-              <td class="p-3">{{ $santri->nis }}</td>
-              <td class="p-3 flex items-center gap-2">
+        <tbody class="divide-y divide-gray-200">
+          @forelse($santris as $index => $santri)
+            <tr class="hover:bg-gray-50 transition duration-150 ease-in-out">
+              <td class="px-4 py-3 text-center font-medium">{{ $santris->firstItem() + $index }}</td>
+              <td class="px-4 py-3 text-center">{{ $santri->nis }}</td>
+              <td class="px-4 py-3 flex items-center gap-3">
                 @if($santri->foto)
-                  <img src="{{ asset('storage/'.$santri->foto) }}" class="w-8 h-8 rounded-full"/>
+                  <img src="{{ asset('storage/'.$santri->foto) }}" class="w-9 h-9 rounded-full object-cover shadow-sm"/>
                 @else
-                  <div class="w-8 h-8 rounded-full bg-blue-300 flex items-center justify-center text-white font-bold">
+                  <div class="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
                     {{ strtoupper(substr($santri->nama_siswa,0,1)) }}
                   </div>
                 @endif
-                {{ $santri->nama_siswa }}
+                <span class="font-medium">{{ $santri->nama_siswa }}</span>
               </td>
-              <td class="p-3">{{ $santri->nisn }}</td>
-              <td class="p-3">{{ $santri->tempat_lahir.', '.\Carbon\Carbon::parse($santri->tanggal_lahir)->format('d-m-Y') }}</td>
-              <td class="p-3">
-                <span class="inline-block px-2 py-1 text-xs rounded-full {{ $santri->jenis_kelamin=='L'?'bg-blue-100 text-blue-700':'bg-pink-100 text-pink-700' }}">
-                  {{ $santri->jenis_kelamin }}
+              <td class="px-4 py-3 text-center">{{ $santri->nisn }}</td>
+              <td class="px-4 py-3">{{ $santri->tempat_lahir.', '.\Carbon\Carbon::parse($santri->tanggal_lahir)->format('d F Y') }}</td>
+              <td class="px-4 py-3 text-center">
+                <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full {{ $santri->jenis_kelamin=='L'?'bg-blue-100 text-blue-700':'bg-pink-100 text-pink-700' }}">
+                  {{ $santri->jenis_kelamin == 'L' ? 'Laki-laki' : 'Perempuan' }}
                 </span>
               </td>
-              <td class="p-3 text-center flex justify-center gap-2">
-                <!-- Preview -->
-                <a class="p-2 rounded-full bg-green-50 hover:bg-green-200 text-green-700">
-                  <!-- 👁 -->
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7-5.065 7-9.542 7S3.732 16.057 2.458 12z"/>
-                  </svg>
-                </a>
-                <!-- Edit -->
-                <a class="p-2 rounded-full bg-blue-50 hover:bg-blue-200 text-blue-700">
-                  <!-- ✏️ -->
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M4 20h4l11-11-4-4L4 16v4z"/>
-                  </svg>
-                </a>
-                <!-- Mutasi -->
-                <button type="button"
-                        @click="mutasiOpen = true; mutasiId = {{ $santri->id }}; mutasiNama = '{{ addslashes($santri->nama_siswa) }}';"
-                         class="p-2 rounded-full bg-yellow-50 hover:bg-yellow-200 text-yellow-700">
-                  <!-- 🔄 -->
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 11-6 0V7a3 3 0 116 0v1"/>
-                  </svg>
-                </button>
-                <!-- Hapus -->
-                <form action="{{ route('santris.destroy',$santri->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus?')" class="inline-block">
-                  @csrf @method('DELETE')
-                  <button type="submit" class="p-2 rounded-full bg-red-50 hover:bg-red-200 text-red-600">
-                    <!-- 🗑️ -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7H5M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M10 11v6M14 11v6M9 7V4h6v3"/>
-                    </svg>
-                  </button>
-                </form>
+              <td class="px-4 py-3 text-center">
+                <div class="flex justify-center items-center gap-2">
+                    <a href="{{ route('santris.show', $santri->id) }}" title="Lihat Detail"
+                       class="p-2 rounded-full text-green-600 hover:bg-green-100 transition duration-150 ease-in-out">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                      </svg>
+                    </a>
+                    <a href="{{ route('santris.edit', $santri->id) }}" title="Edit Santri"
+                       class="p-2 rounded-full text-blue-600 hover:bg-blue-100 transition duration-150 ease-in-out">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                      </svg>
+                    </a>
+                    <button type="button" title="Mutasi Santri"
+                            @click="mutasiOpen = true; mutasiId = {{ $santri->id }}; mutasiNama = '{{ addslashes($santri->nama_siswa) }}';"
+                            class="p-2 rounded-full text-yellow-600 hover:bg-yellow-100 transition duration-150 ease-in-out">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                        <path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/>
+                      </svg>
+                    </button>
+                    <form action="{{ route('santris.destroy',$santri->id) }}" method="POST" onsubmit="return confirm('Anda yakin ingin menghapus santri bernama {{ addslashes($santri->nama_siswa) }}?')" class="inline-block">
+                      @csrf @method('DELETE')
+                      <button type="submit" title="Hapus Santri"
+                              class="p-2 rounded-full text-red-600 hover:bg-red-100 transition duration-150 ease-in-out">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                        </svg>
+                      </button>
+                    </form>
+                </div>
               </td>
             </tr>
-          @endforeach
+          @empty
+            <tr>
+                <td colspan="7" class="text-center py-10 text-gray-500">
+                    <div class="flex flex-col items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-3" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clip-rule="evenodd" />
+                          </svg>
+                        <p class="font-semibold text-lg">Data Santri Tidak Ditemukan</p>
+                        <p class="text-sm">Tidak ada data santri yang sesuai dengan kriteria pencarian atau filter Anda.</p>
+                        @if(request()->has('search') || request()->has('kelas') || request()->has('jenis_kelamin') || request()->has('status'))
+                            <a href="{{ route('santris.index') }}" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-150 ease-in-out">
+                                Reset Filter & Pencarian
+                            </a>
+                        @else
+                            <a href="{{ route('santris.create') }}" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-150 ease-in-out">
+                                Tambah Santri Baru
+                            </a>
+                        @endif
+                    </div>
+                </td>
+            </tr>
+          @endforelse
         </tbody>
       </table>
     </div>
 
     {{-- Pagination --}}
-    <div class="px-4 py-3 bg-gray-50 rounded-b-lg flex justify-end">
-      {{ $santris->links() }}
+    <div class="mt-6">
+        {{ $santris->appends(request()->query())->links() }}
     </div>
 
     {{-- Mutasi Modal --}}

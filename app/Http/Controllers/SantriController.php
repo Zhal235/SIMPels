@@ -41,7 +41,8 @@ class SantriController extends Controller
         $query->where('status', $request->status);
     }
 
-    $santris = $query->paginate(15)->withQueryString();
+    $perPage = $request->input('per_page', 15); // Ambil per_page dari request, default 15
+    $santris = $query->paginate($perPage)->withQueryString();
     $kelasList = Kelas::orderBy('nama')->get();
 
     return view('santris.index', compact('santris','kelasList'));

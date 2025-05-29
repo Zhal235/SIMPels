@@ -74,6 +74,11 @@ Route::middleware(['auth'])->group(function () {
     // Modul Asrama (CRUD)
     Route::resource('asrama', AsramaController::class);
 
+    // Import Asrama (bukan nested)
+    Route::post('asrama-import', [AsramaController::class, 'import'])->name('asrama.import');
+    Route::get('asrama-import', [AsramaController::class, 'importForm'])->name('asrama.import.form');
+    Route::get('asrama-template', [AsramaController::class, 'template'])->name('asrama.template');
+
     // Anggota Asrama (nested)
     Route::prefix('asrama/{asrama}')->name('asrama.')->group(function () {
         Route::get('anggota', [AsramaAnggotaController::class, 'index'])->name('anggota.index');

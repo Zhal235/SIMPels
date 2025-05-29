@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Kelas;
 use App\Models\Santri;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\KelasImport;
 
 class KelasController extends Controller
 {
@@ -98,7 +100,7 @@ public function import(Request $request)
     if (!$file) {
         return back()->with('error', 'File tidak ditemukan');
     }
-    $data = \Excel::toArray([], $file)[0];
+    $data = Excel::toArray(new KelasImport, $file)[0];
 
     // Skip header
     unset($data[0]);
