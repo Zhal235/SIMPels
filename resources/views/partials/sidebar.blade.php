@@ -99,11 +99,30 @@
                     <span class="material-icons text-base">payments</span>
                     <span class="menu-label">Pembayaran Santri</span>
                 </a>
-                <a href="{{ route('setting-pembayaran.index') }}"
-                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('setting-pembayaran*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-                    <span class="material-icons text-base">settings</span>
-                    <span class="menu-label">Setting Pembayaran</span>
-                </a>
+                <!-- Setting Menu (moved to bottom) -->
+                <div x-data="{ open: false }" class="space-y-1">
+                    <button @click="open = !open"
+                            class="w-full flex items-center justify-between px-3 py-2 text-sm font-semibold uppercase tracking-wider hover:bg-gray-800 rounded-md text-white">
+                        <div class="flex items-center space-x-2">
+                            <span class="material-icons text-base">settings</span>
+                            <span class="menu-label">Setting</span>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform transition-transform duration-200"
+                            :class="{ 'rotate-90': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                    <div x-show="open" class="pl-8 space-y-1">
+                        <a href="{{ route('jenis-bayar.index') }}" class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('keuangan/setting/jenis-bayar*') ? 'bg-blue-700 text-white' : 'hover:bg-gray-700 text-gray-300' }}">
+                            <span class="material-icons text-base">list_alt</span>
+                            <span class="menu-label">Jenis Bayar</span>
+                        </a>
+                        <a href="{{ route('jenis-kas.index') }}" class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('keuangan/setting/jenis-kas*') ? 'bg-blue-700 text-white' : 'hover:bg-gray-700 text-gray-300' }}">
+                            <span class="material-icons text-base">category</span>
+                            <span class="menu-label">Jenis Kas</span>
+                        </a>
+                    </div>
+                </div>
                 <a href="{{ route('bukti-transfer-wali-murid.index') }}"
                    class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('bukti-transfer-wali-murid*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
                     <span class="material-icons text-base">receipt_long</span>

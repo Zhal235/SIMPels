@@ -20,7 +20,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($asrama->santris as $no => $santri)
+                    @forelse($anggota as $no => $santri)
                     <tr>
                         <td class="p-2">{{ $no+1 }}</td>
                         <td class="p-2">{{ $santri->nama_siswa }}</td>
@@ -44,38 +44,38 @@
     </div>
 
     {{-- Panel Tambah Anggota Asrama --}}
-<div class="w-80 bg-white rounded-xl shadow-md p-6 h-fit">
-    <h3 class="text-lg font-semibold mb-3 text-center">Tambah Anggota</h3>
-    <form action="{{ route('asrama.anggota.store', $asrama->id) }}" method="POST">
-        @csrf
-        <input type="text" class="border rounded px-3 py-1 w-full mb-3 text-sm" placeholder="Cari nama/nis..." oninput="filterSantriAsrama(this.value)">
-        <div style="max-height: 220px; overflow-y: auto;" id="daftar-santri-available-asrama">
-            <table class="w-full text-sm bg-blue-50 rounded">
-                <thead class="sticky top-0 bg-blue-100">
-                    <tr>
-                        <th class="p-2"><input type="checkbox" onclick="toggleAllAsrama(this)"></th>
-                        <th class="p-2">Nama</th>
-                        <th class="p-2">NIS</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($santriNotIn as $santri)
-                    <tr>
-                        <td class="p-2 text-center">
-                            <input type="checkbox" name="santri_id[]" value="{{ $santri->id }}">
-                        </td>
-                        <td class="p-2">{{ $santri->nama_siswa }}</td>
-                        <td class="p-2">{{ $santri->nis }}</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded w-full mt-4 text-base flex justify-center items-center gap-2">
-            <span class="text-xl">+</span> Tambah ke Asrama
-        </button>
-    </form>
-</div>
+    <div class="w-80 bg-white rounded-xl shadow-md p-6 h-fit">
+        <h3 class="text-lg font-semibold mb-3 text-center">Tambah Anggota</h3>
+        <form action="{{ route('asrama.anggota.store', $asrama->id) }}" method="POST">
+            @csrf
+            <input type="text" class="border rounded px-3 py-1 w-full mb-3 text-sm" placeholder="Cari nama/nis..." oninput="filterSantriAsrama(this.value)">
+            <div style="max-height: 220px; overflow-y: auto;" id="daftar-santri-available-asrama">
+                <table class="w-full text-sm bg-blue-50 rounded">
+                    <thead class="sticky top-0 bg-blue-100">
+                        <tr>
+                            <th class="p-2"><input type="checkbox" onclick="toggleAllAsrama(this)"></th>
+                            <th class="p-2">Nama</th>
+                            <th class="p-2">NIS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($santriNotIn as $santri)
+                        <tr>
+                            <td class="p-2 text-center">
+                                <input type="checkbox" name="santri_id[]" value="{{ $santri->id }}">
+                            </td>
+                            <td class="p-2">{{ $santri->nama_siswa }}</td>
+                            <td class="p-2">{{ $santri->nis }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded w-full mt-4 text-base flex justify-center items-center gap-2">
+                <span class="text-xl">+</span> Tambah ke Asrama
+            </button>
+        </form>
+    </div>
 
 <script>
 function filterSantriAsrama(keyword) {

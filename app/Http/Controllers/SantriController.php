@@ -20,10 +20,8 @@ class SantriController extends Controller
     /** List & filter */
     public function index(Request $request)
 {
-    $query = Santri::query();
-
-    // Contoh pada method index()
-    $santris = Santri::belumMutasi()->paginate(15);
+    // Mulai dengan query yang sudah memfilter santri yang belum mutasi
+    $query = Santri::belumMutasi();
 
     // Filter/cari
     if ($request->filled('search')) {

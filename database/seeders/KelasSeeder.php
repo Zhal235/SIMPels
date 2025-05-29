@@ -13,10 +13,10 @@ class KelasSeeder extends Seeder
     public function run(): void
     {
         $kelas = [
-            ['nama' => 'VII A', 'keterangan' => 'Kelas 7A'],
-            ['nama' => 'VII B', 'keterangan' => 'Kelas 7B'],
-            ['nama' => 'VIII A', 'keterangan' => 'Kelas 8A'],
-            ['nama' => 'IX A', 'keterangan' => 'Kelas 9A'],
+            ['kode' => 'VIIA', 'nama' => 'VII A', 'tingkat' => 'VII' /*, 'keterangan' => 'Kelas 7A' */],
+            ['kode' => 'VIIB', 'nama' => 'VII B', 'tingkat' => 'VII' /*, 'keterangan' => 'Kelas 7B' */],
+            ['kode' => 'VIIIA', 'nama' => 'VIII A', 'tingkat' => 'VIII' /*, 'keterangan' => 'Kelas 8A' */],
+            ['kode' => 'IXA', 'nama' => 'IX A', 'tingkat' => 'IX' /*, 'keterangan' => 'Kelas 9A' */],
         ];
 
         foreach ($kelas as $kls) {
