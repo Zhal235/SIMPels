@@ -10,16 +10,7 @@ use App\Http\Controllers\AsramaController;
 use App\Http\Controllers\AsramaAnggotaController;
 use App\Http\Controllers\MutasiSantriController;
 use App\Http\Controllers\RfidTagController;
-use App\Http\Controllers\PembayaranSantriController;
-use App\Http\Controllers\SettingPembayaranController;
-use App\Http\Controllers\BuktiTransferWaliMuridController;
-use App\Http\Controllers\LimitTarikTabunganController;
-use App\Http\Controllers\TabunganSantriController;
-use App\Http\Controllers\KasBankController;
-use App\Http\Controllers\PenggajianController;
-use App\Http\Controllers\HutangController;
-use App\Http\Controllers\KirimTagihanController;
-use App\Http\Controllers\JenisBayarController;
+
 
 // Redirect root ke data santri
 Route::get('/', fn() => redirect()->route('santris.index'));
@@ -88,19 +79,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('rfid-tags', RfidTagController::class)->middleware('auth');
 
-    // Modul Keuangan
-    Route::resource('pembayaran-santri', PembayaranSantriController::class);
-    Route::resource('jenis-bayar', App\Http\Controllers\JenisBayarController::class)->except(['create', 'show']);
-    // Jenis Kas
-    Route::resource('keuangan/setting/jenis-kas', App\Http\Controllers\JenisKasController::class)->except(['show', 'edit', 'create']);
-    Route::resource('setting-pembayaran', SettingPembayaranController::class);
-    Route::resource('bukti-transfer-wali-murid', BuktiTransferWaliMuridController::class);
-    Route::resource('limit-tarik-tabungan', LimitTarikTabunganController::class);
-    Route::resource('tabungan-santri', TabunganSantriController::class);
-    Route::resource('kas-bank', KasBankController::class);
-    Route::resource('penggajian', PenggajianController::class);
-    Route::resource('hutang', HutangController::class);
-    Route::resource('kirim-tagihan', KirimTagihanController::class);
+
 
 });
 

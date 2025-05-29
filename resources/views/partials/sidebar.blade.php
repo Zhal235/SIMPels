@@ -1,195 +1,190 @@
 <!-- resources/views/partials/sidebar.blade.php -->
-<aside id="sidebar" class="w-64 bg-[#212936] text-white flex flex-col h-screen fixed top-0 left-0 z-40 transition-all duration-300 ease-in-out">
-    <!-- Header biru -->
-    <div class="bg-blue-800 text-white py-4 text-2xl font-bold tracking-wide flex items-center justify-between px-4 border-b border-blue-700">
-        <span id="logo-text">SIMPelS</span>
-        <button id="sidebar-toggle" class="inline-flex items-center px-2 py-1 rounded text-white hover:bg-blue-700">
+<aside id="sidebar" class="w-64 bg-slate-900 text-slate-200 flex flex-col h-screen fixed top-0 left-0 z-40 transition-transform duration-300 ease-in-out shadow-lg">
+    <!-- Sidebar Header -->
+    <div class="bg-blue-700 text-white py-4 text-2xl font-bold tracking-tight flex items-center justify-between px-4 border-b border-blue-600 shadow-sm">
+        <span id="logo-text" class="transition-opacity duration-300">SIMPelS</span>
+        <button id="sidebar-toggle" class="p-1.5 rounded-md text-blue-200 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors">
             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path>
             </svg>
         </button>
     </div>
+
     <!-- Menu Sidebar -->
-    <nav class="flex-1 px-2 py-6 space-y-2 overflow-y-auto">
+    <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-800">
         <a href="/dashboard"
-           class="flex items-center space-x-2 px-3 py-2 rounded-md transition {{ request()->is('dashboard') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 6h18M3 14h18M3 18h18" />
-            </svg>
-            <span class="menu-label">Dashboard</span>
+           class="flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 ease-in-out group {{ request()->is('dashboard') ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-slate-800 hover:text-white text-slate-300' }}">
+            <span class="material-icons-outlined text-xl opacity-80 group-hover:opacity-100 {{ request()->is('dashboard') ? 'text-white' : 'text-blue-400' }}">dashboard</span>
+            <span class="menu-label font-medium">Dashboard</span>
         </a>
+
         <!-- Kesantrian Menu -->
-        <div x-data="{ open: true }" class="space-y-1" x-cloak>
+        <div x-data="{ open: {{ request()->is('santris*') || request()->is('kelas*') || request()->is('asrama*') || request()->is('rfid-tags*') || request()->is('mutasi-santri*') ? 'true' : 'false' }} }" class="space-y-1" x-cloak>
             <button @click="open = !open"
-                    class="w-full flex items-center justify-between px-3 py-2 text-sm font-semibold uppercase tracking-wider hover:bg-gray-800 rounded-md text-white">
-                <div class="flex items-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 15c2.485 0 4.779.657 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
+                    class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold uppercase tracking-wider hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-all duration-200 ease-in-out group">
+                <div class="flex items-center space-x-3">
+                    <span class="material-icons-outlined text-xl opacity-80 group-hover:opacity-100 text-blue-400">groups</span>
                     <span class="menu-label">Kesantrian</span>
                 </div>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform transition-transform duration-200"
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform transition-transform duration-200 text-slate-500 group-hover:text-white"
                     :class="{ 'rotate-90': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
            </button>
-<div x-show="open" class="pl-8 space-y-1">
-    <!-- Data Santri -->
-    <a href="/santris" class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('santris*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-        <!-- Icon Users -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M7 18v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <circle cx="17" cy="7" r="4"/>
-        </svg>
-        <span class="menu-label">Data Santri</span>
-    </a>
-    <!-- Kelas -->
-    <a href="/kelas" class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('kelas*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-        <!-- Icon Layers -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
-            <polyline points="2 17 12 22 22 17"/>
-            <polyline points="2 12 12 17 22 12"/>
-        </svg>
-        <span class="menu-label">Kelas</span>
-    </a>
-    <!-- Asrama -->
-    <a href="/asrama" class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('asrama*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-        <!-- Icon Home -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path d="M3 9.5V22h7v-6h4v6h7V9.5"/>
-            <path d="M22 9.5 12 2 2 9.5"/>
-        </svg>
-        <span class="menu-label">Asrama</span>
-    </a>
-               <a href="{{ route('rfid-tags.index') }}"
-   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition
-          {{ request()->is('rfid-tags*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-  <span class="material-icons text-base">qr_code_2</span>
-  <span class="menu-label">RFID Tags</span>
-</a>
-
+            <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-2" class="ml-4 pl-3 border-l border-slate-700 space-y-1">
+                <a href="/santris" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('santris*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('santris*') ? 'text-white' : 'text-blue-400' }}">badge</span>
+                    <span class="menu-label">Data Santri</span>
+                </a>
+                <a href="/kelas" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('kelas*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('kelas*') ? 'text-white' : 'text-blue-400' }}">school</span>
+                    <span class="menu-label">Kelas</span>
+                </a>
+                <a href="/asrama" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('asrama*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('asrama*') ? 'text-white' : 'text-blue-400' }}">cottage</span>
+                    <span class="menu-label">Asrama</span>
+                </a>
+                <a href="{{ route('rfid-tags.index') }}"
+                   class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('rfid-tags*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('rfid-tags*') ? 'text-white' : 'text-blue-400' }}">qr_code_2</span>
+                    <span class="menu-label">RFID Tags</span>
+                </a>
                 <a href="{{ route('mutasi_santri.index') }}"
-                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('mutasi-santri*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-                    <span class="material-icons text-base">swap_horiz</span>
+                   class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('mutasi-santri*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('mutasi-santri*') ? 'text-white' : 'text-blue-400' }}">transfer_within_a_station</span>
                     <span class="menu-label">Mutasi Santri</span>
                 </a>
             </div>
         </div>
 
-        <!-- Keuangan Menu -->
-        <div x-data="{ open: false }" class="space-y-1">
-            <button @click="open = !open"
-                    class="w-full flex items-center justify-between px-3 py-2 text-sm font-semibold uppercase tracking-wider hover:bg-gray-800 rounded-md text-white">
-                <div class="flex items-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    <span class="menu-label">Keuangan</span>
+
+
+        <!-- User Management -->
+        @if(Auth::check() && Auth::user()->hasRole('admin')) {{-- Assuming Spatie/laravel-permission --}}
+        <div x-data="{ open: {{ request()->is('users*') || request()->is('roles*') ? 'true' : 'false' }} }" class="space-y-1">
+             <button @click="open = !open"
+                    class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold uppercase tracking-wider hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-all duration-200 ease-in-out group">
+                <div class="flex items-center space-x-3">
+                    <span class="material-icons-outlined text-xl opacity-80 group-hover:opacity-100 text-blue-400">admin_panel_settings</span>
+                    <span class="menu-label">Admin Area</span>
                 </div>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform transition-transform duration-200"
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform transition-transform duration-200 text-slate-500 group-hover:text-white"
                     :class="{ 'rotate-90': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
-            </button>
-            <div x-show="open" class="pl-8 space-y-1">
-                <a href="{{ route('pembayaran-santri.index') }}"
-                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('pembayaran-santri*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-                    <span class="material-icons text-base">payments</span>
-                    <span class="menu-label">Pembayaran Santri</span>
+           </button>
+            <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-2" class="ml-4 pl-3 border-l border-slate-700 space-y-1">
+                <a href="{{ route('users.index') }}"
+                   class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('users*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('users*') ? 'text-white' : 'text-blue-400' }}">manage_accounts</span>
+                    <span class="menu-label">User Management</span>
                 </a>
-                <!-- Setting Menu (moved to bottom) -->
-                <div x-data="{ open: false }" class="space-y-1">
-                    <button @click="open = !open"
-                            class="w-full flex items-center justify-between px-3 py-2 text-sm font-semibold uppercase tracking-wider hover:bg-gray-800 rounded-md text-white">
-                        <div class="flex items-center space-x-2">
-                            <span class="material-icons text-base">settings</span>
-                            <span class="menu-label">Setting</span>
-                        </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform transition-transform duration-200"
-                            :class="{ 'rotate-90': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                    </button>
-                    <div x-show="open" class="pl-8 space-y-1">
-                        <a href="{{ route('jenis-bayar.index') }}" class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('keuangan/setting/jenis-bayar*') ? 'bg-blue-700 text-white' : 'hover:bg-gray-700 text-gray-300' }}">
-                            <span class="material-icons text-base">list_alt</span>
-                            <span class="menu-label">Jenis Bayar</span>
-                        </a>
-                        <a href="{{ route('jenis-kas.index') }}" class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('keuangan/setting/jenis-kas*') ? 'bg-blue-700 text-white' : 'hover:bg-gray-700 text-gray-300' }}">
-                            <span class="material-icons text-base">category</span>
-                            <span class="menu-label">Jenis Kas</span>
-                        </a>
-                    </div>
-                </div>
-                <a href="{{ route('bukti-transfer-wali-murid.index') }}"
-                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('bukti-transfer-wali-murid*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-                    <span class="material-icons text-base">receipt_long</span>
-                    <span class="menu-label">Bukti Transfer Wali Murid</span>
-                </a>
-                <a href="{{ route('limit-tarik-tabungan.index') }}"
-                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('limit-tarik-tabungan*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-                    <span class="material-icons text-base">account_balance_wallet</span>
-                    <span class="menu-label">Limit Tarik Tabungan</span>
-                </a>
-                <a href="{{ route('tabungan-santri.index') }}"
-                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('tabungan-santri*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-                    <span class="material-icons text-base">savings</span>
-                    <span class="menu-label">Tabungan Santri</span>
-                </a>
-                <a href="{{ route('kas-bank.index') }}"
-                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('kas-bank*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-                    <span class="material-icons text-base">account_balance</span>
-                    <span class="menu-label">Kas & Bank</span>
-                </a>
-                <a href="{{ route('penggajian.index') }}"
-                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('penggajian*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-                    <span class="material-icons text-base">paid</span>
-                    <span class="menu-label">Penggajian</span>
-                </a>
-                <a href="{{ route('hutang.index') }}"
-                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('hutang*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-                    <span class="material-icons text-base">money_off</span>
-                    <span class="menu-label">Hutang</span>
-                </a>
-                <a href="{{ route('kirim-tagihan.index') }}"
-                   class="flex items-center space-x-2 px-3 py-1 text-sm rounded-md transition {{ request()->is('kirim-tagihan*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-                    <span class="material-icons text-base">send</span>
-                    <span class="menu-label">Kirim Tagihan</span>
+                <a href="{{ route('roles.index') }}"
+                   class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('roles*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('roles*') ? 'text-white' : 'text-blue-400' }}">verified_user</span>
+                    <span class="menu-label">Role Management</span>
                 </a>
             </div>
         </div>
-    </nav>
-        <!-- User Management -->
-        @if(Auth::check() && Auth::user()->role === 'admin')
-        <div class="space-y-1">
-            <a href="{{ route('users.index') }}"
-               class="flex items-center space-x-2 px-3 py-2 rounded-md transition {{ request()->is('users*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-                <span class="material-icons text-base">manage_accounts</span>
-                <span class="menu-label">User Management</span>
-            </a>
-            <a href="{{ route('roles.index') }}"
-               class="flex items-center space-x-2 px-3 py-2 rounded-md transition {{ request()->is('roles*') ? 'bg-blue-800 text-white' : 'hover:bg-gray-800 text-gray-300' }}">
-                <span class="material-icons text-base">assignment_ind</span>
-                <span class="menu-label">Role Management</span>
-            </a>
-        </div>
         @endif
+    </nav>
+
     <!-- Logout fixed bottom -->
-    <div class="mt-auto p-4">
+    <div class="mt-auto p-3 border-t border-slate-700">
         <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button class="w-full flex items-center space-x-2 px-3 py-2 hover:bg-red-100 text-red-200 rounded-md">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H4a3 3 0 01-3-3V7a3 3 0 013-3h6a3 3 0 013 3v1" />
-                </svg>
-                <span class="menu-label">Logout</span>
+            <button class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-red-400 hover:bg-red-500 hover:text-white transition-all duration-200 ease-in-out group">
+                <span class="material-icons-outlined text-xl opacity-80 group-hover:opacity-100">logout</span>
+                <span class="menu-label font-medium">Logout</span>
             </button>
         </form>
     </div>
 </aside>
+
 <!-- Alpine.js jika belum dimuat global -->
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-<!-- Material Icons jika butuh -->
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<!-- Material Icons Outlined (recommended for modern look) -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Icons+Outlined" rel="stylesheet">
+
+<style>
+    /* Custom scrollbar for WebKit browsers */
+    #sidebar nav::-webkit-scrollbar {
+        width: 6px;
+    }
+    #sidebar nav::-webkit-scrollbar-track {
+        background: #1e293b; /* slate-800 */
+    }
+    #sidebar nav::-webkit-scrollbar-thumb {
+        background: #334155; /* slate-700 */
+        border-radius: 3px;
+    }
+    #sidebar nav::-webkit-scrollbar-thumb:hover {
+        background: #475569; /* slate-600 */
+    }
+
+    /* Sidebar toggle animation */
+    .sidebar-collapsed #logo-text {
+        opacity: 0;
+    }
+    .sidebar-collapsed .menu-label {
+        display: none;
+    }
+    .sidebar-collapsed #sidebar {
+        width: 4.5rem; /* Adjust to fit icons only */
+    }
+    .sidebar-collapsed .menu-label{
+        opacity:0;
+        width:0;
+        transition: opacity 0.1s ease-out, width 0.1s ease-out;
+    }
+    #sidebar:not(.sidebar-collapsed) .menu-label{
+        opacity:1;
+        transition: opacity 0.2s ease-in 0.1s;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const logoText = document.getElementById('logo-text');
+        const menuLabels = document.querySelectorAll('.menu-label');
+        const mainContent = document.querySelector('main'); // Assuming your main content area has a <main> tag
+
+        // Function to toggle sidebar state
+        function toggleSidebar() {
+            sidebar.classList.toggle('sidebar-collapsed');
+            if (sidebar.classList.contains('sidebar-collapsed')) {
+                localStorage.setItem('sidebarState', 'collapsed');
+                if(mainContent) mainContent.style.marginLeft = '4.5rem'; // Adjust based on collapsed width
+            } else {
+                localStorage.setItem('sidebarState', 'expanded');
+                if(mainContent) mainContent.style.marginLeft = '16rem'; // Adjust based on expanded width
+            }
+        }
+
+        // Event listener for the toggle button
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', toggleSidebar);
+        }
+
+        // Check local storage for saved sidebar state
+        const savedSidebarState = localStorage.getItem('sidebarState');
+        if (savedSidebarState === 'collapsed') {
+            sidebar.classList.add('sidebar-collapsed');
+            if(mainContent) mainContent.style.marginLeft = '4.5rem';
+        } else {
+            // Default to expanded if no state or 'expanded'
+            sidebar.classList.remove('sidebar-collapsed');
+            if(mainContent) mainContent.style.marginLeft = '16rem';
+        }
+
+        // Adjust main content margin on load based on initial sidebar state
+        // This is important if the page loads with the sidebar already in a certain state
+        if (sidebar.classList.contains('sidebar-collapsed')) {
+            if(mainContent) mainContent.style.marginLeft = '4.5rem';
+        } else {
+            if(mainContent) mainContent.style.marginLeft = '16rem';
+        }
+    });
+</script>
