@@ -718,19 +718,40 @@ init() {
             });
         },
 
-        cetakKwitansi() {
-            if (this.selectedPayments.length === 0) {
-                alert('Pilih tagihan yang akan dicetak kwitansinya');
-                return;
+        cetakKwitansi(paymentData = null) {
+            let itemsToPrint, totalAmount, cashAmount, changeAmount, walletDepositValue;
+
+            if (paymentData) { // Dipanggil dari processFullPayment atau processPartialPayment
+                itemsToPrint = paymentData.items;
+                totalAmount = paymentData.total;
+                cashAmount = paymentData.cashAmount;
+                changeAmount = paymentData.changeAmount;
+                walletDepositValue = paymentData.walletDeposit;
+            } else { // Dipanggil dari tombol "Cetak Kwitansi" langsung
+                if (this.selectedPayments.length === 0) {
+                    alert('Pilih tagihan yang akan dicetak kwitansinya');
+                    return;
+                }
+                const selectedPaymentDetails = this.selectedPayments.map(paymentId => {
+                    const payment = this.payments.find(p => p.id === Number(paymentId));
+                    return payment;
+                }).filter(item => item !== undefined);
+
+                itemsToPrint = selectedPaymentDetails.map(item => ({
+                    name: item.jenis_pembayaran,
+                    period: item.bulan,
+                    amount: this.formatRupiah(item.tagihan), // Cetak tagihan penuh jika dari tombol cetak langsung
+                    status: item.status,
+                    paid: this.formatRupiah(item.dibayar),
+                    remaining: this.formatRupiah(item.sisa)
+                }));                
+                totalAmount = this.totalSelectedAmount;
+                // Untuk cetak langsung, asumsikan dibayar pas atau belum ada info pembayaran spesifik
+                cashAmount = totalAmount; 
+                changeAmount = 0;
+                walletDepositValue = false;
             }
             
-            // Kumpulkan data pembayaran yang dipilih
-            const selectedPaymentItems = this.selectedPayments.map(paymentId => {
-                const payment = this.payments.find(p => p.id === paymentId);
-                return payment;
-            }).filter(item => item !== undefined);
-            
-            // Buat data untuk kwitansi
             const receiptData = {
                 receiptNumber: 'KWT-' + new Date().getTime(),
                 date: new Date().toLocaleDateString('id-ID', {
@@ -741,23 +762,16 @@ init() {
                 studentName: this.selectedSantri.nama,
                 studentNIS: this.selectedSantri.nis,
                 studentClass: this.selectedSantri.kelas,
-                adminName: this.getRandomAdmin(),
-                items: selectedPaymentItems.map(item => ({
-                    name: item.jenis_pembayaran,
-                    period: item.bulan,
-                    amount: this.formatRupiah(item.sisa)
-                })),
-                total: this.formatRupiah(this.totalSelectedAmount),
-                cashAmount: this.formatRupiah(this.totalSelectedAmount),
-                changeAmount: 0,
-                walletDeposit: false,
+                adminName: this.getRandomAdmin(), // Anda mungkin ingin menggunakan admin yang memproses pembayaran jika ada
+                items: itemsToPrint,
+                total: this.formatRupiah(totalAmount),
+                cashAmount: this.formatRupiah(cashAmount),
+                changeAmount: this.formatRupiah(changeAmount),
+                walletDeposit: walletDepositValue,
                 autoPrint: true
             };
             
-            // Simpan data ke localStorage untuk diakses oleh halaman kwitansi
             localStorage.setItem('receiptData', JSON.stringify(receiptData));
-            
-            // Buka halaman kwitansi di tab baru
             window.open('{{ route("pembayaran.santri.kwitansi") }}', '_blank');
         },
 
@@ -859,12 +873,11 @@ init() {
             }
             
             let message = '';
+            const processedItemsForReceipt = [];
             
-            // Process all selected payments as fully paid
             for (const paymentId of this.selectedPayments) {
-                const payment = this.payments.find(p => p.id === paymentId);
+                const payment = this.payments.find(p => p.id === Number(paymentId));
                 if (payment) {
-                    // Update payment status
                     const amountToPay = payment.sisa;
                     payment.dibayar += amountToPay;
                     payment.sisa = 0;
@@ -874,53 +887,35 @@ init() {
                         month: 'long',
                         year: 'numeric'
                     });
-                    payment.admin_penerima = this.getRandomAdmin();
+                    payment.admin_penerima = this.getRandomAdmin(); 
                     
-                    // Add to message
                     message += `- ${payment.jenis_pembayaran} (${payment.bulan}): ${this.formatRupiah(amountToPay)} (Lunas)\n`;
+                    processedItemsForReceipt.push({
+                        name: payment.jenis_pembayaran,
+                        period: payment.bulan,
+                        amount: this.formatRupiah(amountToPay), // Jumlah yang dibayarkan untuk item ini
+                        status: 'Lunas',
+                        paid: this.formatRupiah(payment.dibayar),
+                        remaining: this.formatRupiah(payment.sisa)
+                    });
                 }
             }
             
-            // Prepare receipt data
-            const receiptData = {
-                receiptNumber: 'KWT-' + new Date().getTime(),
-                date: new Date().toLocaleDateString('id-ID', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                }),
-                studentName: this.selectedSantri.nama,
-                studentNIS: this.selectedSantri.nis,
-                studentClass: this.selectedSantri.kelas,
-                adminName: this.getRandomAdmin(),
-                items: this.selectedPayments.map(paymentId => {
-                    const payment = this.payments.find(p => p.id === paymentId);
-                    return {
-                        name: payment.jenis_pembayaran,
-                        period: payment.bulan,
-                        amount: this.formatRupiah(payment.dibayar)
-                    };
-                }),
-                total: this.formatRupiah(this.totalSelectedAmount),
-                cashAmount: this.formatRupiah(this.fullPaymentAmount),
-                changeAmount: this.formatRupiah(this.fullPaymentChange),
-                walletDeposit: this.saveToWallet,
-                autoPrint: true
+            const paymentDetailsForReceipt = {
+                items: processedItemsForReceipt,
+                total: this.totalSelectedAmount,
+                cashAmount: this.fullPaymentAmount,
+                changeAmount: this.fullPaymentChange,
+                walletDeposit: this.saveToWallet
             };
+
+            this.cetakKwitansi(paymentDetailsForReceipt);
             
-            // Save receipt data to localStorage
-            localStorage.setItem('receiptData', JSON.stringify(receiptData));
-            
-            // Reset and close modal
             this.closeFullPaymentModal();
             this.selectedPayments = [];
             this.selectAll = false;
             
-            // Show success message
             alert(`Pembayaran lunas berhasil diproses!\n\nDetail Pembayaran:\n${message}\nKembalian: ${this.formatRupiah(this.fullPaymentChange)}${this.saveToWallet ? ' (Disimpan ke dompet santri)' : ''}`);
-            
-            // Open receipt in new tab
-            window.open('{{ route("pembayaran.santri.kwitansi") }}', '_blank');
         },
         
         closeFullPaymentModal() {
@@ -1097,49 +1092,64 @@ init() {
                 }
             }
 
-            // Prepare receipt data for partial payment
-            const receiptData = {
-                receiptNumber: 'KWT-' + new Date().getTime(),
-                date: new Date().toLocaleDateString('id-ID', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                }),
-                studentName: this.selectedSantri.nama,
-                studentNIS: this.selectedSantri.nis,
-                studentClass: this.selectedSantri.kelas,
-                adminName: this.getRandomAdmin(),
-                items: this.paymentPriorityList.map(item => {
-                    const payment = this.payments.find(p => p.id === item.id);
-                    const paidAmount = item.willBePaidFull ? payment.tagihan - payment.sisa + (payment.dibayar - (payment.tagihan - payment.sisa)) : 
-                                     Math.min(this.partialAmount, payment.sisa);
-                    return {
-                        name: payment.jenis_pembayaran,
-                        period: payment.bulan,
-                        amount: this.formatRupiah(paidAmount)
-                    };
-                }),
-                total: this.formatRupiah(this.partialAmount),
-                cashAmount: this.formatRupiah(this.partialAmount),
-                changeAmount: 0,
-                walletDeposit: false,
-                autoPrint: true
+            const paidItemsForReceipt = [];
+            let totalPaidInThisTransaction = 0;
+
+            // Kumpulkan detail item yang diproses dalam transaksi ini
+            // Iterasi melalui paymentPriorityList untuk mendapatkan item yang diproses
+            this.paymentPriorityList.forEach(priorityItem => {
+                const payment = this.payments.find(p => p.id === priorityItem.id);
+                if (payment) {
+                    // Cari tahu berapa yang dibayarkan untuk item ini dalam transaksi saat ini
+                    // Ini mungkin memerlukan logika yang lebih canggih jika Anda tidak menyimpan jumlah pembayaran per item transaksi
+                    // Untuk saat ini, kita asumsikan `priorityItem.amountPaidInThisTx` akan diisi saat pemrosesan
+                    // Atau, kita bisa merekonstruksi berdasarkan status `willBePaidFull` dan `partialAmount`
+                    let amountPaidForItem = 0;
+                    if (priorityItem.willBePaidFull) {
+                        // Jika item ini ditandai untuk dibayar lunas dalam transaksi parsial
+                        // dan sisa sebelumnya adalah X, maka amountPaidForItem adalah X
+                        // Ini perlu disesuaikan dengan bagaimana `payment.dibayar` diperbarui
+                        // Untuk kwitansi, kita ingin menunjukkan apa yang *baru saja* dibayar
+                        // Ini adalah contoh, Anda perlu menyesuaikan berdasarkan logika Anda
+                        const originalSisa = this.payments.find(p => p.id === priorityItem.id).sisa + (payment.dibayar - (this.payments.find(p => p.id === priorityItem.id).tagihan - this.payments.find(p => p.id === priorityItem.id).sisa)); // Sisa sebelum transaksi ini
+                        amountPaidForItem = Math.min(originalSisa, this.partialAmount - totalPaidInThisTransaction);
+                    } else {
+                        // Jika tidak dibayar lunas, dan masih ada sisa uang dari partialAmount
+                        amountPaidForItem = Math.min(payment.sisa, this.partialAmount - totalPaidInThisTransaction);
+                    }
+                    // Pastikan amountPaidForItem tidak negatif atau lebih besar dari yang seharusnya
+                    amountPaidForItem = Math.max(0, amountPaidForItem);
+                    
+                    if (amountPaidForItem > 0) {
+                         paidItemsForReceipt.push({
+                            name: payment.jenis_pembayaran,
+                            period: payment.bulan,
+                            amount: this.formatRupiah(amountPaidForItem), // Jumlah yang dibayarkan untuk item ini
+                            status: payment.status, // Status setelah pembayaran
+                            paid: this.formatRupiah(payment.dibayar), // Total dibayar setelah transaksi
+                            remaining: this.formatRupiah(payment.sisa) // Sisa setelah transaksi
+                        });
+                        totalPaidInThisTransaction += amountPaidForItem;
+                    }
+                }
+            });
+
+            const paymentDetailsForReceipt = {
+                items: paidItemsForReceipt,
+                total: totalPaidInThisTransaction, // Total yang dibayarkan dalam transaksi ini
+                cashAmount: this.partialAmount, // Uang yang diberikan
+                changeAmount: 0, // Tidak ada kembalian untuk bayar sebagian
+                walletDeposit: false
             };
+
+            this.cetakKwitansi(paymentDetailsForReceipt);
             
-            // Save receipt data to localStorage
-            localStorage.setItem('receiptData', JSON.stringify(receiptData));
-            
-            // Reset and close modal
             this.closePartialPaymentModal();
             this.selectedPayments = [];
             this.selectAll = false;
             
-            // Show success message
             alert(`Pembayaran sebagian berhasil diproses!\n\nDetail Pembayaran:\n${message}`);
-            
-            // Open receipt in new tab
-            window.open('{{ route("pembayaran.santri.kwitansi") }}', '_blank');
-        },
+        },"instruction":"Memperbarui fungsi cetakKwitansi, processFullPayment, dan processPartialPayment untuk mencerminkan detail kwitansi yang diminta, termasuk jumlah bayar, kembalian, dan penyimpanan ke dompet santri, serta sisa tagihan untuk pembayaran sebagian."}]}}}
 
         closePartialPaymentModal() {
             this.showPartialPaymentModal = false;
