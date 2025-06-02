@@ -30,7 +30,7 @@ class MutasiSantriController extends Controller
     
     MutasiSantri::create([
         'santri_id'      => $id,
-        'nama'           => $santri->nama_siswa,
+        'nama'           => $santri->nama_santri,
         'alasan'         => $request->alasan,
         'tujuan_mutasi'  => $request->tujuan_mutasi,
         'tanggal_mutasi' => now(),

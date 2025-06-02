@@ -28,13 +28,13 @@
 
         {{-- Kartu Placeholder 3 --}}
         <div class="bg-gradient-to-br from-yellow-600 to-yellow-400 text-white p-4 rounded-md shadow">
-            <div class="text-sm font-semibold opacity-90">Pembayaran Siswa</div>
+            <div class="text-sm font-semibold opacity-90">Pembayaran Santri</div>
             <div class="text-xl font-bold">–</div>
         </div>
 
         {{-- Kartu Placeholder 4 --}}
         <div class="bg-gradient-to-br from-red-600 to-red-400 text-white p-4 rounded-md shadow">
-            <div class="text-sm font-semibold opacity-90">Tabungan Siswa</div>
+            <div class="text-sm font-semibold opacity-90">Tabungan Santri</div>
             <div class="text-xl font-bold">–</div>
         </div>
     </div>

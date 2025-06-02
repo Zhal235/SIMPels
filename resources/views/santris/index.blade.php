@@ -203,10 +203,10 @@
                   <img src="{{ asset('storage/'.$santri->foto) }}" class="w-9 h-9 rounded-full object-cover shadow-sm"/>
                 @else
                   <div class="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-                    {{ strtoupper(substr($santri->nama_siswa,0,1)) }}
+                    {{ strtoupper(substr($santri->nama_santri,0,1)) }}
                   </div>
                 @endif
-                <span class="font-medium">{{ $santri->nama_siswa }}</span>
+                <span class="font-medium">{{ $santri->nama_santri }}</span>
               </td>
               <td class="px-4 py-3 text-center">{{ $santri->nisn }}</td>
               <td class="px-4 py-3">{{ $santri->tempat_lahir.', '.\Carbon\Carbon::parse($santri->tanggal_lahir)->format('d F Y') }}</td>
@@ -230,13 +230,13 @@
                       </svg>
                     </a>
                     <button type="button" title="Mutasi Santri"
-                            @click="mutasiOpen = true; mutasiId = {{ $santri->id }}; mutasiNama = '{{ addslashes($santri->nama_siswa) }}';"
+                            @click="mutasiOpen = true; mutasiId = {{ $santri->id }}; mutasiNama = '{{ addslashes($santri->nama_santri) }}';"
                             class="p-2 rounded-full text-yellow-600 hover:bg-yellow-100 transition duration-150 ease-in-out">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
                         <path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/>
                       </svg>
                     </button>
-                    <form action="{{ route('santris.destroy',$santri->id) }}" method="POST" onsubmit="return confirm('Anda yakin ingin menghapus santri bernama {{ addslashes($santri->nama_siswa) }}?')" class="inline-block">
+                    <form action="{{ route('santris.destroy',$santri->id) }}" method="POST" onsubmit="return confirm('Anda yakin ingin menghapus santri bernama {{ addslashes($santri->nama_santri) }}?')" class="inline-block">
                       @csrf @method('DELETE')
                       <button type="submit" title="Hapus Santri"
                               class="p-2 rounded-full text-red-600 hover:bg-red-100 transition duration-150 ease-in-out">

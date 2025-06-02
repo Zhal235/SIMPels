@@ -1,7 +1,7 @@
 @extends('layouts.admin')
 
 @section('content')
-<div x-data="{ openFilter:false, openModal:false, selected:{id:null,nis:'',nama_siswa:''} }"
+<div x-data="{ openFilter:false, openModal:false, selected:{id:null,nis:'',nama_santri:''} }"
      class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
 
   <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 pb-4 border-b border-gray-200">
@@ -103,14 +103,14 @@
                 <tr class="hover:bg-gray-50 transition duration-150 ease-in-out">
                     <td class="px-4 py-3 whitespace-nowrap text-sm">{{ $santris->firstItem() + $i }}</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm">{{ $santri->nis }}</td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">{{ $santri->nama_siswa }}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">{{ $santri->nama_santri }}</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm">
                         {{ $santri->kelasRelasi->pluck('nama')->join(', ') ?: '-' }}
                     </td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm">{{ $santri->rfidTag->tag_uid ?? '-' }}</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm">{{ $santri->rfidTag->pin ?? '-' }}</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-center">
-                        <button @click="openModal=true; selected.id={{$santri->id}}; selected.nis='{{$santri->nis}}'; selected.nama_siswa='{{addslashes($santri->nama_siswa)}}';"
+                        <button @click="openModal=true; selected.id={{$santri->id}}; selected.nis='{{$santri->nis}}'; selected.nama_santri='{{addslashes($santri->nama_santri)}}';"
                                 class="p-2 rounded-full text-blue-600 hover:bg-blue-100 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors duration-150" title="Set RFID & PIN">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M5 2a1 1 0 00-1 1v1H3a1 1 0 000 2h1v1a1 1 0 001 1h10a1 1 0 001-1V6h1a1 1 0 100-2h-1V3a1 1 0 00-1-1H5zm0 4h10v10H5V6zm2 3a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1z" clip-rule="evenodd" />
@@ -191,7 +191,7 @@
                 </svg>
             </button>
         </div>
-        <p class="mb-4 text-sm text-gray-600">Santri: <strong x-text="selected.nis" class="text-gray-800"></strong> — <span x-text="selected.nama_siswa" class="text-gray-800"></span></p>
+        <p class="mb-4 text-sm text-gray-600">Santri: <strong x-text="selected.nis" class="text-gray-800"></strong> — <span x-text="selected.nama_santri" class="text-gray-800"></span></p>
         <form action="{{ route('rfid-tags.store') }}" method="POST" class="space-y-4">
             @csrf
             <input type="hidden" name="santri_id" :value="selected.id">

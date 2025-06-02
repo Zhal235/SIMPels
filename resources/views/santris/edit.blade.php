@@ -59,8 +59,8 @@
 
                 {{-- Loop field lain --}}
                 @foreach ([
-                    'nik_siswa'        => 'NIK Siswa',
-                    'nama_siswa'       => 'Nama Lengkap',
+                    'nik_santri'       => 'NIK Santri',
+                    'nama_santri'      => 'Nama Lengkap',
                     'tempat_lahir'     => 'Tempat Lahir',
                     'tanggal_lahir'    => 'Tanggal Lahir',
                     'jenis_kelamin'    => 'Jenis Kelamin (L/P)',

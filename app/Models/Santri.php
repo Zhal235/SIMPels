@@ -13,7 +13,7 @@ class Santri extends Model
     use HasFactory;
 
     protected $fillable = [
-        'nis', 'nisn', 'nik_siswa', 'nama_siswa', 'tempat_lahir', 'tanggal_lahir',
+        'nis', 'nisn', 'nik_santri', 'nama_santri', 'tempat_lahir', 'tanggal_lahir',
         'jenis_kelamin', 'kelas', 'asal_sekolah', 'hobi', 'cita_cita',
         'jumlah_saudara', 'alamat', 'provinsi', 'kabupaten', 'kecamatan',
         'desa', 'kode_pos', 'no_kk', 'nama_ayah', 'nik_ayah', 'pendidikan_ayah',

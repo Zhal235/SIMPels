@@ -18,8 +18,8 @@ class SantriImport implements ToModel, WithHeadingRow
         return new Santri([
             'nis'               => $row['nis'] ?? null,
             'nisn'              => $row['nisn'] ?? null,
-            'nik_siswa'         => $row['nik_siswa'] ?? null,
-            'nama_siswa'        => $row['nama_siswa'] ?? null,
+            'nik_santri'        => $row['nik_santri'] ?? null,
+            'nama_santri'       => $row['nama_santri'] ?? null,
             'tempat_lahir'      => $row['tempat_lahir'] ?? null,
             'tanggal_lahir'     => $tanggal_lahir,
             'jenis_kelamin'     => $row['jenis_kelamin'] ?? null,

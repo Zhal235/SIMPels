@@ -27,7 +27,7 @@ class SantriController extends Controller
     if ($request->filled('search')) {
         $s = $request->search;
         $query->where(function($q) use ($s) {
-            $q->where('nama_siswa','like',"%{$s}%")
+            $q->where('nama_santri','like',"%{$s}%")
               ->orWhere('nis','like',"%{$s}%");
         });
     }
@@ -63,8 +63,8 @@ class SantriController extends Controller
         $data = $request->validate([
             'nis'               => 'required|unique:santris,nis',
             'nisn'              => 'nullable',
-            'nik_siswa'         => 'nullable',
-            'nama_siswa'        => 'required',
+            'nik_santri'        => 'nullable',
+            'nama_santri'       => 'required',
             'tempat_lahir'      => 'nullable',
             'tanggal_lahir'     => 'nullable|date',
             'jenis_kelamin'     => 'nullable',
@@ -157,8 +157,8 @@ class SantriController extends Controller
         $data = $request->validate([
             'nis'               => 'required|unique:santris,nis,'.$id,
             'nisn'              => 'nullable',
-            'nik_siswa'         => 'nullable',
-            'nama_siswa'        => 'required',
+            'nik_santri'        => 'nullable',
+            'nama_santri'       => 'required',
             'tempat_lahir'      => 'nullable',
             'tanggal_lahir'     => 'nullable|date',
             'jenis_kelamin'     => 'nullable',

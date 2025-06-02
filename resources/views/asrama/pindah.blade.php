@@ -41,7 +41,7 @@
                             multiple size="15" required>
                         @foreach($santris as $santri)
                             <option value="{{ $santri->id }}" data-asrama="{{ $santri->asrama ? $santri->asrama->kode : '' }}">
-                                {{ $santri->nis }} - {{ $santri->nama_siswa }}
+                                {{ $santri->nis }} - {{ $santri->nama_santri }}
                             </option>
                         @endforeach
                     </select>
@@ -110,7 +110,7 @@
             santris.forEach(function(s) {
                 if (s.asrama && s.asrama.kode === tujuanKode) {
                     let option = document.createElement('option');
-                    option.text = (s.nis ? s.nis : '-') + ' - ' + s.nama_siswa;
+                    option.text = (s.nis ? s.nis : '-') + ' - ' + s.nama_santri;
                     tujuanList.add(option);
                 }
             });

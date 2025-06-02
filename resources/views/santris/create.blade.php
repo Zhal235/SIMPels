@@ -43,8 +43,8 @@
 
             {{-- KOLOM 3/4 KOLOM UNTUK DATA INPUT --}}
             <div class="md:col-span-3">
-                {{-- DATA SISWA --}}
-                <h3 class="text-lg font-semibold text-gray-600">Data Siswa</h3>
+                {{-- DATA SANTRI --}}
+                <h3 class="text-lg font-semibold text-gray-600">Data Santri</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block font-medium text-sm">NIS</label>
@@ -57,8 +57,8 @@
                 </div>
 
                 @foreach ([
-                    'nik_siswa' => 'NIK Siswa',
-                    'nama_siswa' => 'Nama Lengkap',
+                    'nik_santri' => 'NIK Santri',
+                    'nama_santri' => 'Nama Lengkap',
                     'tempat_lahir' => 'Tempat Lahir',
                     'tanggal_lahir' => 'Tanggal Lahir',
                     'jenis_kelamin' => 'Jenis Kelamin (L/P)',

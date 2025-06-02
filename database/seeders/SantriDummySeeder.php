@@ -38,7 +38,7 @@ class SantriDummySeeder extends Seeder
 
             Santri::create([
                 'nis'           => $nis++,
-                'nama_siswa'    => $nama,
+                'nama_santri'   => $nama,
                 'jenis_kelamin' => $jenis_kelamin,
                 'tempat_lahir'  => $tempatLahirList[array_rand($tempatLahirList)],
                 'tanggal_lahir' => $tanggal_lahir,

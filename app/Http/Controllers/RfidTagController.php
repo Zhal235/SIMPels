@@ -17,11 +17,11 @@ class RfidTagController extends Controller
 {
     $query = \App\Models\Santri::with(['rfidTag', 'kelasRelasi'])
                    ->where('status', 'aktif') // Tambahkan filter status aktif
-                   ->orderBy('nama_siswa');
+                   ->orderBy('nama_santri');
 
     if ($s = $request->search) {
         $query->where(function($q) use ($s) {
-            $q->where('nama_siswa', 'like', "%{$s}%")
+            $q->where('nama_santri', 'like', "%{$s}%")
               ->orWhere('nis', 'like', "%{$s}%");
         });
     }
@@ -51,7 +51,7 @@ class RfidTagController extends Controller
      */
     public function create()
     {
-        $santris = Santri::where('status', 'aktif')->orderBy('nama_siswa')->get();
+        $santris = Santri::where('status', 'aktif')->orderBy('nama_santri')->get();
         return view('rfid_tags.create', compact('santris'));
     }
 
@@ -78,7 +78,7 @@ class RfidTagController extends Controller
      */
     public function edit(RfidTag $rfidTag)
     {
-        $santris = Santri::orderBy('nama_siswa')->get();
+        $santris = Santri::orderBy('nama_santri')->get();
         return view('rfid_tags.edit', compact('rfidTag', 'santris'));
     }
 

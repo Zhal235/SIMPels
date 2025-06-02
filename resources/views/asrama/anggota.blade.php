@@ -23,7 +23,7 @@
                     @forelse($anggota as $no => $santri)
                     <tr>
                         <td class="p-2">{{ $no+1 }}</td>
-                        <td class="p-2">{{ $santri->nama_siswa }}</td>
+                        <td class="p-2">{{ $santri->nama_santri }}</td>
                         <td class="p-2">{{ $santri->nis }}</td>
                         <td class="p-2">
                             <form action="{{ route('asrama.anggota.destroy', [$asrama->id, $santri->id]) }}" method="POST" onsubmit="return confirm('Keluarkan santri ini dari asrama?')">
@@ -64,7 +64,7 @@
                             <td class="p-2 text-center">
                                 <input type="checkbox" name="santri_id[]" value="{{ $santri->id }}">
                             </td>
-                            <td class="p-2">{{ $santri->nama_siswa }}</td>
+                            <td class="p-2">{{ $santri->nama_santri }}</td>
                             <td class="p-2">{{ $santri->nis }}</td>
                         </tr>
                         @endforeach

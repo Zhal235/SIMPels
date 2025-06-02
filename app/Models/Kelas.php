@@ -26,7 +26,7 @@ public function santris()
     return $this->hasMany(\App\Models\Santri::class, 'kelas_id');
 }
  // app/Models/Kelas.php
-public function siswa()
+public function santri()
 {
     return $this->belongsToMany(
         \App\Models\Santri::class,

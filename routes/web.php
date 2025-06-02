@@ -79,7 +79,11 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('rfid-tags', RfidTagController::class)->middleware('auth');
 
+    // Modul Pembayaran Santri
+    Route::get('pembayaran-santri', [\App\Http\Controllers\PembayaranSantriController::class, 'index'])->name('pembayaran.santri.index')->middleware(['role:admin|bendahara']); // Tambahkan role bendahara jika ada
+    Route::get('pembayaran-santri/kwitansi', [\App\Http\Controllers\PembayaranSantriController::class, 'kwitansi'])->name('pembayaran.santri.kwitansi')->middleware(['role:admin|bendahara']);
 
+    
 
 });
 

@@ -37,7 +37,7 @@
                         @forelse($anggota as $i => $santri)
                             <tr class="border-b">
                                 <td class="p-3">{{ $i+1 }}</td>
-                                <td class="p-3">{{ $santri->nama_siswa }}</td>
+                                <td class="p-3">{{ $santri->nama_santri }}</td>
                                 <td class="p-3">{{ $santri->nis ?? '-' }}</td>
                                 <td class="p-3">
                                     <form action="{{ route('kelas.anggota.destroy', [$kelas, $santri]) }}" method="POST" style="display:inline;">
@@ -89,7 +89,7 @@
                             <td class="text-center">
                                 <input type="checkbox" name="santri_id[]" value="{{ $santri->id }}" class="santri-checkbox accent-blue-600 rounded">
                             </td>
-                            <td class="py-2 px-2 text-gray-800">{{ $santri->nama_siswa }}</td>
+                            <td class="py-2 px-2 text-gray-800">{{ $santri->nama_santri }}</td>
                             <td class="py-2 px-2 text-gray-500 font-mono">{{ $santri->nis ?? '-' }}</td>
                         </tr>
                     @empty

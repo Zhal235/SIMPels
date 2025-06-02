@@ -20,8 +20,8 @@
 
             {{-- Loop field lain secara manual --}}
             @foreach ([
-                'nik_siswa'      => 'NIK Siswa',
-                'nama_siswa'     => 'Nama Lengkap',
+                'nik_santri'     => 'NIK Santri',
+                    'nama_santri'    => 'Nama Lengkap',
                 'tempat_lahir'   => 'Tempat Lahir',
                 'tanggal_lahir'  => 'Tanggal Lahir',
                 'jenis_kelamin'  => 'Jenis Kelamin',
@@ -100,7 +100,7 @@
             <label class="block font-medium text-sm text-gray-600 mb-2">Pas Foto</label>
             @if($santri->foto)
                 <img src="{{ asset('storage/' . $santri->foto) }}"
-                     alt="Foto {{ $santri->nama_siswa }}"
+                     alt="Foto {{ $santri->nama_santri }}"
                      class="border rounded w-full aspect-[3/4] object-cover">
             @else
                 <div class="border rounded w-full aspect-[3/4] flex items-center justify-center bg-gray-100 text-gray-500">

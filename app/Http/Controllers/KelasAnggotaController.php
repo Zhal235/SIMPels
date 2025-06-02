@@ -12,7 +12,7 @@ class KelasAnggotaController extends Controller
     public function index(Kelas $kelas)
     {
         // Anggota kelas (pivot)
-        $anggota = $kelas->siswa()->where('status', 'aktif')->get();
+        $anggota = $kelas->santri()->where('status', 'aktif')->get();
 
         // Santri yang belum punya kelas (tidak ada di pivot)
         $santriNotIn = Santri::whereDoesntHave('kelasRelasi')
@@ -28,7 +28,7 @@ class KelasAnggotaController extends Controller
         $request->validate([
             'santri_id' => 'required|array'
         ]);
-        $kelas->siswa()->attach($request->santri_id);
+        $kelas->santri()->attach($request->santri_id);
 
         return redirect()->route('kelas.anggota.index', $kelas)
                          ->with('success', 'Santri berhasil ditambahkan ke kelas.');
@@ -37,7 +37,7 @@ class KelasAnggotaController extends Controller
     // Keluarkan santri dari kelas (hapus dari pivot)
     public function destroy(Kelas $kelas, Santri $santri)
     {
-        $kelas->siswa()->detach($santri->id);
+        $kelas->santri()->detach($santri->id);
 
         return redirect()->route('kelas.anggota.index', $kelas)
                          ->with('success', 'Santri berhasil dikeluarkan dari kelas.');
