@@ -176,10 +176,7 @@
                         <th>No</th>
                         <th>Jenis Pembayaran</th>
                         <th>Bulan/Periode</th>
-                        <th class="text-center">Status</th>
-                        <th class="text-right">Dibayar (Transaksi Ini)</th>
-                        <th class="text-right">Total Telah Dibayar</th>
-                        <th class="text-right">Sisa Tagihan</th>
+                        <th>Jumlah</th>
                     </tr>
                 </thead>
                 <tbody id="payment-items">
@@ -187,16 +184,16 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="6" class="text-right font-bold">Total Tagihan Transaksi Ini</td>
-                        <td class="font-bold text-right" id="payment-total"></td>
+                        <td colspan="3" class="text-right font-bold">Total</td>
+                        <td class="font-bold" id="payment-total"></td>
                     </tr>
                     <tr id="cash-row">
-                        <td colspan="6" class="text-right">Jumlah Bayar</td>
-                        <td class="text-right" id="cash-amount"></td>
+                        <td colspan="3" class="text-right">Tunai</td>
+                        <td id="cash-amount"></td>
                     </tr>
                     <tr id="change-row">
-                        <td colspan="6" class="text-right">Kembalian</td>
-                        <td class="text-right" id="change-amount"></td>
+                        <td colspan="3" class="text-right">Kembalian</td>
+                        <td id="change-amount"></td>
                     </tr>
                     <tr id="wallet-row" style="display: none;">
                         <td colspan="4">
@@ -270,11 +267,8 @@
                     <tr>
                         <td>${index + 1}</td>
                         <td>${item.name}</td>
-                        <td>${item.period ? item.period : '-'}</td>
-                        <td class="text-center">${item.status ? item.status.charAt(0).toUpperCase() + item.status.slice(1) : '-'}</td>
-                        <td class="text-right">${item.amount}</td> <!-- Jumlah yang dibayarkan untuk item ini dalam transaksi -->
-                        <td class="text-right">${item.paid ? item.paid : '-'}</td> <!-- Total dibayar untuk item ini -->
-                        <td class="text-right">${item.remaining ? item.remaining : '-'}</td> <!-- Sisa untuk item ini -->
+                        <td>${item.period}</td>
+                        <td>${item.amount}</td>
                     </tr>
                 `;
             });
@@ -287,19 +281,19 @@
             document.getElementById('cash-amount').textContent = receiptData.cashAmount;
             
             // Handle change or wallet deposit
-            const numericChangeAmount = parseFloat(String(receiptData.changeAmount).replace(/[^0-9,-]+/g, "").replace(',', '.'));
-            if (numericChangeAmount > 0) {
-                document.getElementById('change-row').style.display = 'table-row';
-                document.getElementById('change-amount').textContent = receiptData.changeAmount; // Tetap tampilkan jumlah kembalian
+            if (receiptData.changeAmount > 0) {
                 if (receiptData.walletDeposit) {
+                    // Hide change row and show wallet row
+                    document.getElementById('change-row').style.display = 'none';
                     document.getElementById('wallet-row').style.display = 'table-row';
-                    document.getElementById('wallet-amount').textContent = receiptData.changeAmount; // Tampilkan juga di info dompet
+                    document.getElementById('wallet-amount').textContent = receiptData.changeAmount;
                 } else {
-                    document.getElementById('wallet-row').style.display = 'none';
+                    // Show change amount
+                    document.getElementById('change-amount').textContent = receiptData.changeAmount;
                 }
             } else {
+                // Hide change row if no change
                 document.getElementById('change-row').style.display = 'none';
-                document.getElementById('wallet-row').style.display = 'none';
             }
 
             // Auto print if needed
