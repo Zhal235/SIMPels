@@ -17,13 +17,12 @@ class PembayaranSantriController extends Controller
     {
         // Ambil semua santri aktif dengan relasi asrama dan kelas
         $santris = Santri::where('status', 'aktif')
-            ->with(['asrama', 'asrama_anggota_terakhir.asrama', 'kelas_anggota.kelas'])
+            ->with(['asrama', 'asrama_anggota_terakhir.asrama', 'kelasRelasi'])
             ->orderBy('nama_santri')
             ->get()
             ->map(function ($santri) {
-                // Ambil kelas terakhir
-                $kelasAnggota = $santri->kelas_anggota->last();
-                $kelas = $kelasAnggota ? $kelasAnggota->kelas->nama_kelas : 'Belum ada kelas';
+                // Ambil kelas menggunakan kelasRelasi (sama seperti di RFID tags)
+                $kelas = $santri->kelasRelasi->pluck('nama')->join(', ') ?: 'Belum ada kelas';
                 
                 // Ambil asrama terakhir
                 $asramaAnggota = $santri->asrama_anggota_terakhir;

@@ -12,6 +12,7 @@ use App\Http\Controllers\MutasiSantriController;
 use App\Http\Controllers\RfidTagController;
 use App\Http\Controllers\PembayaranSantriController;
 use App\Http\Controllers\JenisPembayaranController;
+use App\Http\Controllers\TahunAjaranController;
 
 
 // Redirect root ke data santri
@@ -89,6 +90,10 @@ Route::middleware(['auth'])->group(function () {
 
     // Modul Jenis Pembayaran
     Route::resource('jenis-pembayaran', JenisPembayaranController::class)->middleware(['role:admin']);
+
+    // Modul Akademik - Tahun Ajaran
+    Route::resource('tahun-ajaran', TahunAjaranController::class)->middleware(['role:admin']);
+    Route::post('tahun-ajaran/{tahunAjaran}/activate', [TahunAjaranController::class, 'activate'])->name('tahun-ajaran.activate')->middleware(['role:admin']);
 
 });
 
