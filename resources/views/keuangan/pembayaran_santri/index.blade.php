@@ -419,6 +419,7 @@
                                 <p class="text-xs text-gray-500 mt-1">Total tagihan: <span x-text="formatRupiah(totalSelectedAmount)"></span></p>
                             </div>
                             
+
                             <div x-show="partialAmount > 0 && selectedPayments.length > 0 && partialAmount < totalSelectedAmount" class="mb-4">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Prioritas Pembayaran</label>
                                 <div class="max-h-48 overflow-y-auto border border-gray-200 rounded-md">
@@ -504,6 +505,7 @@
                                     <p class="text-xs text-blue-600 mt-1" x-text="selectedPayments.length + ' item pembayaran terpilih'"></p>
                                 </div>
                                 
+
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Jumlah Uang Diterima</label>
                                 <input type="number" 
                                        x-model="fullPaymentAmount"
@@ -612,7 +614,7 @@ init() {
 },
         payments: [],
         santriList: @json($santris),
-        kategoriKeuangan: @json($kategoriKeuangan),
+        jenisPembayarans: @json($jenisPembayarans),
         activeTab: 'belum_bayar',
         showPartialPaymentModal: false,
         showFullPaymentModal: false,
@@ -668,6 +670,41 @@ init() {
         },
 
         loadPaymentData(santriId) {
+            // Fetch payment data from API
+            fetch(`/pembayaran-santri/data/${santriId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Process the data from API
+                    if (data && data.length > 0) {
+                        this.payments = data.map((item, index) => ({
+                            id: item.id,
+                            bulan: new Date(item.tanggal).toLocaleDateString('id-ID', {
+                                month: 'long',
+                                year: 'numeric'
+                            }),
+                            jenis_pembayaran: item.jenis_pembayaran.nama,
+                            jenis_pembayaran_id: item.jenis_pembayaran.id, // Added jenis_pembayaran_id
+                            kategori: 'Pembayaran Rutin',
+                            tagihan: parseFloat(item.nominal),
+                            dibayar: parseFloat(item.nominal),
+                            sisa: 0,
+                            status: 'lunas',
+                            tanggal_bayar: new Date(item.tanggal).toLocaleDateString('id-ID'),
+                            admin_penerima: 'Admin',
+                        }));
+                    } else {
+                        // If no data, generate sample data
+                        this.generateSamplePaymentData();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching payment data:', error);
+                    // If error, generate sample data
+                    this.generateSamplePaymentData();
+                });
+        },
+        
+        generateSamplePaymentData() {
             // Generate sample payment data with categories
             const months = [
                 'Juli 2024', 'Agustus 2024', 'September 2024', 'Oktober 2024',
@@ -680,15 +717,16 @@ init() {
             
             months.forEach((month, index) => {
                 // Add routine payments for each month
-                this.kategoriKeuangan.forEach(kategori => {
+                this.jenisPembayarans.forEach(jenis => {
                     const status = index < 2 ? 'lunas' : (index === 2 ? 'sebagian' : 'belum_bayar');
-                    const tagihan = kategori.nama_kategori === 'SPP' ? 500000 : 150000;
+                    const tagihan = jenis.nominal_tagihan;
                     const dibayar = status === 'lunas' ? tagihan : (status === 'sebagian' ? tagihan * 0.6 : 0);
                     
                     this.payments.push({
                         id: paymentId++,
                         bulan: month,
-                        jenis_pembayaran: kategori.nama_kategori,
+                        jenis_pembayaran: jenis.nama,
+                        jenis_pembayaran_id: jenis.id, // Added jenis_pembayaran_id
                         kategori: 'Pembayaran Rutin',
                         tagihan: tagihan,
                         dibayar: dibayar,
@@ -699,22 +737,23 @@ init() {
                     });
                 });
                 
-                // Add occasional incidental payment
-                if (index % 3 === 0) {
-                    const insidentalStatus = index < 2 ? 'lunas' : 'belum_bayar';
-                    this.payments.push({
-                        id: paymentId++,
-                        bulan: month,
-                        jenis_pembayaran: 'Kegiatan Ekstrakurikuler',
-                        kategori: 'Pembayaran Insidental',
-                        tagihan: 200000,
-                        dibayar: index < 2 ? 200000 : 0,
-                        sisa: index < 2 ? 0 : 200000,
-                        status: insidentalStatus,
-                        tanggal_bayar: insidentalStatus === 'lunas' ? this.generatePaymentDate(month) : null,
-                        admin_penerima: insidentalStatus === 'lunas' ? this.getRandomAdmin() : null
-                    });
-                }
+                // // Add occasional incidental payment
+                // if (index % 3 === 0) {
+                //     const insidentalStatus = index < 2 ? 'lunas' : 'belum_bayar';
+                //     this.payments.push({
+                //         id: paymentId++,
+                //         bulan: month,
+                //         jenis_pembayaran: 'Kegiatan Ekstrakurikuler',
+                //         jenis_pembayaran_id: this.jenisPembayarans.find(jp => jp.nama === 'Kegiatan Ekstrakurikuler')?.id || null, // Added jenis_pembayaran_id for incidental
+                //         kategori: 'Pembayaran Insidental',
+                //         tagihan: 200000,
+                //         dibayar: index < 2 ? 200000 : 0,
+                //         sisa: index < 2 ? 0 : 200000,
+                //         status: insidentalStatus,
+                //         tanggal_bayar: insidentalStatus === 'lunas' ? this.generatePaymentDate(month) : null,
+                //         admin_penerima: insidentalStatus === 'lunas' ? this.getRandomAdmin() : null
+                //     });
+                // }
             });
         },
 

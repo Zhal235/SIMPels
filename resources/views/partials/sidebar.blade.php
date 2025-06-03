@@ -58,7 +58,7 @@
         </div>
 
         <!-- Keuangan Menu -->
-        <div x-data="{ open: {{ request()->is('pembayaran-santri*') ? 'true' : 'false' }} }" class="space-y-1" x-cloak>
+        <div x-data="{ open: {{ request()->is('keuangan*') ? 'true' : 'false' }} }" class="space-y-1" x-cloak>
             <button @click="open = !open"
                     class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold uppercase tracking-wider hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-all duration-200 ease-in-out group">
                 <div class="flex items-center space-x-3">
@@ -71,9 +71,13 @@
                 </svg>
            </button>
             <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-2" class="ml-4 pl-3 border-l border-slate-700 space-y-1">
-                <a href="{{ route('pembayaran.santri.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('pembayaran-santri*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                <a href="{{ route('pembayaran.santri.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/pembayaran-santri*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('pembayaran-santri*') ? 'text-white' : 'text-blue-400' }}">payments</span>
                     <span class="menu-label">Pembayaran Santri</span>
+                </a>
+                <a href="{{ route('jenis-pembayaran.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/jenis-pembayaran*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('jenis-pembayaran*') ? 'text-white' : 'text-blue-400' }}">category</span>
+                    <span class="menu-label">Jenis Pembayaran</span>
                 </a>
             </div>
         </div>

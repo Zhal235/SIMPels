@@ -10,8 +10,7 @@ class Transaksi extends Model
 
     protected $fillable = [
         'santri_id',
-        'keuangan_kategori_id',
-        'keuangan_metode_id',
+        'jenis_pembayaran_id',
         'tipe_pembayaran',
         'nominal',
         'tanggal',
@@ -27,14 +26,9 @@ class Transaksi extends Model
         return $this->belongsTo(Santri::class);
     }
 
-    public function kategoriKeuangan()
+    public function jenisPembayaran()
     {
-        return $this->belongsTo(KategoriKeuangan::class, 'keuangan_kategori_id');
-    }
-
-    public function metodePembayaran()
-    {
-        return $this->belongsTo(MetodePembayaran::class, 'keuangan_metode_id');
+        return $this->belongsTo(JenisPembayaran::class, 'jenis_pembayaran_id');
     }
     //
 }

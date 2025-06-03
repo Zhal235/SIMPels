@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Santri;
-use App\Models\KategoriKeuangan;
+use App\Models\JenisPembayaran;
+use App\Models\Transaksi;
+use Illuminate\Support\Facades\DB;
 
 class PembayaranSantriController extends Controller
 {
@@ -42,9 +44,59 @@ class PembayaranSantriController extends Controller
             });
 
         // Ambil kategori keuangan untuk jenis pembayaran
-        $kategoriKeuangan = KategoriKeuangan::all();
+        $jenisPembayarans = JenisPembayaran::all();
+        
 
-        return view('pembayaran_santri.index', compact('santris', 'kategoriKeuangan'));
+        return view('keuangan.pembayaran_santri.index', compact('santris', 'jenisPembayarans'));
+    }
+
+    /**
+     * Get payment data for a specific student
+     */
+    public function getPaymentData($santriId)
+    {
+        // Ambil data transaksi untuk santri tertentu
+        $transaksi = Transaksi::where('santri_id', $santriId)
+            ->with(['jenisPembayaran'])
+            ->orderBy('tanggal', 'desc')
+            ->get();
+            
+        return response()->json($transaksi);
+    }
+
+    /**
+     * Process payment for student
+     */
+    public function processPayment(Request $request)
+    {
+        $validated = $request->validate([
+            'santri_id' => 'required|exists:santris,id',
+            'payments' => 'required|array',
+            'total_amount' => 'required|numeric',
+            'received_amount' => 'required|numeric',
+            'save_to_wallet' => 'boolean',
+        ]);
+        
+        DB::beginTransaction();
+        
+        try {
+            foreach ($request->payments as $payment) {
+                Transaksi::create([
+                    'santri_id' => $request->santri_id,
+                    'jenis_pembayaran_id' => $payment['jenis_pembayaran_id'],
+                    'tipe_pembayaran' => $payment['tipe_pembayaran'] ?? 'penuh',
+                    'nominal' => $payment['nominal'],
+                    'tanggal' => now(),
+                    'keterangan' => $payment['keterangan'] ?? 'Pembayaran ' . ($payment['jenis_pembayaran'] ?? $payment['jenis_pembayaran_id']),
+                ]);
+            }
+            
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Pembayaran berhasil disimpan']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Gagal menyimpan pembayaran: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -55,7 +107,4 @@ class PembayaranSantriController extends Controller
         // Halaman kwitansi hanya menampilkan template, data diambil dari localStorage
         return view('pembayaran_santri.kwitansi');
     }
-
-    // Metode lainnya bisa ditambahkan di sini sesuai kebutuhan
-    // seperti create, store, edit, update, destroy, dll.
 }
