@@ -139,7 +139,7 @@ class TahunAjaranController extends Controller
     /**
      * Set tahun ajaran sebagai aktif
      */
-    public function setActive(TahunAjaran $tahunAjaran)
+    public function activate(TahunAjaran $tahunAjaran)
     {
         DB::beginTransaction();
         try {

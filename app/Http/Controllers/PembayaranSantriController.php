@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Santri;
-use App\Models\JenisPembayaran;
+use App\Models\JenisTagihan;
 use App\Models\Transaksi;
+use App\Models\TahunAjaran;
 use Illuminate\Support\Facades\DB;
 
 class PembayaranSantriController extends Controller
@@ -42,11 +43,12 @@ class PembayaranSantriController extends Controller
                 ];
             });
 
-        // Ambil kategori keuangan untuk jenis pembayaran
-        $jenisPembayarans = JenisPembayaran::all();
+        // Ambil kategori keuangan untuk jenis pembayaran berdasarkan tahun ajaran aktif
+        $activeTahunAjaran = TahunAjaran::getActive();
+        $jenisTagihans = JenisTagihan::activeYear()->get();
         
 
-        return view('keuangan.pembayaran_santri.index', compact('santris', 'jenisPembayarans'));
+        return view('keuangan.pembayaran_santri.index', compact('santris', 'jenisTagihans', 'activeTahunAjaran'));
     }
 
     /**
@@ -54,9 +56,10 @@ class PembayaranSantriController extends Controller
      */
     public function getPaymentData($santriId)
     {
-        // Ambil data transaksi untuk santri tertentu
+        // Ambil data transaksi untuk santri tertentu berdasarkan tahun ajaran aktif
         $transaksi = Transaksi::where('santri_id', $santriId)
-            ->with(['jenisPembayaran'])
+            ->activeYear()
+            ->with(['jenisTagihan', 'tahunAjaran'])
             ->orderBy('tanggal', 'desc')
             ->get();
             
@@ -79,6 +82,11 @@ class PembayaranSantriController extends Controller
         DB::beginTransaction();
         
         try {
+            $activeTahunAjaran = TahunAjaran::getActive();
+            if (!$activeTahunAjaran) {
+                return response()->json(['success' => false, 'message' => 'Tidak ada tahun ajaran aktif'], 400);
+            }
+
             foreach ($request->payments as $payment) {
                 Transaksi::create([
                     'santri_id' => $request->santri_id,
@@ -87,6 +95,7 @@ class PembayaranSantriController extends Controller
                     'nominal' => $payment['nominal'],
                     'tanggal' => now(),
                     'keterangan' => $payment['keterangan'] ?? 'Pembayaran ' . ($payment['jenis_pembayaran'] ?? $payment['jenis_pembayaran_id']),
+                    'tahun_ajaran_id' => $activeTahunAjaran->id,
                 ]);
             }
             

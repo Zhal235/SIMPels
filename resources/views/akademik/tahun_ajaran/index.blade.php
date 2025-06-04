@@ -130,9 +130,8 @@
                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                             <div class="flex items-center justify-center space-x-2">
                                 @if(!$tahunAjaran->is_active)
-                                    <form action="{{ route('tahun-ajaran.set-active', $tahunAjaran) }}" method="POST" class="inline">
+                                    <form action="{{ route('tahun-ajaran.activate', $tahunAjaran) }}" method="POST" class="inline">
                                         @csrf
-                                        @method('PATCH')
                                         <button type="submit" 
                                                 class="text-green-600 hover:text-green-900 transition-colors duration-150"
                                                 title="Aktifkan"

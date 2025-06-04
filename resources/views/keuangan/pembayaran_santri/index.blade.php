@@ -614,7 +614,7 @@ init() {
 },
         payments: [],
         santriList: @json($santris),
-        jenisPembayarans: @json($jenisPembayarans),
+        jenisTagihans: @json($jenisTagihans),
         activeTab: 'belum_bayar',
         showPartialPaymentModal: false,
         showFullPaymentModal: false,
@@ -717,7 +717,7 @@ init() {
             
             months.forEach((month, index) => {
                 // Add routine payments for each month
-                this.jenisPembayarans.forEach(jenis => {
+                this.jenisTagihans.forEach(jenis => {
                     const status = index < 2 ? 'lunas' : (index === 2 ? 'sebagian' : 'belum_bayar');
                     const tagihan = jenis.nominal_tagihan;
                     const dibayar = status === 'lunas' ? tagihan : (status === 'sebagian' ? tagihan * 0.6 : 0);
@@ -744,7 +744,7 @@ init() {
                 //         id: paymentId++,
                 //         bulan: month,
                 //         jenis_pembayaran: 'Kegiatan Ekstrakurikuler',
-                //         jenis_pembayaran_id: this.jenisPembayarans.find(jp => jp.nama === 'Kegiatan Ekstrakurikuler')?.id || null, // Added jenis_pembayaran_id for incidental
+                //         jenis_pembayaran_id: this.jenisTagihans.find(jp => jp.nama === 'Kegiatan Ekstrakurikuler')?.id || null, // Added jenis_pembayaran_id for incidental
                 //         kategori: 'Pembayaran Insidental',
                 //         tagihan: 200000,
                 //         dibayar: index < 2 ? 200000 : 0,

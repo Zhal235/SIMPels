@@ -13,8 +13,10 @@ return new class extends Migration
     {
         Schema::create('keuangan_transaksis', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('santri_id')->constrained('santris')->onDelete('cascade');
-            $table->foreignId('jenis_pembayaran_id')->constrained('keuangan_jenis_pembayarans')->onDelete('cascade');
+            $table->unsignedBigInteger('santri_id');
+            $table->unsignedBigInteger('jenis_pembayaran_id');
+            $table->index('santri_id');
+            $table->index('jenis_pembayaran_id');
             $table->enum('tipe_pembayaran', ['sekali_bayar', 'cicilan', 'bulanan', 'tahunan']);
             $table->decimal('nominal', 15, 2);
             $table->date('tanggal');

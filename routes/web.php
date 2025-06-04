@@ -11,7 +11,7 @@ use App\Http\Controllers\AsramaAnggotaController;
 use App\Http\Controllers\MutasiSantriController;
 use App\Http\Controllers\RfidTagController;
 use App\Http\Controllers\PembayaranSantriController;
-use App\Http\Controllers\JenisPembayaranController;
+use App\Http\Controllers\JenisTagihanController;
 use App\Http\Controllers\TahunAjaranController;
 
 
@@ -89,7 +89,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('pembayaran-santri/process', [PembayaranSantriController::class, 'processPayment'])->name('pembayaran.santri.process')->middleware(['role:admin|bendahara']);
 
     // Modul Jenis Pembayaran
-    Route::resource('jenis-pembayaran', JenisPembayaranController::class)->middleware(['role:admin']);
+    Route::resource('jenis-tagihan', JenisTagihanController::class)->middleware(['role:admin']);
+    
+    // Modul Pembayaran Santri Management
+    Route::resource('pembayaran-santri-management', \App\Http\Controllers\PembayaranSantriManagementController::class)->middleware(['role:admin']);
+    Route::post('pembayaran-santri-management/bulk-assign', [\App\Http\Controllers\PembayaranSantriManagementController::class, 'bulkAssign'])->name('pembayaran-santri-management.bulk-assign')->middleware(['role:admin']);
 
     // Modul Akademik - Tahun Ajaran
     Route::resource('tahun-ajaran', TahunAjaranController::class)->middleware(['role:admin']);

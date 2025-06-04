@@ -75,9 +75,9 @@
                     <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('pembayaran-santri*') ? 'text-white' : 'text-blue-400' }}">payments</span>
                     <span class="menu-label">Pembayaran Santri</span>
                 </a>
-                <a href="{{ route('jenis-pembayaran.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/jenis-pembayaran*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('jenis-pembayaran*') ? 'text-white' : 'text-blue-400' }}">category</span>
-                    <span class="menu-label">Jenis Pembayaran</span>
+                <a href="{{ route('jenis-tagihan.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/jenis-tagihan*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('jenis-tagihan*') ? 'text-white' : 'text-blue-400' }}">category</span>
+                    <span class="menu-label">Jenis Tagihan</span>
                 </a>
             </div>
         </div>
