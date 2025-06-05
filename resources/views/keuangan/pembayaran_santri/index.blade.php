@@ -158,14 +158,25 @@
                                 <div class="mb-6 border-b border-gray-200">
                                     <ul class="flex flex-wrap -mb-px text-sm font-medium text-center">
                                         <li class="mr-2">
-                                            <button @click="activeTab = 'belum_bayar'" 
-                                                    :class="{'text-blue-600 border-blue-600': activeTab === 'belum_bayar', 'text-gray-500 hover:text-gray-600 border-transparent': activeTab !== 'belum_bayar'}"
+                                            <button @click="activeTab = 'rutin'; selectedPayments = []; selectAll = false;" 
+                                                    :class="{'text-blue-600 border-blue-600': activeTab === 'rutin', 'text-gray-500 hover:text-gray-600 border-transparent': activeTab !== 'rutin'}"
                                                     class="inline-flex items-center p-4 border-b-2 rounded-t-lg group">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" :class="{'text-blue-600': activeTab === 'belum_bayar', 'text-gray-400': activeTab !== 'belum_bayar'}" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" :class="{'text-blue-600': activeTab === 'rutin', 'text-gray-400': activeTab !== 'rutin'}" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
                                                 </svg>
-                                                Belum Dibayar
-                                                <span class="ml-2 bg-gray-100 text-gray-700 py-0.5 px-2 rounded-full text-xs" x-text="payments.filter(p => p.status !== 'lunas').length"></span>
+                                                Tagihan Rutin
+                                                <span class="ml-2 bg-blue-100 text-blue-700 py-0.5 px-2 rounded-full text-xs" x-text="payments.filter(p => (p.kategori_tagihan === 'Rutin' || p.is_bulanan) && p.status !== 'lunas').length"></span>
+                                            </button>
+                                        </li>
+                                        <li class="mr-2">
+                                            <button @click="activeTab = 'insidentil'; selectedPayments = []; selectAll = false;" 
+                                                    :class="{'text-purple-600 border-purple-600': activeTab === 'insidentil', 'text-gray-500 hover:text-gray-600 border-transparent': activeTab !== 'insidentil'}"
+                                                    class="inline-flex items-center p-4 border-b-2 rounded-t-lg group">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" :class="{'text-purple-600': activeTab === 'insidentil', 'text-gray-400': activeTab !== 'insidentil'}" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd" />
+                                                </svg>
+                                                Tagihan Insidentil
+                                                <span class="ml-2 bg-purple-100 text-purple-700 py-0.5 px-2 rounded-full text-xs" x-text="payments.filter(p => p.kategori_tagihan === 'Insidental' && p.status !== 'lunas').length"></span>
                                             </button>
                                         </li>
                                         <li class="mr-2">
@@ -176,39 +187,39 @@
                                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                                                 </svg>
                                                 Sudah Dibayar
-                                                <span class="ml-2 bg-gray-100 text-gray-700 py-0.5 px-2 rounded-full text-xs" x-text="payments.filter(p => p.status === 'lunas').length"></span>
+                                                <span class="ml-2 bg-green-100 text-green-700 py-0.5 px-2 rounded-full text-xs" x-text="payments.filter(p => p.status === 'lunas').length"></span>
                                             </button>
                                         </li>
                                     </ul>
                                 </div>
                                 
                                 <div class="overflow-x-auto pb-4">
-                                    <!-- Tab Content: Belum Dibayar -->
-                                    <div x-show="activeTab === 'belum_bayar'">
-                                        <!-- Monthly Payment Boxes for Unpaid -->
+                                    <!-- Tab Content: Tagihan Rutin -->
+                                    <div x-show="activeTab === 'rutin'">
+                                        <!-- Monthly Payment Boxes for Unpaid Rutin -->
                                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                            <template x-for="month in ['Juli 2024', 'Agustus 2024', 'September 2024', 'Oktober 2024', 'November 2024', 'Desember 2024', 'Januari 2025', 'Februari 2025', 'Maret 2025', 'April 2025', 'Mei 2025', 'Juni 2025'].filter(m => payments.some(p => p.bulan === m && p.status !== 'lunas'))" :key="month">
+                                            <template x-for="month in ['2024-07', '2024-08', '2024-09', '2024-10', '2024-11', '2024-12', '2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06'].filter(m => payments.some(p => p.bulan === m && p.status !== 'lunas' && (p.kategori_tagihan === 'Rutin' || p.is_bulanan)))" :key="month">
                                                 <div class="border rounded-lg overflow-hidden shadow-sm">
                                                     <!-- Month Header with Checkbox -->
-                                                    <div class="bg-gray-50 px-4 py-3 border-b flex justify-between items-center">
-                                                        <h3 class="font-medium text-gray-900" x-text="month"></h3>
+                                                    <div class="bg-blue-50 px-4 py-3 border-b flex justify-between items-center">
+                                                        <h3 class="font-medium text-gray-900" x-text="formatMonthDisplay(month)"></h3>
                                                         <label class="flex items-center">
                                                             <input type="checkbox" 
-                                                                   @change="toggleMonthSelection(month)"
-                                                                   :checked="isMonthSelected(month)"
+                                                                   @change="toggleMonthSelection(month, 'rutin')"
+                                                                   :checked="isMonthSelected(month, 'rutin')"
                                                                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                                                             <span class="ml-2 text-xs text-gray-700">Pilih Semua</span>
                                                         </label>
                                                     </div>
                                                     
-                                                    <!-- Month Payments (Only Unpaid or Partially Paid) -->
+                                                    <!-- Month Payments (Only Unpaid Rutin) -->
                                                     <div class="divide-y divide-gray-200">
-                                                        <template x-for="payment in payments.filter(p => p.bulan === month && p.status !== 'lunas')" :key="payment.id">
+                                                        <template x-for="payment in payments.filter(p => p.bulan === month && p.status !== 'lunas' && (p.kategori_tagihan === 'Rutin' || p.is_bulanan))" :key="payment.id">
                                                             <div class="p-4" :class="payment.status === 'sebagian' ? 'bg-yellow-50' : ''">
                                                                 <div class="flex justify-between items-start mb-2">
                                                                     <div>
                                                                         <div class="font-medium text-gray-900" x-text="payment.jenis_tagihan"></div>
-                                                                        <div class="text-xs text-gray-500" x-text="payment.kategori"></div>
+                                                                        <div class="text-xs text-blue-600 font-medium">Rutin</div>
                                                                     </div>
                                                                     <div>
                                                                         <input type="checkbox"
@@ -248,13 +259,92 @@
                                                             </div>
                                                         </template>
                                                         
-                                                        <!-- Empty state if no unpaid payments for this month -->
-                                                        <div x-show="!payments.some(p => p.bulan === month && p.status !== 'lunas')" class="p-4 text-center text-gray-500 text-sm">
-                                                            Semua tagihan bulan ini telah lunas
+                                                        <!-- Empty state if no unpaid rutin payments for this month -->
+                                                        <div x-show="!payments.some(p => p.bulan === month && p.status !== 'lunas' && (p.kategori_tagihan === 'Rutin' || p.is_bulanan))" class="p-4 text-center text-gray-500 text-sm">
+                                                            Semua tagihan rutin bulan ini telah lunas
                                                         </div>
                                                     </div>
                                                 </div>
                                             </template>
+                                        </div>
+                                        
+                                        <!-- Empty state if no rutin payments at all -->
+                                        <div x-show="!payments.some(p => p.status !== 'lunas' && (p.kategori_tagihan === 'Rutin' || p.is_bulanan))" class="text-center py-12">
+                                            <div class="text-gray-400 mb-4">
+                                                <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </div>
+                                            <h3 class="text-lg font-medium text-gray-900 mb-2">Tidak Ada Tagihan Rutin</h3>
+                                            <p class="text-gray-500">Semua tagihan rutin telah dibayar lunas</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Tab Content: Tagihan Insidentil -->
+                                    <div x-show="activeTab === 'insidentil'">
+                                        <!-- Payment Boxes for Unpaid Insidentil -->
+                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                            <template x-for="payment in payments.filter(p => p.status !== 'lunas' && p.kategori_tagihan === 'Insidental')" :key="payment.id">
+                                                <div class="border rounded-lg overflow-hidden shadow-sm">
+                                                    <!-- Payment Header -->
+                                                    <div class="bg-purple-50 px-4 py-3 border-b flex justify-between items-center">
+                                                        <div>
+                                                            <h3 class="font-medium text-gray-900" x-text="payment.jenis_tagihan"></h3>
+                                                            <p class="text-xs text-purple-600 font-medium">Insidentil</p>
+                                                        </div>
+                                                        <input type="checkbox"
+                                                            :value="payment.id" 
+                                                            :checked="selectedPayments.includes(Number(payment.id))"
+                                                            @change="togglePaymentSelection(Number(payment.id))"
+                                                            class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+                                                    </div>
+                                                    
+                                                    <!-- Payment Content -->
+                                                    <div class="p-4" :class="payment.status === 'sebagian' ? 'bg-yellow-50' : ''">
+                                                        <!-- Payment Details -->
+                                                        <div class="space-y-1 text-sm">
+                                                            <div class="flex justify-between">
+                                                                <span class="text-gray-600">Tagihan:</span>
+                                                                <span class="font-medium" x-text="formatRupiah(payment.tagihan)"></span>
+                                                            </div>
+                                                            <div class="flex justify-between">
+                                                                <span class="text-gray-600">Dibayar:</span>
+                                                                <span class="font-medium" x-text="formatRupiah(payment.dibayar)"></span>
+                                                            </div>
+                                                            <div class="flex justify-between">
+                                                                <span class="text-gray-600">Sisa:</span>
+                                                                <span class="font-medium text-red-600" x-text="formatRupiah(payment.sisa)"></span>
+                                                            </div>
+                                                            <div class="flex justify-between pt-2 border-t border-gray-200">
+                                                                <span class="text-gray-600">Bulan:</span>
+                                                                <span class="font-medium" x-text="payment.bulan"></span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- Status Badge -->
+                                                        <div class="mt-3">
+                                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-full justify-center"
+                                                                :class="{
+                                                                    'bg-red-100 text-red-800': payment.status === 'belum_bayar',
+                                                                    'bg-yellow-100 text-yellow-800': payment.status === 'sebagian'
+                                                                }"
+                                                                x-text="payment.status === 'sebagian' ? 'Sebagian' : 'Belum Bayar'">
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        
+                                        <!-- Empty state if no insidentil payments -->
+                                        <div x-show="!payments.some(p => p.status !== 'lunas' && p.kategori_tagihan === 'Insidental')" class="text-center py-12">
+                                            <div class="text-gray-400 mb-4">
+                                                <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </div>
+                                            <h3 class="text-lg font-medium text-gray-900 mb-2">Tidak Ada Tagihan Insidentil</h3>
+                                            <p class="text-gray-500">Tidak ada tagihan insidentil yang belum dibayar</p>
                                         </div>
                                     </div>
                                     
@@ -262,11 +352,12 @@
                                     <div x-show="activeTab === 'lunas'">
                                         <!-- Monthly Payment Boxes for Paid -->
                                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                            <template x-for="month in ['Juli 2024', 'Agustus 2024', 'September 2024', 'Oktober 2024', 'November 2024', 'Desember 2024', 'Januari 2025', 'Februari 2025', 'Maret 2025', 'April 2025', 'Mei 2025', 'Juni 2025'].filter(m => payments.some(p => p.bulan === m && p.status === 'lunas'))" :key="month">
+                                            <template x-for="month in ['2024-07', '2024-08', '2024-09', '2024-10', '2024-11', '2024-12', '2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06'].filter(m => payments.some(p => p.bulan === m && p.status === 'lunas'))" :key="month">
                                                 <div class="border rounded-lg overflow-hidden shadow-sm">
                                                     <!-- Month Header -->
-                                                    <div class="bg-gray-50 px-4 py-3 border-b">
-                                                        <h3 class="font-medium text-gray-900" x-text="month"></h3>
+                                                    <div class="bg-green-50 px-4 py-3 border-b">
+                                                        <h3 class="font-medium text-gray-900" x-text="formatMonthDisplay(month)"></h3>
+                                                        <p class="text-xs text-green-600 mt-1" x-text="payments.filter(p => p.bulan === month && p.status === 'lunas').length + ' tagihan lunas'"></p>
                                                     </div>
                                                     
                                                     <!-- Month Payments (Only Paid) -->
@@ -276,7 +367,9 @@
                                                                 <div class="flex justify-between items-start mb-2">
                                                                     <div>
                                                                         <div class="font-medium text-gray-900" x-text="payment.jenis_tagihan"></div>
-                                                                        <div class="text-xs text-gray-500" x-text="payment.kategori"></div>
+                                                                        <div class="text-xs font-medium" 
+                                                                             :class="{'text-blue-600': payment.kategori_tagihan === 'Rutin' || payment.is_bulanan, 'text-purple-600': payment.kategori_tagihan === 'Insidental'}"
+                                                                             x-text="payment.kategori_tagihan || (payment.is_bulanan ? 'Rutin' : 'Lainnya')"></div>
                                                                     </div>
                                                                 </div>
                                                                 
@@ -320,6 +413,17 @@
                                                     </div>
                                                 </div>
                                             </template>
+                                        </div>
+                                        
+                                        <!-- Empty state if no paid payments at all -->
+                                        <div x-show="!payments.some(p => p.status === 'lunas')" class="text-center py-12">
+                                            <div class="text-gray-400 mb-4">
+                                                <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </div>
+                                            <h3 class="text-lg font-medium text-gray-900 mb-2">Belum Ada Pembayaran</h3>
+                                            <p class="text-gray-500">Belum ada tagihan yang dibayar lunas</p>
                                         </div>
                                     </div>
                                 </div>
@@ -617,7 +721,7 @@ init() {
         payments: [],
         santriList: @json($santris),
         jenisTagihans: @json($jenisTagihans),
-        activeTab: 'belum_bayar',
+        activeTab: 'rutin',
         showPartialPaymentModal: false,
         showFullPaymentModal: false,
         partialAmount: 0,
@@ -644,6 +748,25 @@ init() {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0 
             }).format(safeNumber);
+        },
+
+        formatMonthDisplay(monthCode) {
+            const monthMap = {
+                '2024-07': 'Juli 2024',
+                '2024-08': 'Agustus 2024',
+                '2024-09': 'September 2024',
+                '2024-10': 'Oktober 2024',
+                '2024-11': 'November 2024',
+                '2024-12': 'Desember 2024',
+                '2025-01': 'Januari 2025',
+                '2025-02': 'Februari 2025',
+                '2025-03': 'Maret 2025',
+                '2025-04': 'April 2025',
+                '2025-05': 'Mei 2025',
+                '2025-06': 'Juni 2025'
+            };
+            
+            return monthMap[monthCode] || monthCode;
         },
 
         get filteredSantri() {
@@ -708,6 +831,8 @@ init() {
                             jenis_tagihan: item.jenis_tagihan,
                             jenis_tagihan_id: item.jenis_tagihan_id,
                             kategori: 'Tagihan Santri',
+                            kategori_tagihan: item.kategori_tagihan || 'Rutin',
+                            is_bulanan: item.is_bulanan || false,
                             tagihan: this.formatNumberSafe(item.nominal_tagihan),
                             dibayar: this.formatNumberSafe(item.nominal_dibayar),
                             sisa: this.formatNumberSafe(item.sisa_tagihan),
@@ -733,9 +858,9 @@ init() {
         generateSamplePaymentData() {
             // Generate sample payment data with categories
             const months = [
-                'Juli 2024', 'Agustus 2024', 'September 2024', 'Oktober 2024',
-                'November 2024', 'Desember 2024', 'Januari 2025', 'Februari 2025',
-                'Maret 2025', 'April 2025', 'Mei 2025', 'Juni 2025'
+                '2024-07', '2024-08', '2024-09', '2024-10',
+                '2024-11', '2024-12', '2025-01', '2025-02',
+                '2025-03', '2025-04', '2025-05', '2025-06'
             ];
             
             this.payments = [];
@@ -754,6 +879,8 @@ init() {
                         jenis_tagihan: jenis.nama,
                         jenis_tagihan_id: jenis.id,
                         kategori: 'Pembayaran Rutin',
+                        kategori_tagihan: jenis.kategori_tagihan || 'Rutin',
+                        is_bulanan: jenis.is_bulanan || false,
                         tagihan: tagihan,
                         dibayar: dibayar,
                         sisa: tagihan - dibayar,
@@ -786,40 +913,58 @@ init() {
         },
 
         cetakKwitansi() {
-            console.warn('Fitur cetak kwitansi belum tersedia');
+            alert('Fitur cetak kwitansi belum tersedia');
             return;
         },
 
         toggleSelectAll() {
-            console.log('[toggleSelectAll] Called. Current selectAll state:', this.selectAll);
+            console.log('[toggleSelectAll] Called. Current selectAll state:', this.selectAll, 'Active tab:', this.activeTab);
             console.log('[toggleSelectAll] selectedPayments BEFORE:', JSON.parse(JSON.stringify(this.selectedPayments)));
+            
             if (this.selectAll) { // If the "select all" checkbox is NOW checked
-                this.selectedPayments = this.payments
-                    .filter(payment => payment.status !== 'lunas')
-                    .map(payment => Number(payment.id)); // Ensure IDs are numbers
+                let paymentsToSelect;
+                
+                // Filter berdasarkan tab aktif
+                if (this.activeTab === 'rutin') {
+                    paymentsToSelect = this.payments
+                        .filter(payment => payment.status !== 'lunas' && (payment.kategori_tagihan === 'Rutin' || payment.is_bulanan))
+                        .map(payment => Number(payment.id));
+                } else if (this.activeTab === 'insidentil') {
+                    paymentsToSelect = this.payments
+                        .filter(payment => payment.status !== 'lunas' && payment.kategori_tagihan === 'Insidental')
+                        .map(payment => Number(payment.id));
+                } else {
+                    // Default: select all unpaid payments
+                    paymentsToSelect = this.payments
+                        .filter(payment => payment.status !== 'lunas')
+                        .map(payment => Number(payment.id));
+                }
+                
+                this.selectedPayments = paymentsToSelect;
             } else { // If the "select all" checkbox is NOW unchecked
                 this.selectedPayments.splice(0, this.selectedPayments.length); // Clears array in place
             }
             console.log('[toggleSelectAll] selectedPayments AFTER:', JSON.parse(JSON.stringify(this.selectedPayments)));
         },
 
-        isMonthSelected(month) {
-            const monthPayments = this.payments
-                .filter(payment => payment.bulan === month && payment.status !== 'lunas')
-                .map(payment => payment.id);
+        toggleMonthSelection(month, kategori = null) {
+            // Filter pembayaran berdasarkan bulan dan kategori
+            let monthPayments;
             
-            // Jika tidak ada pembayaran yang belum lunas, return false
-            if (monthPayments.length === 0) return false;
-            
-            // Periksa apakah semua pembayaran bulan ini sudah dipilih
-            return monthPayments.every(id => this.selectedPayments.includes(id));
-        },
-
-        toggleMonthSelection(month) {
-            // Dapatkan semua pembayaran untuk bulan tertentu yang belum lunas
-            const monthPayments = this.payments
-                .filter(payment => payment.bulan === month && payment.status !== 'lunas')
-                .map(payment => payment.id);
+            if (kategori === 'rutin') {
+                monthPayments = this.payments
+                    .filter(payment => payment.bulan === month && payment.status !== 'lunas' && (payment.kategori_tagihan === 'Rutin' || payment.is_bulanan))
+                    .map(payment => payment.id);
+            } else if (kategori === 'insidentil') {
+                monthPayments = this.payments
+                    .filter(payment => payment.bulan === month && payment.status !== 'lunas' && payment.kategori_tagihan === 'Insidental')
+                    .map(payment => payment.id);
+            } else {
+                // Untuk backward compatibility
+                monthPayments = this.payments
+                    .filter(payment => payment.bulan === month && payment.status !== 'lunas')
+                    .map(payment => payment.id);
+            }
             
             // Periksa apakah semua pembayaran bulan ini sudah dipilih
             const allSelected = monthPayments.every(id => this.selectedPayments.includes(id));
@@ -839,9 +984,32 @@ init() {
             }
         },
 
+        isMonthSelected(month, kategori = null) {
+            // Filter pembayaran berdasarkan bulan dan kategori
+            let monthPayments;
+            
+            if (kategori === 'rutin') {
+                monthPayments = this.payments
+                    .filter(payment => payment.bulan === month && payment.status !== 'lunas' && (payment.kategori_tagihan === 'Rutin' || payment.is_bulanan))
+                    .map(payment => payment.id);
+            } else if (kategori === 'insidentil') {
+                monthPayments = this.payments
+                    .filter(payment => payment.bulan === month && payment.status !== 'lunas' && payment.kategori_tagihan === 'Insidentil')
+                    .map(payment => payment.id);
+            } else {
+                // Untuk backward compatibility
+                monthPayments = this.payments
+                    .filter(payment => payment.bulan === month && payment.status !== 'lunas')
+                    .map(payment => payment.id);
+            }
+            
+            // Return true jika ada pembayaran dan semua dipilih
+            return monthPayments.length > 0 && monthPayments.every(id => this.selectedPayments.includes(id));
+        },
+
         hasMonthFullySelected() {
             // Daftar bulan yang tersedia
-            const availableMonths = ['Juli 2024', 'Agustus 2024', 'September 2024', 'Oktober 2024', 'November 2024', 'Desember 2024', 'Januari 2025', 'Februari 2025', 'Maret 2025', 'April 2025', 'Mei 2025', 'Juni 2025'];
+            const availableMonths = ['2024-07', '2024-08', '2024-09', '2024-10', '2024-11', '2024-12', '2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06'];
             
             // Cek apakah ada bulan yang dipilih semua
             return availableMonths.some(month => {
@@ -859,7 +1027,7 @@ init() {
 
         bayarTerpilih() {
             if (this.selectedPayments.length === 0) {
-                console.warn('Pilih tagihan yang akan dibayar');
+                alert('Pilih tagihan yang akan dibayar');
                 return;
             }
             
@@ -1020,7 +1188,7 @@ init() {
                         // Reset form state only
                         this.showFullPaymentModal = false;
                         this.fullPaymentAmount = 0;
-                        this.fullPaymentChange = 0;
+                        this.fullPaymentChange =  0;
                         this.saveToWallet = false;
                         this.selectedPayments = [];
                         this.selectAll = false;
@@ -1281,21 +1449,21 @@ init() {
 
         generatePaymentDate(month) {
             const monthMap = {
-                'Juli 2024': '2024-07',
-                'Agustus 2024': '2024-08',
-                'September 2024': '2024-09',
-                'Oktober 2024': '2024-10',
-                'November 2024': '2024-11',
-                'Desember 2024': '2024-12',
-                'Januari 2025': '2025-01',
-                'Februari 2025': '2025-02',
-                'Maret 2025': '2025-03',
-                'April 2025': '2025-04',
-                'Mei 2025': '2025-05',
-                'Juni 2025': '2025-06'
+                '2024-07': '2024-07',
+                '2024-08': '2024-08',
+                '2024-09': '2024-09',
+                '2024-10': '2024-10',
+                '2024-11': '2024-11',
+                '2024-12': '2024-12',
+                '2025-01': '2025-01',
+                '2025-02': '2025-02',
+                '2025-03': '2025-03',
+                '2025-04': '2025-04',
+                '2025-05': '2025-05',
+                '2025-06': '2025-06'
             };
             
-            const yearMonth = monthMap[month];
+            const yearMonth = monthMap[month] || month;
             if (!yearMonth) return null;
             
             // Generate random day between 1-28 to avoid month-end issues

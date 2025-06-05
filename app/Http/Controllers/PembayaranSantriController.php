@@ -89,15 +89,17 @@ class PembayaranSantriController extends Controller
             $payments = $tagihanSantri->map(function ($tagihan) {
                     return [
                         'id' => $tagihan->id,
-                        'jenis_tagihan' => $tagihan->jenisTagihan->nama_tagihan,
+                        'jenis_tagihan' => $tagihan->jenisTagihan->nama,
                         'jenis_tagihan_id' => $tagihan->jenis_tagihan_id,
                         'bulan' => $tagihan->bulan,
                         'nominal_tagihan' => $tagihan->nominal_tagihan,
                         'nominal_dibayar' => $tagihan->nominal_dibayar,
                         'sisa_tagihan' => $tagihan->sisa_tagihan,
-                        'status_pembayaran' => $tagihan->status_pembayaran,
+                        'status_pembayaran' => $tagihan->status,
                         'tanggal_jatuh_tempo' => $tagihan->tanggal_jatuh_tempo,
                         'keterangan' => $tagihan->keterangan,
+                        'kategori_tagihan' => $tagihan->jenisTagihan->kategori_tagihan ?? 'Rutin',
+                        'is_bulanan' => $tagihan->jenisTagihan->is_bulanan ?? false,
                         'transaksis' => $tagihan->transaksis->map(function ($transaksi) {
                             return [
                                 'id' => $transaksi->id,
