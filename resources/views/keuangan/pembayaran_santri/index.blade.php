@@ -144,7 +144,7 @@
                                             </svg>
                                             Bayar Lunas
                                         </button>
-                                        <button x-show="selectedPayments.length > 0" @click="showPartialPaymentModal = true" 
+                                        <button x-show="selectedPayments.length > 0" @click="openPartialPaymentModal()" 
                                                 class="bg-orange-600 hover:bg-orange-700 text-white font-medium py-3 px-4 rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
@@ -1081,15 +1081,14 @@ init() {
                     const payment = this.payments.find(p => p.id === paymentId);
                     if (payment) {
                         const amountToPay = payment.sisa;
-                        payments.push({
-                            tagihan_santri_id: payment.id, // ini adalah ID dari TagihanSantri
-                            jenis_tagihan_id: payment.jenis_tagihan_id,
-                            jenis_tagihan: payment.jenis_tagihan,
-                            nominal: amountToPay,
-                            bulan: payment.bulan,
-                            tipe_pembayaran: 'penuh',
-                            keterangan: `Pembayaran ${payment.jenis_tagihan} - ${payment.bulan}`
-                        });
+                    payments.push({
+                        tagihan_santri_id: payment.id, // ini adalah ID dari TagihanSantri
+                        jenis_tagihan_id: payment.jenis_tagihan_id,
+                        jenis_tagihan: payment.jenis_tagihan,
+                        nominal: amountToPay,
+                        bulan: payment.bulan,
+                        keterangan: `Pembayaran ${payment.jenis_tagihan} - ${payment.bulan}`
+                    });
                         
                         message += `- ${payment.jenis_tagihan} (${payment.bulan}): ${this.formatRupiah(amountToPay)} (Lunas)\n`;
                     }
@@ -1133,32 +1132,8 @@ init() {
                     }
 
                     if (result.success) {
-                        // Update local payment data
-                        const updatedPayments = [...this.payments]; // Create a copy of payments
-                        for (const paymentId of this.selectedPayments) {
-                            const paymentIndex = updatedPayments.findIndex(p => p.id === paymentId);
-                            if (paymentIndex !== -1) {
-                                const payment = updatedPayments[paymentIndex];
-                                const amountToPay = payment.sisa;
-                                
-                                // Update payment data
-                                updatedPayments[paymentIndex] = {
-                                    ...payment,
-                                    dibayar: parseFloat(payment.dibayar || 0) + amountToPay,
-                                    sisa: 0,
-                                    status: 'lunas',
-                                    tanggal_bayar: new Date().toLocaleDateString('id-ID', {
-                                        day: 'numeric',
-                                        month: 'long',
-                                        year: 'numeric'
-                                    }),
-                                    admin_penerima: this.getRandomAdmin()
-                                };
-                            }
-                        }
-
-                        // Update the payments array with the new data
-                        this.payments = updatedPayments;
+                        // Refresh payment data from server instead of updating locally
+                        await this.loadPaymentData(this.selectedSantri.id);
 
                         // Show success message with SweetAlert2
                         await Swal.fire({
@@ -1213,6 +1188,49 @@ init() {
                     confirmButtonText: 'Tutup'
                 });
             }
+        },
+        
+        // Method untuk membuka modal pembayaran sebagian dan mengisi prioritas list
+        openPartialPaymentModal() {
+            // Populate paymentPriorityList dari selectedPayments
+            this.paymentPriorityList = this.selectedPayments.map(paymentId => {
+                const payment = this.payments.find(p => p.id === paymentId);
+                if (payment) {
+                    return {
+                        id: payment.id,
+                        jenis_tagihan: payment.jenis_tagihan,
+                        jenis_tagihan_id: payment.jenis_tagihan_id,
+                        bulan: payment.bulan,
+                        kategori: payment.kategori || 'Tagihan Santri',
+                        sisa: payment.sisa,
+                        willBePaidFull: false // Default tidak diprioritaskan
+                    };
+                }
+                return null;
+            }).filter(item => item !== null);
+            
+            // Reset calculated values
+            this.calculatedFullPayment = 0;
+            this.remainingAmount = 0;
+            
+            // Buka modal
+            this.showPartialPaymentModal = true;
+        },
+        
+        // Method untuk update kalkulasi pembayaran prioritas
+        updatePaymentCalculation() {
+            // Hitung total pembayaran yang akan dibayar lunas (prioritas)
+            this.calculatedFullPayment = this.paymentPriorityList
+                .filter(item => item.willBePaidFull)
+                .reduce((total, item) => total + parseFloat(item.sisa || 0), 0);
+            
+            // Hitung sisa uang setelah bayar prioritas
+            this.remainingAmount = Math.max(0, this.partialAmount - this.calculatedFullPayment);
+        },
+        
+        // Method untuk kalkulasi saat input jumlah pembayaran berubah
+        calculatePaymentPriority() {
+            this.updatePaymentCalculation();
         },
         
         async processPartialPayment() {
@@ -1275,7 +1293,6 @@ init() {
                             jenis_tagihan: payment.jenis_tagihan,
                             nominal: amountToPay,
                             bulan: payment.bulan,
-                            tipe_pembayaran: 'sebagian',
                             keterangan: `Pembayaran sebagian ${payment.jenis_tagihan} - ${payment.bulan}`
                         });
                         
@@ -1314,7 +1331,6 @@ init() {
                                 jenis_tagihan: payment.jenis_tagihan,
                                 nominal: amountToPay,
                                 bulan: payment.bulan,
-                                tipe_pembayaran: 'sebagian',
                                 keterangan: `Pembayaran sebagian ${payment.jenis_tagihan} - ${payment.bulan}`
                             });
                             
@@ -1351,26 +1367,8 @@ init() {
                     }
 
                     if (result.success) {
-                        // Update local payment data
-                        for (const payment of payments) {
-                            const localPayment = this.payments.find(p => 
-                                p.jenis_tagihan_id === payment.jenis_tagihan_id && 
-                                p.bulan === payment.bulan
-                            );
-                            
-                            if (localPayment) {
-                                localPayment.dibayar += payment.nominal;
-                                localPayment.sisa = localPayment.tagihan - localPayment.dibayar;
-                                localPayment.status = localPayment.sisa === 0 ? 'lunas' : 'sebagian';
-                                if (localPayment.status === 'lunas') {
-                                    localPayment.tanggal_bayar = new Date().toLocaleDateString('id-ID', {
-                                        day: 'numeric',
-                                        month: 'long',
-                                        year: 'numeric'
-                                    });
-                                }
-                            }
-                        }
+                        // Refresh payment data from server instead of updating locally
+                        await this.loadPaymentData(this.selectedSantri.id);
 
                         // Show success message with SweetAlert2
                         await Swal.fire({

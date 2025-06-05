@@ -145,6 +145,22 @@ class TagihanSantri extends Model
     }
 
     /**
+     * Update pembayaran (hanya nominal_dibayar) berdasarkan transaksi
+     */
+    public function updatePembayaran()
+    {
+        $totalDibayar = $this->transaksis()->sum('nominal');
+        
+        // Update hanya nominal_dibayar
+        // Status pembayaran akan dihitung otomatis melalui accessor getStatusPembayaranAttribute()
+        $this->update([
+            'nominal_dibayar' => $totalDibayar
+        ]);
+        
+        return $this;
+    }
+
+    /**
      * Scope untuk filter berdasarkan bulan
      */
     public function scopeBulan($query, $bulan)

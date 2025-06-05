@@ -95,7 +95,7 @@ class PembayaranSantriController extends Controller
                         'nominal_tagihan' => $tagihan->nominal_tagihan,
                         'nominal_dibayar' => $tagihan->nominal_dibayar,
                         'sisa_tagihan' => $tagihan->sisa_tagihan,
-                        'status_pembayaran' => $tagihan->status,
+                        'status_pembayaran' => $tagihan->status_pembayaran,
                         'tanggal_jatuh_tempo' => $tagihan->tanggal_jatuh_tempo,
                         'keterangan' => $tagihan->keterangan,
                         'kategori_tagihan' => $tagihan->jenisTagihan->kategori_tagihan ?? 'Rutin',
@@ -133,7 +133,6 @@ class PembayaranSantriController extends Controller
                 'payments' => 'required|array|min:1',
                 'payments.*.tagihan_santri_id' => 'required|exists:tagihan_santris,id',
                 'payments.*.nominal' => 'required|numeric|min:1',
-                'payments.*.tipe_pembayaran' => 'nullable|string',
                 'payments.*.keterangan' => 'nullable|string',
                 'total_amount' => 'required|numeric|min:1',
                 'received_amount' => 'required|numeric|min:1',
@@ -166,11 +165,30 @@ class PembayaranSantriController extends Controller
                         ], 400);
                     }
 
+                    // Tentukan tipe pembayaran berdasarkan karakteristik tagihan
+                    $jenisTagihan = $tagihanSantri->jenisTagihan;
+                    $tipePembayaran = 'sekali_bayar'; // default
+                    
+                    if ($jenisTagihan->is_bulanan) {
+                        $tipePembayaran = 'bulanan';
+                    } else if ($jenisTagihan->kategori_tagihan === 'Rutin') {
+                        // Rutin non-bulanan bisa tahunan atau sekali bayar
+                        $tipePembayaran = 'tahunan';
+                    } else {
+                        // Insidentil umumnya sekali bayar
+                        $tipePembayaran = 'sekali_bayar';
+                    }
+                    
+                    // Jika pembayaran tidak penuh, maka ini cicilan
+                    if ($payment['nominal'] < $tagihanSantri->sisa_tagihan) {
+                        $tipePembayaran = 'cicilan';
+                    }
+
                     // Buat transaksi baru
                     $transaksi = Transaksi::create([
                         'santri_id' => $request->santri_id,
                         'tagihan_santri_id' => $payment['tagihan_santri_id'],
-                        'tipe_pembayaran' => $payment['tipe_pembayaran'] ?? 'sebagian',
+                        'tipe_pembayaran' => $tipePembayaran,
                         'nominal' => $payment['nominal'],
                         'tanggal' => now(),
                         'keterangan' => $payment['keterangan'] ?? 'Pembayaran ' . $tagihanSantri->jenisTagihan->nama_tagihan,
