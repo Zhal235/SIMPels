@@ -14,7 +14,7 @@
             <p class="text-sm text-gray-500 mt-1">Kelola tahun ajaran dan atur tahun ajaran aktif untuk referensi administrasi keuangan.</p>
         </div>
         <div class="flex items-center gap-2 w-full sm:w-auto">
-            <a href="{{ route('tahun-ajaran.create') }}" 
+            <a href="{{ route('akademik.tahun-ajaran.create') }}" 
                class="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-150 ease-in-out flex items-center justify-center gap-2 shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
@@ -130,7 +130,7 @@
                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                             <div class="flex items-center justify-center space-x-2">
                                 @if(!$tahunAjaran->is_active)
-                                    <form action="{{ route('tahun-ajaran.activate', $tahunAjaran) }}" method="POST" class="inline">
+                                    <form action="{{ route('akademik.tahun-ajaran.activate', $tahunAjaran) }}" method="POST" class="inline">
                                         @csrf
                                         <button type="submit" 
                                                 class="text-green-600 hover:text-green-900 transition-colors duration-150"
@@ -143,7 +143,7 @@
                                     </form>
                                 @endif
                                 
-                                <a href="{{ route('tahun-ajaran.edit', $tahunAjaran) }}" 
+                                <a href="{{ route('akademik.tahun-ajaran.edit', $tahunAjaran) }}" 
                                    class="text-blue-600 hover:text-blue-900 transition-colors duration-150"
                                    title="Edit">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -152,7 +152,7 @@
                                 </a>
                                 
                                 @if(!$tahunAjaran->is_active)
-                                    <form action="{{ route('tahun-ajaran.destroy', $tahunAjaran) }}" method="POST" class="inline">
+                                    <form action="{{ route('akademik.tahun-ajaran.destroy', $tahunAjaran) }}" method="POST" class="inline">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" 
@@ -178,7 +178,7 @@
                                 <h3 class="mt-2 text-sm font-medium text-gray-900">Belum Ada Tahun Ajaran</h3>
                                 <p class="mt-1 text-sm text-gray-500">Mulai dengan menambahkan tahun ajaran pertama.</p>
                                 <div class="mt-6">
-                                    <a href="{{ route('tahun-ajaran.create') }}"
+                                    <a href="{{ route('akademik.tahun-ajaran.create') }}"
                                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="-ml-1 mr-2 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                             <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />

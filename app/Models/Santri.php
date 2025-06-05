@@ -77,7 +77,12 @@ public function rfidTag()
         );
     }
 
-
-
+    /**
+     * Relasi dengan TagihanSantri
+     */
+    public function tagihanSantris()
+    {
+        return $this->hasMany(TagihanSantri::class);
+    }
 
 }

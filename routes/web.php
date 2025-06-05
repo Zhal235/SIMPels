@@ -82,28 +82,46 @@ Route::middleware(['auth'])->group(function () {
 
     Route::resource('rfid-tags', RfidTagController::class)->middleware('auth');
 
-    // Modul Pembayaran Santri
-    Route::get('pembayaran-santri', [PembayaranSantriController::class, 'index'])->name('pembayaran.santri.index')->middleware(['role:admin|bendahara']); // Tambahkan role bendahara jika ada
-    Route::get('pembayaran-santri/kwitansi', [PembayaranSantriController::class, 'kwitansi'])->name('pembayaran.santri.kwitansi')->middleware(['role:admin|bendahara']);
-    Route::get('pembayaran-santri/data/{santriId}', [PembayaranSantriController::class, 'getPaymentData'])->name('pembayaran.santri.data')->middleware(['role:admin|bendahara']);
-    Route::post('pembayaran-santri/process', [PembayaranSantriController::class, 'processPayment'])->name('pembayaran.santri.process')->middleware(['role:admin|bendahara']);
+    // Modul Keuangan
+    Route::prefix('keuangan')->name('keuangan.')->middleware(['auth'])->group(function () {
+        // Jenis Tagihan
+        Route::get('jenis-tagihan', [JenisTagihanController::class, 'index'])->name('jenis-tagihan.index')->middleware(['role:admin']);
+        Route::get('jenis-tagihan/create', [JenisTagihanController::class, 'create'])->name('jenis-tagihan.create')->middleware(['role:admin']);
+        Route::post('jenis-tagihan', [JenisTagihanController::class, 'store'])->name('jenis-tagihan.store')->middleware(['role:admin']);
+        Route::get('jenis-tagihan/{id}/edit', [JenisTagihanController::class, 'edit'])->name('jenis-tagihan.edit')->middleware(['role:admin']);
+        Route::put('jenis-tagihan/{id}', [JenisTagihanController::class, 'update'])->name('jenis-tagihan.update')->middleware(['role:admin']);
+        Route::delete('jenis-tagihan/{id}', [JenisTagihanController::class, 'destroy'])->name('jenis-tagihan.destroy')->middleware(['role:admin']);
+        Route::get('jenis-tagihan/{id}/kelas', [JenisTagihanController::class, 'showKelas'])->name('jenis-tagihan.show-kelas')->middleware(['role:admin']);
+        Route::put('jenis-tagihan/{id}/kelas', [JenisTagihanController::class, 'updateKelas'])->name('jenis-tagihan.update-kelas')->middleware(['role:admin']);
+        
+        // Pembayaran Santri
+        Route::middleware(['role:admin|bendahara'])->group(function() {
+            Route::get('pembayaran-santri', [PembayaranSantriController::class, 'index'])->name('pembayaran-santri.index');
+            Route::get('pembayaran-santri/data/{santriId}', [PembayaranSantriController::class, 'getPaymentData'])->name('pembayaran-santri.data');
+            Route::post('pembayaran-santri/process', [PembayaranSantriController::class, 'processPayment'])
+                ->name('pembayaran-santri.process');
+        });
+        
+        // Tagihan Santri
+        Route::middleware(['role:admin|bendahara'])->group(function() {
+            Route::get('tagihan-santri', [App\Http\Controllers\TagihanSantriController::class, 'index'])->name('tagihan-santri.index');
+            Route::get('tagihan-santri/{santriId}', [App\Http\Controllers\TagihanSantriController::class, 'show'])->name('tagihan-santri.show');
+            Route::get('tagihan-santri-export', [App\Http\Controllers\TagihanSantriController::class, 'export'])->name('tagihan-santri.export');
+        });
+    });
 
-    // Modul Jenis Pembayaran
-    Route::resource('jenis-tagihan', JenisTagihanController::class)->middleware(['role:admin']);
-    
-    // Modul Pembayaran Santri Management
-    Route::resource('pembayaran-santri-management', \App\Http\Controllers\PembayaranSantriManagementController::class)->middleware(['role:admin']);
-    Route::post('pembayaran-santri-management/bulk-assign', [\App\Http\Controllers\PembayaranSantriManagementController::class, 'bulkAssign'])->name('pembayaran-santri-management.bulk-assign')->middleware(['role:admin']);
-
-    // Modul Akademik - Tahun Ajaran
-    Route::resource('tahun-ajaran', TahunAjaranController::class)->middleware(['role:admin']);
-    Route::post('tahun-ajaran/{tahunAjaran}/activate', [TahunAjaranController::class, 'activate'])->name('tahun-ajaran.activate')->middleware(['role:admin']);
-
-});
-
+    // Modul Akademik
+    Route::prefix('akademik')->name('akademik.')->middleware(['auth'])->group(function () {
+        // Tahun Ajaran
+        Route::resource('tahun-ajaran', TahunAjaranController::class)->middleware(['role:admin']);
+        Route::post('tahun-ajaran/{tahunAjaran}/activate', [TahunAjaranController::class, 'activate'])
+            ->name('tahun-ajaran.activate')
+            ->middleware(['role:admin']);
+    });
 
     // User Management
     Route::resource('users', \App\Http\Controllers\UserController::class)->middleware(['role:admin']);
     Route::resource('roles', \App\Http\Controllers\RoleController::class)->middleware(['role:admin']);
+}); // Close auth middleware group
 
 require __DIR__.'/auth.php';

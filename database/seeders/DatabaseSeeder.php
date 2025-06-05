@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
         AsramaSeeder::class,
         KelasSeeder::class,
         KelasAnggotaSeeder::class,
+        JenisTagihanSeeder::class,
     ]);
     }
 }

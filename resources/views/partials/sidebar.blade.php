@@ -71,13 +71,17 @@
                 </svg>
            </button>
             <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-2" class="ml-4 pl-3 border-l border-slate-700 space-y-1">
-                <a href="{{ route('pembayaran.santri.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/pembayaran-santri*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('pembayaran-santri*') ? 'text-white' : 'text-blue-400' }}">payments</span>
+                <a href="{{ route('keuangan.pembayaran-santri.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/pembayaran-santri*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/pembayaran-santri*') ? 'text-white' : 'text-blue-400' }}">payments</span>
                     <span class="menu-label">Pembayaran Santri</span>
                 </a>
-                <a href="{{ route('jenis-tagihan.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/jenis-tagihan*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('jenis-tagihan*') ? 'text-white' : 'text-blue-400' }}">category</span>
+                <a href="{{ route('keuangan.jenis-tagihan.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/jenis-tagihan*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/jenis-tagihan*') ? 'text-white' : 'text-blue-400' }}">category</span>
                     <span class="menu-label">Jenis Tagihan</span>
+                </a>
+                <a href="{{ route('keuangan.tagihan-santri.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/tagihan-santri*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/tagihan-santri*') ? 'text-white' : 'text-blue-400' }}">receipt_long</span>
+                    <span class="menu-label">Tagihan Santri</span>
                 </a>
             </div>
         </div>
@@ -96,8 +100,8 @@
                 </svg>
            </button>
             <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-2" class="ml-4 pl-3 border-l border-slate-700 space-y-1">
-                <a href="{{ route('tahun-ajaran.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('tahun-ajaran*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('tahun-ajaran*') ? 'text-white' : 'text-blue-400' }}">date_range</span>
+                <a href="{{ route('akademik.tahun-ajaran.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('akademik/tahun-ajaran*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('akademik/tahun-ajaran*') ? 'text-white' : 'text-blue-400' }}">date_range</span>
                     <span class="menu-label">Tahun Ajaran</span>
                 </a>
             </div>

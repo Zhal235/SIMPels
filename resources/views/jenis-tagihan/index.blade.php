@@ -5,8 +5,7 @@
         <div class="flex justify-between items-center">
             <h2 class="my-6 text-2xl font-semibold text-gray-700 dark:text-gray-200">
                 Jenis Tagihan
-            </h2>
-            <a href="{{ route('keuangan.jenis-tagihan.create') }}" 
+            </h2>            <a href="{{ route('keuangan.jenis-tagihan.create') }}" 
                class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded shadow-lg hover:shadow-xl transition-all duration-200">
                 + Tambah Jenis Tagihan
             </a>
@@ -23,12 +22,16 @@
                 <div class="bg-white overflow-hidden shadow-sm rounded-lg">
                     <div class="mb-4 flex justify-between items-center">
                         <h3 class="text-lg font-semibold">Daftar Jenis Tagihan</h3>
-                        {{-- <a href="{{ route('keuangan.jenis-tagihan.create') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        <a href="{{ route('jenis-tagihan.create') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                             Tambah Jenis Tagihan
-                        </a> --}}
+                        </a>
                     </div>
 
-                    <table class="w-full whitespace-no-wrap">
+                    @if(session('success'))
+                        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+                            <span class="block sm:inline">{{ session('success') }}</span>
+                        </div>
+                    @endif                    <table class="w-full whitespace-no-wrap">
                         <thead>
                             <tr class="text-xs font-semibold tracking-wide text-left text-gray-500 uppercase border-b dark:border-gray-700 bg-gray-50 dark:text-gray-400 dark:bg-gray-800">
                                 <th class="px-4 py-3">Nama Tagihan</th>
@@ -39,7 +42,7 @@
                                 <th class="px-4 py-3">Aksi</th>
                             </tr>
                         </thead>                        <tbody class="bg-white divide-y dark:divide-gray-700 dark:bg-gray-800">
-                            @foreach($jenisTagihans as $tagihan)
+                            @foreach($jenisTagihan as $tagihan)
                             <tr class="text-gray-700 dark:text-gray-400">
                                 <td class="px-4 py-3">
                                     <div class="flex items-center text-sm">
@@ -61,8 +64,7 @@
                                         {{ $tagihan->is_bulanan ? 'Bulanan' : 'Sekali Bayar' }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3 text-sm">
-                                    @if($tagihan->is_nominal_per_kelas)
+                                <td class="px-4 py-3 text-sm">                                    @if($tagihan->is_nominal_per_kelas)
                                         <button onclick="window.location.href='{{ route('keuangan.jenis-tagihan.show-kelas', $tagihan->id) }}'"
                                             class="px-3 py-1 text-sm font-medium leading-5 text-white transition-colors duration-150 bg-purple-600 border border-transparent rounded-md active:bg-purple-600 hover:bg-purple-700 focus:outline-none focus:shadow-outline-purple">
                                             Lihat Nominal
@@ -72,8 +74,7 @@
                                     @endif
                                 </td>
                                 <td class="px-4 py-3">
-                                    <div class="flex items-center space-x-4 text-sm">
-                                        <a href="{{ route('keuangan.jenis-tagihan.edit', $tagihan->id) }}" 
+                                    <div class="flex items-center space-x-4 text-sm">                                        <a href="{{ route('keuangan.jenis-tagihan.edit', $tagihan->id) }}" 
                                            class="flex items-center justify-between px-2 py-2 text-sm font-medium leading-5 text-purple-600 rounded-lg dark:text-gray-400 focus:outline-none focus:shadow-outline-gray"
                                            aria-label="Edit">
                                             <svg class="w-5 h-5" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20">

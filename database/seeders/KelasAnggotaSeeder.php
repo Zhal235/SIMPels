@@ -16,9 +16,7 @@ class KelasAnggotaSeeder extends Seeder
     public function run(): void
     {
         // Hapus data lama
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        KelasAnggota::truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        DB::table('kelas_anggota')->delete();
 
         // Ambil semua kelas yang ada
         $kelas = Kelas::all();

@@ -12,11 +12,14 @@ class KelasSeeder extends Seeder
      */
     public function run(): void
     {
+        // Clear existing data first
+        \DB::table('kelas')->delete();
+        
         $kelas = [
-            ['kode' => 'VIIA', 'nama' => 'VII A', 'tingkat' => 'VII' /*, 'keterangan' => 'Kelas 7A' */],
-            ['kode' => 'VIIB', 'nama' => 'VII B', 'tingkat' => 'VII' /*, 'keterangan' => 'Kelas 7B' */],
-            ['kode' => 'VIIIA', 'nama' => 'VIII A', 'tingkat' => 'VIII' /*, 'keterangan' => 'Kelas 8A' */],
-            ['kode' => 'IXA', 'nama' => 'IX A', 'tingkat' => 'IX' /*, 'keterangan' => 'Kelas 9A' */],
+            ['kode' => "'VIIA'", 'nama' => "'VII A'", 'tingkat' => "'VII'"],
+            ['kode' => "'VIIB'", 'nama' => "'VII B'", 'tingkat' => "'VII'"],
+            ['kode' => "'VIIIA'", 'nama' => "'VIII A'", 'tingkat' => "'VIII'"],
+            ['kode' => "'IXA'", 'nama' => "'IX A'", 'tingkat' => "'IX'"],
         ];
 
         foreach ($kelas as $kls) {

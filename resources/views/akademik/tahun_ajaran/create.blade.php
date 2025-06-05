@@ -14,11 +14,9 @@
             <p class="text-sm text-gray-500 mt-1">Tambahkan tahun ajaran baru untuk administrasi pesantren.</p>
         </div>
         <div class="flex items-center gap-2">
-            <a href="{{ route('tahun-ajaran.index') }}" 
-               class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition duration-150 ease-in-out flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-                </svg>
+            <a href="{{ route('akademik.tahun-ajaran.index') }}" 
+               class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">
+                <span class="material-icons-outlined mr-2 text-gray-500">arrow_back</span>
                 Kembali
             </a>
         </div>
@@ -33,7 +31,7 @@
 
     <!-- Form -->
     <div class="bg-white shadow-xl rounded-xl border border-gray-200">
-        <form action="{{ route('tahun-ajaran.store') }}" method="POST" class="p-6 space-y-6">
+        <form action="{{ route('akademik.tahun-ajaran.store') }}" method="POST" class="p-6 space-y-6">
             @csrf
             
             <!-- Nama Tahun Ajaran -->
@@ -169,11 +167,8 @@
                     Simpan Tahun Ajaran
                 </button>
                 
-                <a href="{{ route('tahun-ajaran.index') }}" 
-                   class="w-full sm:w-auto bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition duration-150 ease-in-out flex items-center justify-center gap-2 font-medium">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
+                <a href="{{ route('akademik.tahun-ajaran.index') }}" 
+                   class="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                     Batal
                 </a>
             </div>

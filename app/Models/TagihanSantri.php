@@ -5,19 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PembayaranSantri extends Model
+class TagihanSantri extends Model
 {
     use HasFactory;
 
-    protected $table = 'pembayaran_santris';
+    protected $table = 'tagihan_santris';
 
     protected $fillable = [
         'santri_id',
-        'jenis_pembayaran_id',
+        'jenis_tagihan_id',
         'tahun_ajaran_id',
+        'bulan',
         'nominal_tagihan',
         'nominal_dibayar',
-        'bulan_pembayaran',
         'status',
         'keterangan'
     ];
@@ -25,7 +25,6 @@ class PembayaranSantri extends Model
     protected $casts = [
         'nominal_tagihan' => 'decimal:2',
         'nominal_dibayar' => 'decimal:2',
-        'bulan_pembayaran' => 'array'
     ];
 
     /**
@@ -53,11 +52,11 @@ class PembayaranSantri extends Model
     }
 
     /**
-     * Relasi dengan Transaksi
+     * Relasi dengan Transaksi (Pembayaran)
      */
     public function transaksis()
     {
-        return $this->hasMany(Transaksi::class, 'pembayaran_santri_id');
+        return $this->hasMany(Transaksi::class, 'tagihan_santri_id');
     }
 
     /**
@@ -65,7 +64,7 @@ class PembayaranSantri extends Model
      */
     public function scopeActiveYear($query)
     {
-        $activeTahunAjaran = TahunAjaran::getActive();
+        $activeTahunAjaran = TahunAjaran::where('is_active', true)->first();
         if ($activeTahunAjaran) {
             return $query->where('tahun_ajaran_id', $activeTahunAjaran->id);
         }
@@ -114,31 +113,50 @@ class PembayaranSantri extends Model
     }
 
     /**
-     * Check if payment is for specific month
+     * Get bulan tahun dalam format yang mudah dibaca
      */
-    public function isForMonth($month)
+    public function getBulanTahunAttribute()
     {
-        if (!$this->bulan_pembayaran) {
-            return false;
+        $months = [
+            '01' => 'Januari', '02' => 'Februari', '03' => 'Maret',
+            '04' => 'April', '05' => 'Mei', '06' => 'Juni',
+            '07' => 'Juli', '08' => 'Agustus', '09' => 'September',
+            '10' => 'Oktober', '11' => 'November', '12' => 'Desember'
+        ];
+
+        $parts = explode('-', $this->bulan);
+        if (count($parts) === 2) {
+            $tahun = $parts[0];
+            $bulan = $parts[1];
+            return ($months[$bulan] ?? $bulan) . ' ' . $tahun;
         }
-        return in_array($month, $this->bulan_pembayaran);
+        
+        return $this->bulan;
     }
 
     /**
-     * Get month names in Indonesian
+     * Update nominal dibayar berdasarkan transaksi
      */
-    public function getBulanNamesAttribute()
+    public function updateNominalDibayar()
     {
-        $months = [
-            1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
-            4 => 'April', 5 => 'Mei', 6 => 'Juni',
-            7 => 'Juli', 8 => 'Agustus', 9 => 'September',
-            10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-        ];
+        $totalDibayar = $this->transaksis()->sum('nominal');
+        $this->update(['nominal_dibayar' => $totalDibayar]);
+        return $this;
+    }
 
-        $selectedMonths = $this->bulan_pembayaran ?? [];
-        return collect($selectedMonths)->map(function($month) use ($months) {
-            return $months[$month] ?? $month;
-        })->toArray();
+    /**
+     * Scope untuk filter berdasarkan bulan
+     */
+    public function scopeBulan($query, $bulan)
+    {
+        return $query->where('bulan', $bulan);
+    }
+
+    /**
+     * Scope untuk filter berdasarkan santri
+     */
+    public function scopeBySantri($query, $santriId)
+    {
+        return $query->where('santri_id', $santriId);
     }
 }

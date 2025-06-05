@@ -11,30 +11,28 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Add tahun_ajaran_id to keuangan_transaksis table and foreign key constraints
+        // Add tahun_ajaran_id to keuangan_transaksis table
         Schema::table('keuangan_transaksis', function (Blueprint $table) {
-            // Check if column doesn't exist before adding
             if (!Schema::hasColumn('keuangan_transaksis', 'tahun_ajaran_id')) {
-                $table->foreignId('tahun_ajaran_id')->constrained('tahun_ajaran')->onDelete('cascade');
+                $table->foreignId('tahun_ajaran_id')->nullable()->constrained('tahun_ajaran')->onDelete('set null');
                 $table->index('tahun_ajaran_id');
-            } else {
-                // Just add foreign key constraint if column exists
-                $table->foreign('tahun_ajaran_id')->references('id')->on('tahun_ajaran')->onDelete('cascade');
             }
-            
-            // Add foreign key constraints for existing columns
-            $table->foreign('santri_id')->references('id')->on('santris')->onDelete('cascade');
-            $table->foreign('jenis_pembayaran_id')->references('id')->on('jenis_tagihans')->onDelete('cascade');
         });
 
-        // Add foreign key constraint to jenis_pembayarans table (column already exists)
-        Schema::table('jenis_pembayarans', function (Blueprint $table) {
-            $table->foreign('tahun_ajaran_id')->references('id')->on('tahun_ajaran')->onDelete('cascade');
+        // Add tahun_ajaran_id to jenis_tagihans table  
+        Schema::table('jenis_tagihans', function (Blueprint $table) {
+            if (!Schema::hasColumn('jenis_tagihans', 'tahun_ajaran_id')) {
+                $table->foreignId('tahun_ajaran_id')->nullable()->constrained('tahun_ajaran')->onDelete('set null');
+                $table->index('tahun_ajaran_id');
+            }
         });
 
+        // Add tahun_ajaran_id to keuangan_kategoris table
         Schema::table('keuangan_kategoris', function (Blueprint $table) {
-            $table->foreignId('tahun_ajaran_id')->nullable()->constrained('tahun_ajaran')->onDelete('cascade');
-            $table->index('tahun_ajaran_id');
+            if (!Schema::hasColumn('keuangan_kategoris', 'tahun_ajaran_id')) {
+                $table->foreignId('tahun_ajaran_id')->nullable()->constrained('tahun_ajaran')->onDelete('set null');
+                $table->index('tahun_ajaran_id');
+            }
         });
     }
 

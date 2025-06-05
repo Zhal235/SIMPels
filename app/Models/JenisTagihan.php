@@ -14,10 +14,12 @@ class JenisTagihan extends Model
     protected $fillable = [
         'nama',
         'nominal',
+        'is_nominal_per_kelas',
         'is_bulanan',
         'bulan_pembayaran',
         'deskripsi',
-        'tahun_ajaran_id'
+        'tahun_ajaran_id',
+        'kategori_tagihan'
     ];
 
     protected $casts = [
@@ -98,5 +100,48 @@ class JenisTagihan extends Model
         return collect($selectedMonths)->map(function($month) use ($months) {
             return $months[$month] ?? $month;
         })->toArray();
+    }
+
+    /**
+     * Get the class-specific amounts for this jenis tagihan
+     */
+    public function kelasNominal()
+    {
+        return $this->hasMany(JenisTagihanKelas::class);
+    }
+
+    /**
+     * Get nominal for a specific class
+     */
+    public function getNominalForKelas($kelasId)
+    {
+        if (!$this->is_nominal_per_kelas) {
+            return $this->nominal;
+        }
+
+        $kelasNominal = $this->kelasNominal()
+            ->where('kelas_id', $kelasId)
+            ->first();
+
+        return $kelasNominal ? $kelasNominal->nominal : $this->nominal;
+    }
+
+    /**
+     * Set nominal for a specific class
+     */
+    public function setNominalForKelas($kelasId, $nominal)
+    {
+        return $this->kelasNominal()->updateOrCreate(
+            ['kelas_id' => $kelasId],
+            ['nominal' => $nominal]
+        );
+    }
+
+    /**
+     * Determine if this tagihan has any class-specific amounts
+     */
+    public function hasClassSpecificAmounts()
+    {
+        return $this->is_nominal_per_kelas && $this->kelasNominal()->count() > 0;
     }
 }

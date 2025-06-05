@@ -14,8 +14,7 @@ return new class extends Migration
         Schema::create('jenis_tagihans', function (Blueprint $table) {
             $table->id();
             $table->string('nama');
--           $table->decimal('nominal', 15, 2);
-+           $table->decimal('nominal', 15, 2)->nullable();
+            $table->decimal('nominal', 15, 2)->nullable();
             $table->boolean('is_bulanan')->default(false);
             $table->json('bulan_pembayaran')->nullable();
             $table->text('deskripsi')->nullable();

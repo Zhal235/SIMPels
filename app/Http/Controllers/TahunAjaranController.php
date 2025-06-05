@@ -53,8 +53,8 @@ class TahunAjaranController extends Controller
             TahunAjaran::create($validated);
 
             DB::commit();
-            return redirect()->route('tahun-ajaran.index')
-                ->with('success', 'Tahun ajaran berhasil ditambahkan.');
+            return redirect()->route('akademik.tahun-ajaran.index')
+                ->with('success', 'Tahun Ajaran berhasil ditambahkan');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()
@@ -105,8 +105,8 @@ class TahunAjaranController extends Controller
             $tahunAjaran->update($validated);
 
             DB::commit();
-            return redirect()->route('tahun-ajaran.index')
-                ->with('success', 'Tahun ajaran berhasil diperbarui.');
+            return redirect()->route('akademik.tahun-ajaran.index')
+                ->with('success', 'Tahun Ajaran berhasil diperbarui');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()
@@ -128,8 +128,8 @@ class TahunAjaranController extends Controller
             }
 
             $tahunAjaran->delete();
-            return redirect()->route('tahun-ajaran.index')
-                ->with('success', 'Tahun ajaran berhasil dihapus.');
+            return redirect()->route('akademik.tahun-ajaran.index')
+                ->with('success', 'Tahun Ajaran berhasil dihapus');
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Gagal menghapus tahun ajaran: ' . $e->getMessage());
@@ -150,8 +150,8 @@ class TahunAjaranController extends Controller
             $tahunAjaran->update(['is_active' => true]);
 
             DB::commit();
-            return redirect()->route('tahun-ajaran.index')
-                ->with('success', 'Tahun ajaran ' . $tahunAjaran->nama_tahun_ajaran . ' berhasil diaktifkan.');
+            return redirect()->route('akademik.tahun-ajaran.index')
+                ->with('success', 'Status tahun ajaran berhasil diperbarui');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()

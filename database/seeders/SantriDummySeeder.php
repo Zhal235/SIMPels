@@ -12,9 +12,7 @@ class SantriDummySeeder extends Seeder
     public function run()
     {
         // Hapus data lama
-        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        Santri::truncate();
-        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        \DB::table('santris')->delete();
 
         $alamatList = ['Jl. Melati', 'Jl. Mawar', 'Jl. Kenanga', 'Jl. Anggrek', 'Jl. Dahlia', 'Jl. Kamboja', 'Jl. Flamboyan'];
         $ayahNames = ['Budi', 'Joko', 'Samsul', 'Andi', 'Syahrul', 'Soleh', 'Imam', 'Rohmat', 'Tono', 'Fauzi', 'Wahyudi', 'Herman', 'Eko', 'Ahmad', 'Ramli'];

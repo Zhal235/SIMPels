@@ -2,26 +2,27 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Transaksi extends Model
 {
+    use HasFactory;
+
     protected $table = 'keuangan_transaksis';
 
     protected $fillable = [
         'santri_id',
-        'jenis_pembayaran_id',
-        'pembayaran_santri_id',
+        'tagihan_santri_id',
         'tipe_pembayaran',
         'nominal',
         'tanggal',
         'keterangan',
-        'tahun_ajaran_id',
-        'bulan',
+        'tahun_ajaran_id'
     ];
 
-    protected $casts = [
-        'tanggal' => 'date',
+    protected $dates = [
+        'tanggal'
     ];
 
     public function santri()
@@ -29,37 +30,35 @@ class Transaksi extends Model
         return $this->belongsTo(Santri::class);
     }
 
+    public function tagihanSantri()
+    {
+        return $this->belongsTo(TagihanSantri::class, 'tagihan_santri_id');
+    }
+
+    // Akses JenisTagihan melalui TagihanSantri
     public function jenisTagihan()
     {
-        return $this->belongsTo(JenisTagihan::class, 'jenis_pembayaran_id');
+        return $this->hasOneThrough(
+            JenisTagihan::class,
+            TagihanSantri::class,
+            'id', // foreign key on TagihanSantri
+            'id', // foreign key on JenisTagihan
+            'tagihan_santri_id', // local key on Transaksi
+            'jenis_tagihan_id' // local key on TagihanSantri
+        );
     }
 
-    /**
-     * Relasi dengan PembayaranSantri
-     */
-    public function pembayaranSantri()
-    {
-        return $this->belongsTo(PembayaranSantri::class);
-    }
-
-    /**
-     * Relasi dengan TahunAjaran
-     */
     public function tahunAjaran()
     {
         return $this->belongsTo(TahunAjaran::class);
     }
 
-    /**
-     * Scope untuk filter berdasarkan tahun ajaran aktif
-     */
     public function scopeActiveYear($query)
     {
-        $activeTahunAjaran = TahunAjaran::getActive();
+        $activeTahunAjaran = TahunAjaran::where('is_active', true)->first();
         if ($activeTahunAjaran) {
             return $query->where('tahun_ajaran_id', $activeTahunAjaran->id);
         }
-        return $query;
+        return $query->whereNull('id'); // Return empty result if no active year
     }
-    //
 }

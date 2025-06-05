@@ -14,16 +14,22 @@ class TahunAjaranSeeder extends Seeder
      */
     public function run(): void
     {
+        // Clear existing data
+        \DB::table('tahun_ajaran')->delete();
+
         $tahunAjarans = [
+            // 2025/2026
             [
-                'nama_tahun_ajaran' => '2023/2024',
-                'tahun_mulai' => 2023,
-                'tahun_selesai' => 2024,
-                'tanggal_mulai' => Carbon::create(2023, 7, 1),
-                'tanggal_selesai' => Carbon::create(2024, 6, 30),
+                'nama_tahun_ajaran' => '2025/2026',
+                'tahun_mulai' => 2025,
+                'tahun_selesai' => 2026,
+                'tanggal_mulai' => Carbon::create(2025, 7, 1),
+                'tanggal_selesai' => Carbon::create(2026, 6, 30),
                 'is_active' => false,
-                'keterangan' => 'Tahun Ajaran 2023/2024'
+                'keterangan' => 'Tahun Ajaran 2025/2026'
             ],
+            
+            // 2024/2025 (Current Active Year)
             [
                 'nama_tahun_ajaran' => '2024/2025',
                 'tahun_mulai' => 2024,
@@ -33,14 +39,16 @@ class TahunAjaranSeeder extends Seeder
                 'is_active' => true,
                 'keterangan' => 'Tahun Ajaran 2024/2025 (Aktif)'
             ],
+
+            // 2023/2024
             [
-                'nama_tahun_ajaran' => '2025/2026',
-                'tahun_mulai' => 2025,
-                'tahun_selesai' => 2026,
-                'tanggal_mulai' => Carbon::create(2025, 7, 1),
-                'tanggal_selesai' => Carbon::create(2026, 6, 30),
+                'nama_tahun_ajaran' => '2023/2024',
+                'tahun_mulai' => 2023,
+                'tahun_selesai' => 2024,
+                'tanggal_mulai' => Carbon::create(2023, 7, 1),
+                'tanggal_selesai' => Carbon::create(2024, 6, 30),
                 'is_active' => false,
-                'keterangan' => 'Tahun Ajaran 2025/2026'
+                'keterangan' => 'Tahun Ajaran 2023/2024'
             ]
         ];
 
