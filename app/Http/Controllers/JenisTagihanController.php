@@ -8,6 +8,7 @@ use App\Models\Santri;
 use App\Models\TagihanSantri;
 use App\Models\JenisTagihanKelas;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class JenisTagihanController extends Controller
 {
@@ -35,44 +36,63 @@ class JenisTagihanController extends Controller
      */
     public function store(Request $request)
     {
+        // Simple validation for basic form fields
         $rules = [
             'nama' => 'required|string|max:255',
-            'nominal' => 'nullable|numeric|min:0',
-            'deskripsi' => 'nullable|string'
+            'deskripsi' => 'nullable|string',
+            'kategori_tagihan' => 'required|in:Rutin,Insidental',
+            'is_bulanan' => 'required|in:0,1',
+            'nominal' => 'required|numeric|min:0',
+            'is_nominal_per_kelas' => 'required|in:0,1',
         ];
 
-        // Validasi kondisional berdasarkan jenis pembayaran
-        if ($request->jenis_pembayaran === 'rutin') {
-            $rules['is_bulanan'] = 'required|boolean';
-            if ($request->is_bulanan) {
-                $rules['bulan_pembayaran'] = 'required|array|min:1';
-                $rules['bulan_pembayaran.*'] = 'integer|between:1,12';
+        $validator = \Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
             }
-        } elseif ($request->jenis_pembayaran === 'insidentil') {
-            $rules['tahun_ajaran_id'] = 'required|exists:tahun_ajarans,id';
-            $rules['bulan_pembayaran'] = 'required|array|min:1';
-            $rules['bulan_pembayaran.*'] = 'integer|between:1,12';
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $validated = $request->validate($rules);
+        try {
+            $jenisTagihan = JenisTagihan::create([
+                'nama' => $request->nama,
+                'deskripsi' => $request->deskripsi,
+                'kategori_tagihan' => $request->kategori_tagihan,
+                'is_bulanan' => $request->is_bulanan,
+                'nominal' => $request->nominal,
+                'is_nominal_per_kelas' => $request->is_nominal_per_kelas,
+            ]);
 
-        // Set default values berdasarkan jenis pembayaran
-        if ($request->jenis_pembayaran === 'rutin') {
-            $validated['tahun_ajaran_id'] = null;
-            if (!$request->is_bulanan) {
-                $validated['bulan_pembayaran'] = null;
+            // Generate tagihan santri untuk jenis tagihan baru
+            $this->generateTagihanSantri();
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data berhasil ditambahkan dan tagihan santri telah dibuat otomatis',
+                    'data' => $jenisTagihan
+                ]);
             }
-        } elseif ($request->jenis_pembayaran === 'insidentil') {
-            $validated['is_bulanan'] = false;
+
+            return redirect()->route('keuangan.jenis-tagihan.index')
+                ->with('success', 'Data berhasil ditambahkan dan tagihan santri telah dibuat otomatis');
+        } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan saat menyimpan data')
+                ->withInput();
         }
-
-        JenisTagihan::create($validated);
-
-        // Generate tagihan santri untuk jenis tagihan baru
-        $this->generateTagihanSantri();
-
-        return redirect()->route('keuangan.jenis-tagihan.index')
-            ->with('success', 'Data berhasil ditambahkan dan tagihan santri telah dibuat otomatis');
     }
 
     /**
@@ -88,9 +108,29 @@ class JenisTagihanController extends Controller
      */
     public function edit($id)
     {
-        $jenisTagihan = JenisTagihan::findOrFail($id);
-        $tahunAjarans = TahunAjaran::all();
-        return view('keuangan.jenis_tagihan.edit', compact('jenisTagihan', 'tahunAjarans'));
+        try {
+            $jenisTagihan = JenisTagihan::findOrFail($id);
+            
+            if (request()->expectsJson() || request()->ajax() || request()->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => true,
+                    'jenisTagihan' => $jenisTagihan
+                ]);
+            }
+            
+            $tahunAjarans = TahunAjaran::all();
+            return view('keuangan.jenis_tagihan.edit', compact('jenisTagihan', 'tahunAjarans'));
+        } catch (\Exception $e) {
+            if (request()->expectsJson() || request()->ajax() || request()->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak ditemukan: ' . $e->getMessage()
+                ], 404);
+            }
+            
+            return redirect()->route('keuangan.jenis-tagihan.index')
+                ->with('error', 'Data tidak ditemukan');
+        }
     }
 
     /**
@@ -99,28 +139,63 @@ class JenisTagihanController extends Controller
     public function update(Request $request, $id)
     {
         $jenisTagihan = JenisTagihan::findOrFail($id);
-        $request->validate([
+        
+        $rules = [
             'nama' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'kategori_tagihan' => 'required|in:Rutin,Insidental',
             'is_bulanan' => 'required|in:0,1',
             'nominal' => 'required|numeric|min:0',
             'is_nominal_per_kelas' => 'required|in:0,1',
-        ]);
-        $jenisTagihan->update([
-            'nama' => $request->nama,
-            'deskripsi' => $request->deskripsi,
-            'kategori_tagihan' => $request->kategori_tagihan,
-            'is_bulanan' => $request->is_bulanan,
-            'nominal' => $request->nominal,
-            'is_nominal_per_kelas' => $request->is_nominal_per_kelas,
-        ]);
+        ];
 
-        // Generate tagihan santri jika ada perubahan yang mempengaruhi
-        $this->generateTagihanSantri();
+        $validator = Validator::make($request->all(), $rules);
 
-        return redirect()->route('keuangan.jenis-tagihan.index')
-            ->with('success', 'Jenis Tagihan berhasil diperbarui dan tagihan santri telah disinkronkan');
+        if ($validator->fails()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            $jenisTagihan->update([
+                'nama' => $request->nama,
+                'deskripsi' => $request->deskripsi,
+                'kategori_tagihan' => $request->kategori_tagihan,
+                'is_bulanan' => $request->is_bulanan,
+                'nominal' => $request->nominal,
+                'is_nominal_per_kelas' => $request->is_nominal_per_kelas,
+            ]);
+
+            // Generate tagihan santri jika ada perubahan yang mempengaruhi
+            $this->generateTagihanSantri();
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Jenis Tagihan berhasil diperbarui dan tagihan santri telah disinkronkan',
+                    'data' => $jenisTagihan
+                ]);
+            }
+
+            return redirect()->route('keuangan.jenis-tagihan.index')
+                ->with('success', 'Jenis Tagihan berhasil diperbarui dan tagihan santri telah disinkronkan');
+        } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat memperbarui data: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan saat memperbarui data')
+                ->withInput();
+        }
     }
 
     /**
