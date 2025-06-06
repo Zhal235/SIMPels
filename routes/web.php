@@ -213,6 +213,7 @@ Route::middleware(['auth'])->group(function () {
         Route::middleware(['role:admin|bendahara'])->group(function() {
             Route::get('pembayaran-santri', [PembayaranSantriController::class, 'index'])->name('pembayaran-santri.index');
             Route::get('pembayaran-santri/data/{santriId}', [PembayaranSantriController::class, 'getPaymentData'])->name('pembayaran-santri.data');
+            Route::get('pembayaran-santri/tunggakan/{santriId}', [PembayaranSantriController::class, 'getTunggakanData'])->name('pembayaran-santri.tunggakan');
             Route::post('pembayaran-santri/process', [PembayaranSantriController::class, 'processPayment'])
                 ->name('pembayaran-santri.process');
         });

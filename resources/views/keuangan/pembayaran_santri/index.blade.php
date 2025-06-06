@@ -3,7 +3,7 @@
 @section('content')
 <script>
     window.pembayaranSantriProcessUrl = "{{ route('keuangan.pembayaran-santri.process') }}";
-    window.pembayaranSantriDataUrl = "{{ url('keuangan/pembayaran-santri/data') }}";
+    window.pembayaranSantriDataUrl = "{{ url('keuangan/pembayaran-santri') }}";
 </script>
 <div x-data="pembayaranSantri()">
     
@@ -180,6 +180,17 @@
                                             </button>
                                         </li>
                                         <li class="mr-2">
+                                            <button @click="activeTab = 'tunggakan'; selectedPayments = []; selectAll = false; loadTunggakanData();" 
+                                                    :class="{'text-red-600 border-red-600': activeTab === 'tunggakan', 'text-gray-500 hover:text-gray-600 border-transparent': activeTab !== 'tunggakan'}"
+                                                    class="inline-flex items-center p-4 border-b-2 rounded-t-lg group">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" :class="{'text-red-600': activeTab === 'tunggakan', 'text-gray-400': activeTab !== 'tunggakan'}" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                                </svg>
+                                                Tunggakan
+                                                <span class="ml-2 bg-red-100 text-red-700 py-0.5 px-2 rounded-full text-xs" x-text="tunggakanPayments.length"></span>
+                                            </button>
+                                        </li>
+                                        <li class="mr-2">
                                             <button @click="activeTab = 'lunas'; selectedPayments = []; selectAll = false;" 
                                                     :class="{'text-green-600 border-green-600': activeTab === 'lunas', 'text-gray-500 hover:text-gray-600 border-transparent': activeTab !== 'lunas'}"
                                                     class="inline-flex items-center p-4 border-b-2 rounded-t-lg group">
@@ -244,10 +255,27 @@
                                                                         <span class="text-gray-600">Sisa:</span>
                                                                         <span class="font-medium text-red-600" x-text="formatRupiah(payment.sisa)"></span>
                                                                     </div>
+                                                                    <!-- Tanggal Jatuh Tempo -->
+                                                                    <div x-show="payment.tanggal_jatuh_tempo" class="flex justify-between pt-1 border-t border-gray-100">
+                                                                        <span class="text-gray-600">Jatuh Tempo:</span>
+                                                                        <span class="font-medium text-xs" 
+                                                                              :class="payment.is_jatuh_tempo ? 'text-red-600' : 'text-gray-700'"
+                                                                              x-text="formatDate(payment.tanggal_jatuh_tempo)"></span>
+                                                                    </div>
                                                                 </div>
                                                                 
-                                                                <!-- Status Badge -->
-                                                                <div class="mt-3">
+                                                                <!-- Status Badge dengan Indikator Jatuh Tempo -->
+                                                                <div class="mt-3 space-y-1">
+                                                                    <!-- Badge Jatuh Tempo (jika sudah jatuh tempo) -->
+                                                                    <div x-show="payment.is_jatuh_tempo" class="text-center">
+                                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 w-full justify-center">
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                                                            </svg>
+                                                                            Jatuh Tempo
+                                                                        </span>
+                                                                    </div>
+                                                                    <!-- Badge Status Pembayaran -->
                                                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-full justify-center"
                                                                         :class="{
                                                                             'bg-red-100 text-red-800': payment.status === 'belum_bayar',
@@ -319,10 +347,27 @@
                                                                 <span class="text-gray-600">Bulan:</span>
                                                                 <span class="font-medium" x-text="payment.bulan"></span>
                                                             </div>
+                                                            <!-- Tanggal Jatuh Tempo -->
+                                                            <div x-show="payment.tanggal_jatuh_tempo" class="flex justify-between pt-1">
+                                                                <span class="text-gray-600">Jatuh Tempo:</span>
+                                                                <span class="font-medium" 
+                                                                      :class="payment.is_jatuh_tempo ? 'text-red-600' : 'text-gray-900'"
+                                                                      x-text="formatDate(payment.tanggal_jatuh_tempo)"></span>
+                                                            </div>
                                                         </div>
                                                         
-                                                        <!-- Status Badge -->
-                                                        <div class="mt-3">
+                                                        <!-- Status Badge dengan Indikator Jatuh Tempo -->
+                                                        <div class="mt-3 space-y-2">
+                                                            <!-- Badge Jatuh Tempo (jika sudah jatuh tempo) -->
+                                                            <div x-show="payment.is_jatuh_tempo" class="text-center">
+                                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 w-full justify-center">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                                                    </svg>
+                                                                    Sudah Jatuh Tempo
+                                                                </span>
+                                                            </div>
+                                                            <!-- Badge Status Pembayaran -->
                                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-full justify-center"
                                                                 :class="{
                                                                     'bg-red-100 text-red-800': payment.status === 'belum_bayar',
@@ -345,6 +390,119 @@
                                             </div>
                                             <h3 class="text-lg font-medium text-gray-900 mb-2">Tidak Ada Tagihan Insidentil</h3>
                                             <p class="text-gray-500">Tidak ada tagihan insidentil yang belum dibayar</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Tab Content: Tunggakan -->
+                                    <div x-show="activeTab === 'tunggakan'">
+                                        <!-- Tunggakan grouped by bulan -->
+                                        <div x-show="tunggakanPayments.length > 0">
+                                            <!-- Group by Tahun Ajaran first -->
+                                            <template x-for="(tahunGroup, tahunId) in groupedTunggakan" :key="tahunId">
+                                                <div class="mb-8">
+                                                    <!-- Tahun Ajaran Header -->
+                                                    <div class="bg-red-100 px-6 py-4 rounded-t-lg border border-red-200">
+                                                        <div class="flex justify-between items-center">
+                                                            <div>
+                                                                <h3 class="text-lg font-semibold text-red-900" x-text="tahunGroup.nama"></h3>
+                                                                <p class="text-sm text-red-700" x-text="tahunGroup.payments.length + ' tagihan belum lunas'"></p>
+                                                            </div>
+                                                            <div class="text-right">
+                                                                <p class="text-sm text-red-700">Total Tunggakan:</p>
+                                                                <p class="text-xl font-bold text-red-900" x-text="formatRupiah(tahunGroup.total)"></p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Monthly Payment Boxes for this Tahun Ajaran -->
+                                                    <div class="border-l border-r border-b border-red-200 rounded-b-lg bg-red-50/30 p-6">
+                                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                                            <template x-for="month in getUniqueMonthsForTahun(tahunGroup.payments)" :key="month">
+                                                                <div class="border border-red-200 rounded-lg overflow-hidden shadow-sm bg-white">
+                                                                    <!-- Month Header with Checkbox -->
+                                                                    <div class="bg-red-50 px-4 py-3 border-b border-red-200 flex justify-between items-center">
+                                                                        <h3 class="font-medium text-red-900" x-text="formatMonthDisplay(month)"></h3>
+                                                                        <label class="flex items-center">
+                                                                            <input type="checkbox" 
+                                                                                   @change="toggleMonthSelectionTunggakan(month, tahunId)"
+                                                                                   :checked="isMonthSelectedTunggakan(month, tahunId)"
+                                                                                   class="rounded border-gray-300 text-red-600 focus:ring-red-500">
+                                                                            <span class="ml-2 text-xs text-red-700">Pilih Semua</span>
+                                                                        </label>
+                                                                    </div>
+                                                                    
+                                                                    <!-- Month Payments -->
+                                                                    <div class="divide-y divide-red-100">
+                                                                        <template x-for="payment in tahunGroup.payments.filter(p => p.bulan === month)" :key="payment.id">
+                                                                            <div class="p-4">
+                                                                                <div class="flex justify-between items-start mb-2">
+                                                                                    <div>
+                                                                                        <div class="font-medium text-gray-900" x-text="payment.jenis_tagihan"></div>
+                                                                                        <div class="text-xs text-red-600 font-medium" x-text="payment.kategori_tagihan || (payment.is_bulanan ? 'Rutin' : 'Lainnya')"></div>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <input type="checkbox"
+                                                                                            :value="payment.id" 
+                                                                                            :checked="selectedPayments.includes(Number(payment.id))"
+                                                                                            @change="togglePaymentSelection(Number(payment.id))"
+                                                                                            class="rounded border-gray-300 text-red-600 focus:ring-red-500">
+                                                                                    </div>
+                                                                                </div>
+                                                                                
+                                                                                <!-- Payment Details -->
+                                                                                <div class="mt-2 space-y-1 text-sm">
+                                                                                    <div class="flex justify-between">
+                                                                                        <span class="text-gray-600">Tagihan:</span>
+                                                                                        <span class="font-medium" x-text="formatRupiah(payment.nominal_tagihan)"></span>
+                                                                                    </div>
+                                                                                    <div class="flex justify-between" x-show="payment.nominal_dibayar > 0">
+                                                                                        <span class="text-gray-600">Dibayar:</span>
+                                                                                        <span class="text-green-600" x-text="formatRupiah(payment.nominal_dibayar)"></span>
+                                                                                    </div>
+                                                                                    <div class="flex justify-between" x-show="payment.nominal_keringanan > 0">
+                                                                                        <span class="text-gray-600">Keringanan:</span>
+                                                                                        <span class="text-blue-600" x-text="formatRupiah(payment.nominal_keringanan)"></span>
+                                                                                    </div>
+                                                                                    <div class="flex justify-between border-t border-gray-100 pt-1">
+                                                                                        <span class="text-gray-600">Sisa:</span>
+                                                                                        <span class="font-medium text-red-600" x-text="formatRupiah(payment.sisa_tagihan)"></span>
+                                                                                    </div>
+                                                                                </div>
+                                                                                
+                                                                                <!-- Due Date & Status -->
+                                                                                <div class="mt-3 space-y-2">
+                                                                                    <div x-show="payment.tanggal_jatuh_tempo" class="text-xs text-red-500">
+                                                                                        Jatuh Tempo: <span x-text="formatDate(payment.tanggal_jatuh_tempo)"></span>
+                                                                                    </div>
+                                                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-full justify-center bg-red-100 text-red-800">
+                                                                                        Tunggakan
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </template>
+                                                                        
+                                                                        <!-- Empty state if no payments for this month -->
+                                                                        <div x-show="!tahunGroup.payments.some(p => p.bulan === month)" class="p-4 text-center text-gray-500 text-sm">
+                                                                            Tidak ada tunggakan
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        
+                                        <!-- Empty state if no tunggakan -->
+                                        <div x-show="tunggakanPayments.length === 0" class="text-center py-12">
+                                            <div class="text-gray-400 mb-4">
+                                                <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </div>
+                                            <h3 class="text-lg font-medium text-gray-900 mb-2">Tidak Ada Tunggakan</h3>
+                                            <p class="text-gray-500">Santri tidak memiliki tunggakan dari tahun ajaran manapun</p>
                                         </div>
                                     </div>
                                     
@@ -729,6 +887,7 @@ togglePaymentSelection(paymentId) {
     console.log('[Alpine init] Initial selectAll (likely false as payments might not be loaded):', this.selectAll);
 },
         payments: [],
+        tunggakanPayments: [],
         santriList: @json($santris),
         jenisTagihans: @json($jenisTagihans),
         activeTab: 'rutin',
@@ -779,6 +938,23 @@ togglePaymentSelection(paymentId) {
             return monthMap[monthCode] || monthCode;
         },
 
+        formatDate(dateString) {
+            if (!dateString) return '';
+            
+            try {
+                const date = new Date(dateString);
+                const options = { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric',
+                    timeZone: 'Asia/Jakarta'
+                };
+                return new Intl.DateTimeFormat('id-ID', options).format(date);
+            } catch (error) {
+                return dateString;
+            }
+        },
+
         get filteredSantri() {
             let filtered = this.santriList;
             if (this.searchTerm) {
@@ -820,6 +996,8 @@ togglePaymentSelection(paymentId) {
             this.selectedPayments = [];
             this.selectAll = false;
             this.loadPaymentData(santri.id);
+            // Also load tunggakan data when selecting santri
+            this.loadTunggakanData();
         },
 
         async loadPaymentData(santriId) {
@@ -830,7 +1008,7 @@ togglePaymentSelection(paymentId) {
                 this.selectAll = false;
 
                 // Fetch payment data from API (TagihanSantri)
-                const response = await fetch(`${window.pembayaranSantriDataUrl}/${santriId}`);
+                const response = await fetch(`${window.pembayaranSantriDataUrl}/data/${santriId}`);
                 const data = await response.json();
                 
                 if (data && data.length > 0) {
@@ -848,6 +1026,7 @@ togglePaymentSelection(paymentId) {
                             sisa: this.formatNumberSafe(item.sisa_tagihan),
                             status: item.status_pembayaran,
                             tanggal_jatuh_tempo: item.tanggal_jatuh_tempo,
+                            is_jatuh_tempo: item.is_jatuh_tempo,
                             keterangan: item.keterangan,
                             transaksis: item.transaksis || []
                         };
@@ -864,62 +1043,137 @@ togglePaymentSelection(paymentId) {
                 this.generateSamplePaymentData();
             }
         },
-        
-        generateSamplePaymentData() {
-            // Generate sample payment data with categories
-            const months = [
-                '2024-07', '2024-08', '2024-09', '2024-10',
-                '2024-11', '2024-12', '2025-01', '2025-02',
-                '2025-03', '2025-04', '2025-05', '2025-06'
-            ];
-            
-            this.payments = [];
-            let paymentId = 1;
-            
-            months.forEach((month, index) => {
-                // Add routine payments for each month
-                this.jenisTagihans.forEach(jenis => {
-                    const status = index < 2 ? 'lunas' : (index === 2 ? 'sebagian' : 'belum_bayar');
-                    const tagihan = this.formatNumberSafe(jenis.nominal);
-                    const dibayar = status === 'lunas' ? tagihan : (status === 'sebagian' ? tagihan * 0.6 : 0);
-                    
-                    const payment = {
-                        id: paymentId++,
-                        bulan: month,
-                        jenis_tagihan: jenis.nama,
-                        jenis_tagihan_id: jenis.id,
-                        kategori: 'Pembayaran Rutin',
-                        kategori_tagihan: jenis.kategori_tagihan || 'Rutin',
-                        is_bulanan: jenis.is_bulanan || false,
-                        tagihan: tagihan,
-                        dibayar: dibayar,
-                        sisa: tagihan - dibayar,
-                        status: status,
-                        tanggal_bayar: status === 'lunas' ? this.generatePaymentDate(month) : null,
-                        admin_penerima: status === 'lunas' ? this.getRandomAdmin() : null
-                    };
-                    
-                    this.payments.push(payment);
-                });
+
+        async loadTunggakanData() {
+            if (!this.selectedSantri) {
+                console.warn('No santri selected for tunggakan data');
+                return;
+            }
+
+            try {
+                // Reset tunggakan data
+                this.tunggakanPayments = [];
+                this.selectedPayments = [];
+                this.selectAll = false;
+
+                console.log('Loading tunggakan data for santri:', this.selectedSantri.id);
+
+                // Fetch tunggakan data from API
+                const url = `{{ url('keuangan/pembayaran-santri/tunggakan') }}/${this.selectedSantri.id}`;
+                console.log('Fetching from URL:', url);
                 
-                // // Add occasional incidental payment
-                // if (index % 3 === 0) {
-                //     const insidentalStatus = index < 2 ? 'lunas' : 'belum_bayar';
-                //     this.payments.push({
-                //         id: paymentId++,
-                //         bulan: month,
-                //         jenis_tagihan: 'Kegiatan Ekstrakurikuler',
-                //         jenis_tagihan_id: this.jenisTagihans.find(jp => jp.nama === 'Kegiatan Ekstrakurikuler')?.id || null, // Added jenis_tagihan_id for incidental
-                //         kategori: 'Pembayaran Insidental',
-                //         tagihan: 200000,
-                //         dibayar: index < 2 ? 200000 : 0,
-                //         sisa: index < 2 ? 0 : 200000,
-                //         status: insidentalStatus,
-                //         tanggal_bayar: insidentalStatus === 'lunas' ? this.generatePaymentDate(month) : null,
-                //         admin_penerima: insidentalStatus === 'lunas' ? this.getRandomAdmin() : null
-                //     });
-                // }
+                const response = await fetch(url);
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Tunggakan API response:', data);
+                
+                if (data && data.length > 0) {
+                    this.tunggakanPayments = data.map((item) => {
+                        return {
+                            id: item.id,
+                            bulan: item.bulan,
+                            jenis_tagihan: item.jenis_tagihan,
+                            jenis_tagihan_id: item.jenis_tagihan_id,
+                            tahun_ajaran: item.tahun_ajaran,
+                            tahun_ajaran_id: item.tahun_ajaran_id,
+                            kategori_tagihan: item.kategori_tagihan || 'Rutin',
+                            is_bulanan: item.is_bulanan || false,
+                            nominal_tagihan: this.formatNumberSafe(item.nominal_tagihan),
+                            nominal_dibayar: this.formatNumberSafe(item.nominal_dibayar),
+                            nominal_keringanan: this.formatNumberSafe(item.nominal_keringanan),
+                            sisa_tagihan: this.formatNumberSafe(item.sisa_tagihan),
+                            status_pembayaran: item.status_pembayaran,
+                            tanggal_jatuh_tempo: item.tanggal_jatuh_tempo,
+                            is_jatuh_tempo: item.is_jatuh_tempo,
+                            keterangan: item.keterangan,
+                            transaksis: item.transaksis || []
+                        };
+                    });
+                    console.log('Mapped tunggakan payments:', this.tunggakanPayments.length);
+                } else {
+                    this.tunggakanPayments = [];
+                    console.log('No tunggakan data found');
+                }
+            } catch (error) {
+                console.error('Error loading tunggakan data:', error);
+                this.tunggakanPayments = [];
+            }
+        },
+
+        get groupedTunggakan() {
+            // Group tunggakan by tahun ajaran
+            const grouped = {};
+            
+            this.tunggakanPayments.forEach(payment => {
+                const tahunId = payment.tahun_ajaran_id;
+                
+                if (!grouped[tahunId]) {
+                    grouped[tahunId] = {
+                        nama: payment.tahun_ajaran,
+                        payments: [],
+                        total: 0
+                    };
+                }
+                
+                grouped[tahunId].payments.push(payment);
+                grouped[tahunId].total += payment.sisa_tagihan;
             });
+            
+            return grouped;
+        },
+
+        // Get unique months for a specific tahun ajaran's payments
+        getUniqueMonthsForTahun(payments) {
+            const months = [...new Set(payments.filter(p => p.bulan).map(p => p.bulan))];
+            return months.sort();
+        },
+
+        // Toggle month selection for tunggakan
+        toggleMonthSelectionTunggakan(month, tahunId) {
+            const monthPayments = this.tunggakanPayments.filter(p => 
+                p.bulan === month && p.tahun_ajaran_id === tahunId
+            );
+            
+            const allSelected = monthPayments.every(payment => 
+                this.selectedPayments.includes(Number(payment.id))
+            );
+            
+            if (allSelected) {
+                // Unselect all payments for this month
+                monthPayments.forEach(payment => {
+                    const index = this.selectedPayments.indexOf(Number(payment.id));
+                    if (index > -1) {
+                        this.selectedPayments.splice(index, 1);
+                    }
+                });
+            } else {
+                // Select all payments for this month
+                monthPayments.forEach(payment => {
+                    if (!this.selectedPayments.includes(Number(payment.id))) {
+                        this.selectedPayments.push(Number(payment.id));
+                    }
+                });
+            }
+            
+            this.updateSelectAll();
+        },
+
+        // Check if all payments in a month for specific tahun are selected
+        isMonthSelectedTunggakan(month, tahunId) {
+            const monthPayments = this.tunggakanPayments.filter(p => 
+                p.bulan === month && p.tahun_ajaran_id === tahunId
+            );
+            
+            if (monthPayments.length === 0) return false;
+            
+            return monthPayments.every(payment => 
+                this.selectedPayments.includes(Number(payment.id))
+            );
         },
 
         cetakKwitansi() {
@@ -942,6 +1196,10 @@ togglePaymentSelection(paymentId) {
                 } else if (this.activeTab === 'insidentil') {
                     paymentsToSelect = this.payments
                         .filter(payment => payment.status !== 'lunas' && payment.kategori_tagihan === 'Insidental')
+                        .map(payment => Number(payment.id));
+                } else if (this.activeTab === 'tunggakan') {
+                    paymentsToSelect = this.tunggakanPayments
+                        .filter(payment => payment.status_pembayaran !== 'lunas')
                         .map(payment => Number(payment.id));
                 } else {
                     // Default: select all unpaid payments
@@ -989,6 +1247,7 @@ togglePaymentSelection(paymentId) {
                 // Hapus dulu yang sudah ada untuk menghindari duplikasi
                 const currentSelected = this.selectedPayments.filter(id => 
                     !monthPayments.includes(id)
+
                 );
                 this.selectedPayments = [...currentSelected, ...monthPayments];
             }

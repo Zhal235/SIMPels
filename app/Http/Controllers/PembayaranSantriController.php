@@ -106,9 +106,16 @@ class PembayaranSantriController extends Controller
             
             \Log::info('Active tahun ajaran: ' . $activeTahunAjaran->id);
 
-            // Ambil tagihan santri untuk santri tertentu berdasarkan tahun ajaran aktif
+            $today = now()->format('Y-m-d');
+
+            // Ambil tagihan santri untuk tahun ajaran aktif yang belum jatuh tempo
             $tagihanSantri = TagihanSantri::where('santri_id', $santriId)
                 ->where('tahun_ajaran_id', $activeTahunAjaran->id)
+                ->where(function($query) use ($today) {
+                    // Tagihan yang belum jatuh tempo atau tanggal jatuh tempo masih di masa depan
+                    $query->whereNull('tanggal_jatuh_tempo')
+                          ->orWhere('tanggal_jatuh_tempo', '>=', $today);
+                })
                 ->with(['jenisTagihan', 'tahunAjaran', 'transaksis'])
                 ->orderBy('jenis_tagihan_id')
                 ->get();
@@ -126,6 +133,7 @@ class PembayaranSantriController extends Controller
                         'sisa_tagihan' => $tagihan->sisa_tagihan,
                         'status_pembayaran' => $tagihan->status_pembayaran,
                         'tanggal_jatuh_tempo' => $tagihan->tanggal_jatuh_tempo,
+                        'is_jatuh_tempo' => $tagihan->is_jatuh_tempo,
                         'keterangan' => $tagihan->keterangan,
                         'kategori_tagihan' => $tagihan->jenisTagihan->kategori_tagihan ?? 'Rutin',
                         'is_bulanan' => $tagihan->jenisTagihan->is_bulanan ?? false,
@@ -144,6 +152,142 @@ class PembayaranSantriController extends Controller
             return response()->json($payments);
         } catch (\Exception $e) {
             \Log::error('Error in getPaymentData: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Testing endpoint for debugging tunggakan
+     */
+    public function testTunggakanEndpoint($santriId)
+    {
+        try {
+            // Get data
+            $activeTahunAjaran = TahunAjaran::getActive();
+            if (!$activeTahunAjaran) {
+                return response()->json(['error' => 'No active tahun ajaran'], 400);
+            }
+            
+            $today = now()->format('Y-m-d');
+            
+            // Count tunggakan
+            $count = TagihanSantri::where('santri_id', $santriId)
+                ->whereRaw('nominal_dibayar + nominal_keringanan < nominal_tagihan')
+                ->where(function($query) use ($today, $activeTahunAjaran) {
+                    $query->where('tanggal_jatuh_tempo', '<', $today)
+                          ->orWhere('tahun_ajaran_id', '!=', $activeTahunAjaran->id);
+                })
+                ->count();
+                
+            // Get sample tunggakan
+            $sample = TagihanSantri::where('santri_id', $santriId)
+                ->whereRaw('nominal_dibayar + nominal_keringanan < nominal_tagihan')
+                ->where(function($query) use ($today, $activeTahunAjaran) {
+                    $query->where('tanggal_jatuh_tempo', '<', $today)
+                          ->orWhere('tahun_ajaran_id', '!=', $activeTahunAjaran->id);
+                })
+                ->with(['jenisTagihan', 'tahunAjaran'])
+                ->take(3)
+                ->get();
+                
+            return response()->json([
+                'santri_id' => $santriId,
+                'active_tahun_ajaran' => [
+                    'id' => $activeTahunAjaran->id,
+                    'nama' => $activeTahunAjaran->nama,
+                    'nama_tahun_ajaran' => $activeTahunAjaran->nama_tahun_ajaran,
+                ],
+                'today' => $today,
+                'tunggakan_count' => $count,
+                'sample' => $sample,
+                'request_url' => request()->fullUrl()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    
+    /**
+     * Get tunggakan data for a specific student (all unpaid bills from all years)
+     */
+    public function getTunggakanData($santriId)
+    {
+        try {
+            \Log::info('getTunggakanData called for santri_id: ' . $santriId);
+            
+            // Debug request
+            \Log::debug('REQUEST URL: ' . request()->fullUrl());
+            
+            // Ambil tahun ajaran aktif
+            $activeTahunAjaran = TahunAjaran::getActive();
+            if (!$activeTahunAjaran) {
+                \Log::error('No active tahun ajaran found in getTunggakanData');
+                return response()->json(['error' => 'Tidak ada tahun ajaran aktif'], 400);
+            }
+            
+            \Log::info('Active tahun ajaran in getTunggakanData: ' . $activeTahunAjaran->id . ', nama: ' . $activeTahunAjaran->nama);
+            
+            // Ambil semua tagihan santri yang belum lunas DAN sudah jatuh tempo
+            $today = now()->format('Y-m-d');
+            
+            $tagihanSantri = TagihanSantri::where('santri_id', $santriId)
+                ->whereRaw('nominal_dibayar + nominal_keringanan < nominal_tagihan')
+                ->where(function($query) use ($today, $activeTahunAjaran) {
+                    // Tagihan yang sudah jatuh tempo
+                    $query->where('tanggal_jatuh_tempo', '<', $today)
+                          // Atau tagihan dari tahun ajaran sebelumnya (otomatis dianggap tunggakan)
+                          ->orWhere('tahun_ajaran_id', '!=', $activeTahunAjaran->id);
+                })
+                ->with(['jenisTagihan', 'tahunAjaran', 'transaksis'])
+                ->orderBy('tahun_ajaran_id', 'desc')
+                ->orderBy('jenis_tagihan_id')
+                ->get();
+                
+            \Log::info('Found tunggakan count: ' . $tagihanSantri->count());
+            
+            $tunggakan = $tagihanSantri->map(function ($tagihan) {
+                return [
+                    'id' => $tagihan->id,
+                    'jenis_tagihan' => $tagihan->jenisTagihan->nama,
+                    'jenis_tagihan_id' => $tagihan->jenis_tagihan_id,
+                    'bulan' => $tagihan->bulan,
+                    'tahun' => $tagihan->tahun,
+                    'tahun_ajaran' => $tagihan->tahunAjaran->nama ?? 'Tidak diketahui',
+                    'tahun_ajaran_id' => $tagihan->tahun_ajaran_id,
+                    'nominal_tagihan' => $tagihan->nominal_tagihan,
+                    'nominal_dibayar' => $tagihan->nominal_dibayar,
+                    'nominal_keringanan' => $tagihan->nominal_keringanan,
+                    'sisa_tagihan' => $tagihan->sisa_tagihan,
+                    'status_pembayaran' => $tagihan->status_pembayaran,
+                    'tanggal_jatuh_tempo' => $tagihan->tanggal_jatuh_tempo,
+                    'is_jatuh_tempo' => $tagihan->is_jatuh_tempo,
+                    'keterangan' => $tagihan->keterangan,
+                    'kategori_tagihan' => $tagihan->jenisTagihan->kategori_tagihan ?? 'Rutin',
+                    'is_bulanan' => $tagihan->jenisTagihan->is_bulanan ?? false,
+                    'transaksis' => $tagihan->transaksis->map(function ($transaksi) {
+                        return [
+                            'id' => $transaksi->id,
+                            'nominal' => $transaksi->nominal,
+                            'tanggal' => $transaksi->tanggal,
+                            'keterangan' => $transaksi->keterangan,
+                            'tipe_pembayaran' => $transaksi->tipe_pembayaran,
+                        ];
+                    })
+                ];
+            });
+            
+            \Log::debug('TUNGGAKAN DATA: Returning ' . count($tunggakan) . ' records');
+            
+            // Debug output
+            if (count($tunggakan) > 0) {
+                \Log::debug('SAMPLE TUNGGAKAN: ' . json_encode($tunggakan[0]));
+            } else {
+                \Log::debug('NO TUNGGAKAN FOUND');
+            }
+            
+            return response()->json($tunggakan);
+        } catch (\Exception $e) {
+            \Log::error('Error in getTunggakanData: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }

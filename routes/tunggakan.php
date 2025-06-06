@@ -21,4 +21,11 @@ Route::middleware(['auth'])->prefix('keuangan/tunggakan')->name('keuangan.tungga
     
     // Print Laporan
     Route::get('/print', [TunggakanController::class, 'printLaporan'])->name('print');
+    
+    // Automation Management
+    Route::get('/automation', [TunggakanController::class, 'automationManagement'])->name('automation');
+    Route::post('/copy-routine', [TunggakanController::class, 'copyRoutineTagihan'])->name('copy-routine');
+    Route::post('/preview-copy-routine', [TunggakanController::class, 'previewCopyRoutineTagihan'])->name('preview-copy-routine');
+    Route::post('/automation-preview', [TunggakanController::class, 'automationPreview'])->name('automation-preview');
+    Route::post('/automation-execute', [TunggakanController::class, 'automationExecute'])->name('automation-execute');
 });

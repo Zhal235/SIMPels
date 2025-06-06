@@ -10,6 +10,7 @@ use App\Models\JenisTagihanKelas;
 use App\Models\BukuKas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class JenisTagihanController extends Controller
 {
@@ -21,7 +22,8 @@ class JenisTagihanController extends Controller
         $jenisTagihans = JenisTagihan::with(['tahunAjaran', 'bukuKas'])->paginate(10);
         $activeTahunAjaran = TahunAjaran::getActive();
         $bukuKasList = BukuKas::where('is_active', true)->orderBy('nama_kas')->get();
-        return view('keuangan.jenis_tagihan.index', compact('jenisTagihans', 'activeTahunAjaran', 'bukuKasList'));
+        $tahunAjarans = TahunAjaran::orderBy('nama_tahun_ajaran', 'desc')->get();
+        return view('keuangan.jenis_tagihan.index', compact('jenisTagihans', 'activeTahunAjaran', 'bukuKasList', 'tahunAjarans'));
     }
 
     /**
@@ -344,6 +346,7 @@ class JenisTagihanController extends Controller
                                 'bulan' => $bulan,
                                 'nominal_tagihan' => $nominal,
                                 'nominal_dibayar' => 0,
+                                'tanggal_jatuh_tempo' => $this->calculateDueDateForBulanan($bulan),
                                 'status' => 'aktif'
                             ]);
                         }
@@ -363,6 +366,7 @@ class JenisTagihanController extends Controller
                             'bulan' => $activeTahunAjaran->tahun_mulai . '-07', // Format bulan yang konsisten (Juli tahun mulai)
                             'nominal_tagihan' => $nominal,
                             'nominal_dibayar' => 0,
+                            'tanggal_jatuh_tempo' => $this->calculateDueDateForInsidentil($jenisTagihan, $activeTahunAjaran),
                             'status' => 'aktif'
                         ]);
                     }
@@ -391,5 +395,34 @@ class JenisTagihanController extends Controller
         }
         
         return $bulanList;
+    }
+
+    /**
+     * Calculate due date for tagihan bulanan
+     */
+    private function calculateDueDateForBulanan($bulan)
+    {
+        // Format bulan: YYYY-MM
+        $parts = explode('-', $bulan);
+        if (count($parts) === 2) {
+            $tahun = (int) $parts[0];
+            $bulanInt = (int) $parts[1];
+            
+            // Set jatuh tempo pada tanggal 15 setiap bulan
+            return \Carbon\Carbon::createFromDate($tahun, $bulanInt, 15);
+        }
+        
+        // Fallback: 30 hari dari sekarang
+        return \Carbon\Carbon::now()->addDays(30);
+    }
+
+    /**
+     * Calculate due date for tagihan insidentil/tahunan
+     */
+    private function calculateDueDateForInsidentil($jenisTagihan, $tahunAjaran)
+    {
+        // Untuk tagihan insidentil, set jatuh tempo 3 bulan dari tanggal pembuatan
+        // Atau bisa disesuaikan berdasarkan kebijakan sekolah
+        return \Carbon\Carbon::now()->addMonths(3);
     }
 }

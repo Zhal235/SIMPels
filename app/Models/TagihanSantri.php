@@ -20,20 +20,23 @@ class TagihanSantri extends Model
         'nominal_dibayar',
         'nominal_keringanan', // Tambahkan kolom ini
         'status',
-        'keterangan'
+        'keterangan',
+        'tanggal_jatuh_tempo'
     ];
 
     protected $casts = [
         'nominal_tagihan' => 'decimal:2',
         'nominal_dibayar' => 'decimal:2',
         'nominal_keringanan' => 'decimal:2', // Tambahkan casting
+        'tanggal_jatuh_tempo' => 'date'
     ];
 
     protected $appends = [
         'sisa_tagihan', 
         'status_pembayaran', 
         'persentase_pembayaran',
-        'nominal_harus_dibayar' // Nominal setelah dikurangi keringanan
+        'nominal_harus_dibayar', // Nominal setelah dikurangi keringanan
+        'is_jatuh_tempo'
     ];
 
     /**
@@ -94,6 +97,23 @@ class TagihanSantri extends Model
     public function scopeAktif($query)
     {
         return $query->where('status', 'aktif');
+    }
+
+    /**
+     * Scope untuk filter tagihan yang sudah jatuh tempo
+     */
+    public function scopeJatuhTempo($query)
+    {
+        return $query->where('tanggal_jatuh_tempo', '<', now())
+                    ->whereNotNull('tanggal_jatuh_tempo');
+    }
+
+    /**
+     * Scope untuk filter tagihan yang belum lunas
+     */
+    public function scopeBelumLunas($query)
+    {
+        return $query->whereRaw('(nominal_tagihan - nominal_dibayar - COALESCE(nominal_keringanan, 0)) > 0');
     }
 
     /**
@@ -173,6 +193,18 @@ class TagihanSantri extends Model
     public function getNominalHarusDibayarAttribute()
     {
         return $this->nominal_tagihan - $this->nominal_keringanan;
+    }
+
+    /**
+     * Cek apakah tagihan sudah jatuh tempo
+     */
+    public function getIsJatuhTempoAttribute()
+    {
+        if (!$this->tanggal_jatuh_tempo) {
+            return false;
+        }
+        
+        return now()->greaterThan($this->tanggal_jatuh_tempo);
     }
 
     /**

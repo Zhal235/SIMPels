@@ -14,6 +14,13 @@
             <p class="text-sm text-gray-500 mt-1">Kelola jenis tagihan dan nominal pembayaran untuk santri.</p>
         </div>
         <div class="flex items-center gap-2 w-full sm:w-auto">
+            <button onclick="openAutomationModal()"
+               class="w-full sm:w-auto bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-150 ease-in-out flex items-center justify-center gap-2 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                </svg>
+                Otomatisasi Tagihan
+            </button>
             <button onclick="openCreateModal()"
                class="w-full sm:w-auto bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition duration-150 ease-in-out flex items-center justify-center gap-2 shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -346,6 +353,148 @@
                     </svg>
                     <span id="edit-submit-text">Simpan Perubahan</span>
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Otomatisasi Tagihan -->
+<div id="automationModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                    </svg>
+                    Otomatisasi Tagihan Rutin
+                </h3>
+                <button onclick="closeAutomationModal()" class="text-green-100 hover:text-white transition duration-150 ease-in-out">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="px-6 py-6 max-h-[70vh] overflow-y-auto">
+                <!-- Informasi -->
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                <strong>Otomatisasi Tagihan Rutin:</strong> Fitur ini akan menyalin semua tagihan rutin dari tahun ajaran sebelumnya ke tahun ajaran yang aktif saat ini. Hanya berlaku untuk santri yang masih aktif.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Otomatisasi -->
+                <form id="automationForm" onsubmit="submitAutomation(event)">
+                    @csrf
+                    
+                    <!-- Pilihan Tahun Ajaran -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="tahun_ajaran_asal" class="block text-sm font-medium text-gray-700 mb-2">
+                                Tahun Ajaran Asal
+                            </label>
+                            <select id="tahun_ajaran_asal" name="tahun_ajaran_asal" 
+                                    class="w-full border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500" required>
+                                <option value="">Pilih Tahun Ajaran Asal</option>
+                                @foreach($tahunAjarans ?? [] as $ta)
+                                    @if(!$ta->is_active)
+                                    <option value="{{ $ta->id }}">{{ $ta->nama_tahun_ajaran }}</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="tahun_ajaran_tujuan" class="block text-sm font-medium text-gray-700 mb-2">
+                                Tahun Ajaran Tujuan
+                            </label>
+                            <select id="tahun_ajaran_tujuan" name="tahun_ajaran_tujuan" 
+                                    class="w-full border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 bg-gray-100" readonly>
+                                @foreach($tahunAjarans ?? [] as $ta)
+                                    @if($ta->is_active)
+                                    <option value="{{ $ta->id }}" selected>{{ $ta->nama_tahun_ajaran }} (Aktif)</option>
+                                    @endif
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Filter Kategori -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Filter Kategori Tagihan
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="kategori_tagihan[]" value="Rutin" 
+                                       class="rounded border-gray-300 text-green-600 focus:ring-green-500" checked>
+                                <span class="ml-2 text-sm text-gray-700">Tagihan Rutin</span>
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Hanya tagihan rutin yang akan disalin secara otomatis</p>
+                    </div>
+
+                    <!-- Opsi Tambahan -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Opsi Tambahan
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" name="replace_existing" value="1" 
+                                       class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+                                <span class="ml-2 text-sm text-gray-700">Ganti tagihan yang sudah ada</span>
+                            </label>
+                            <p class="text-xs text-gray-500 ml-6">Jika dicentang, tagihan yang sudah ada akan diganti dengan yang baru</p>
+                        </div>
+                    </div>
+
+                    <!-- Preview Section -->
+                    <div id="previewSection" class="hidden mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-3">Preview Data yang akan Disalin</h4>
+                        <div id="previewContent" class="bg-gray-50 rounded-lg p-4">
+                            <!-- Preview content will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex justify-between items-center pt-4">
+                        <button type="button" onclick="previewAutomation()" 
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-150 ease-in-out flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            Preview
+                        </button>
+                        
+                        <div class="flex gap-2">
+                            <button type="button" onclick="closeAutomationModal()" 
+                                    class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition duration-150 ease-in-out">
+                                Batal
+                            </button>
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-150 ease-in-out flex items-center gap-2">
+                                <svg class="w-4 h-4 hidden animate-spin" id="automation-loading-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                                <span id="automation-submit-text">Jalankan Otomatisasi</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -701,6 +850,95 @@ document.getElementById('createModal').addEventListener('click', function(e) {
 document.getElementById('editModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeEditModal();
+    }
+});
+
+// Automation Modal Functions
+function openAutomationModal() {
+    document.getElementById('automationModal').classList.remove('hidden');
+}
+
+function closeAutomationModal() {
+    document.getElementById('automationModal').classList.add('hidden');
+    // Reset form
+    document.getElementById('automationForm').reset();
+    document.getElementById('previewSection').classList.add('hidden');
+}
+
+function previewAutomation() {
+    const form = document.getElementById('automationForm');
+    const formData = new FormData(form);
+    
+    fetch('{{ route("keuangan.tunggakan.automation-preview") }}', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('previewSection').classList.remove('hidden');
+            document.getElementById('previewContent').innerHTML = data.preview_html;
+        } else {
+            alert(data.message || 'Terjadi kesalahan saat memuat preview');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan saat memuat preview');
+    });
+}
+
+function submitAutomation(event) {
+    event.preventDefault();
+    
+    // Show loading
+    document.getElementById('automation-loading-spinner').classList.remove('hidden');
+    document.getElementById('automation-submit-text').textContent = 'Memproses...';
+    
+    const form = document.getElementById('automationForm');
+    const formData = new FormData(form);
+    
+    fetch('{{ route("keuangan.tunggakan.automation-execute") }}', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json',
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Otomatisasi berhasil! ${data.created_count} tagihan berhasil disalin.`);
+            closeAutomationModal();
+            // Refresh page to show updated data
+            window.location.reload();
+        } else {
+            alert(data.message || 'Terjadi kesalahan saat menjalankan otomatisasi');
+        }
+        
+        // Reset button state
+        document.getElementById('automation-loading-spinner').classList.add('hidden');
+        document.getElementById('automation-submit-text').textContent = 'Jalankan Otomatisasi';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Terjadi kesalahan saat menjalankan otomatisasi');
+        
+        // Reset button state
+        document.getElementById('automation-loading-spinner').classList.add('hidden');
+        document.getElementById('automation-submit-text').textContent = 'Jalankan Otomatisasi';
+    });
+}
+
+// Close automation modal when clicking outside
+document.getElementById('automationModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeAutomationModal();
     }
 });
 </script>

@@ -62,4 +62,12 @@ class TahunAjaran extends Model
     {
         return $this->nama_tahun_ajaran . ' (' . $this->tahun_mulai . '/' . $this->tahun_selesai . ')';
     }
+    
+    /**
+     * Accessor untuk nama (alias ke nama_tahun_ajaran)
+     */
+    public function getNamaAttribute()
+    {
+        return $this->nama_tahun_ajaran ?? $this->tahun_mulai . '/' . $this->tahun_selesai;
+    }
 }

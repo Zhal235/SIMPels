@@ -146,8 +146,16 @@
                         <p class="text-xl font-bold text-red-600">Rp {{ number_format($totalTunggakan, 0, ',', '.') }}</p>
                     </div>
                     <div>
+                        <span class="text-gray-600 text-sm">Tunggakan Tahun Ajaran Saat Ini:</span>
+                        <p class="font-medium text-red-600">Rp {{ number_format($totalTunggakanTahunIni, 0, ',', '.') }}</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-600 text-sm">Tunggakan Tahun Ajaran Sebelumnya:</span>
+                        <p class="font-medium text-red-600">Rp {{ number_format($totalTunggakanTahunSebelumnya, 0, ',', '.') }}</p>
+                    </div>
+                    <div>
                         <span class="text-gray-600 text-sm">Jumlah Tagihan:</span>
-                        <p class="font-medium">{{ $tagihan->count() }} tagihan</p>
+                        <p class="font-medium">{{ $tagihanTahunIni->count() + $tagihanTahunSebelumnya->count() }} tagihan</p>
                     </div>                    <div class="pt-3">
                         <a href="{{ route('keuangan.pembayaran-santri.index', ['santri_id' => $santri->id]) }}" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center justify-center w-full">
                             <span class="material-icons-outlined text-base mr-1">payments</span>
@@ -160,40 +168,53 @@
     </div>
     
     <!-- Tagihan Table -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <h3 class="text-lg font-semibold text-gray-900 border-b p-4">Detail Tagihan</h3>
+    <div class="bg-white rounded-lg shadow overflow-hidden" x-data="{ showPrevious: false }">
+        <div class="flex justify-between items-center border-b p-4">
+            <h3 class="text-lg font-semibold text-gray-900">Detail Tagihan</h3>
+            <div>
+                <button @click="showPrevious = !showPrevious" class="px-3 py-1 text-sm rounded-md border hover:bg-gray-50 inline-flex items-center">
+                    <span x-text="showPrevious ? 'Sembunyikan Tagihan Tahun Sebelumnya' : 'Tampilkan Tagihan Tahun Sebelumnya'"></span>
+                    <span class="material-icons-outlined text-sm ml-1" x-text="showPrevious ? 'expand_less' : 'expand_more'"></span>
+                </button>
+            </div>
+        </div>
         
-        @if($tagihan->count() > 0)
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Tanggal Tagihan
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Jenis Tagihan
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Periode
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Nominal
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Sudah Dibayar
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Sisa Tagihan
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @foreach($tagihan as $item)
-                    <tr class="hover:bg-gray-50">
+        <div>
+            <h4 class="px-4 py-2 bg-blue-50 text-blue-700 text-sm font-medium border-b border-blue-100">
+                Tahun Ajaran {{ $tahunAjaran->nama }}
+            </h4>
+            
+            @if($tagihanTahunIni->count() > 0)
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Tanggal Tagihan
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Jenis Tagihan
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Periode
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Nominal
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Sudah Dibayar
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Sisa Tagihan
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @foreach($tagihanTahunIni as $item)
+                        <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ \Carbon\Carbon::parse($item->tanggal_tagihan)->format('d/m/Y') }}
                         </td>
@@ -241,10 +262,106 @@
         </div>
         @else
         <div class="p-8 text-center">
-            <div class="text-gray-500 text-lg mb-4">Tidak ada data tunggakan untuk santri ini.</div>
-            <div class="text-gray-400">Semua tagihan sudah dilunasi.</div>
+            <div class="text-gray-500 text-lg mb-4">Tidak ada data tunggakan tahun ini untuk santri ini.</div>
+            <div class="text-gray-400">Semua tagihan tahun ini sudah dilunasi.</div>
         </div>
         @endif
+        
+        <!-- Previous Years Tagihan (Collapsed by default) -->
+        <div x-show="showPrevious" x-transition class="border-t">
+            <h4 class="px-4 py-2 bg-orange-50 text-orange-700 text-sm font-medium border-b border-orange-100">
+                Tahun Ajaran Sebelumnya
+            </h4>
+            
+            @if($tagihanTahunSebelumnya->count() > 0)
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Tahun Ajaran
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Tanggal Tagihan
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Jenis Tagihan
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Periode
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Nominal
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Sudah Dibayar
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Sisa Tagihan
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @foreach($tagihanTahunSebelumnya as $item)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ $item->tahunAjaran->nama }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ \Carbon\Carbon::parse($item->tanggal_tagihan)->format('d/m/Y') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ $item->jenisTagihan->nama }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ $item->bulan_tahun }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                Rp {{ number_format($item->nominal_tagihan, 0, ',', '.') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                Rp {{ number_format($item->nominal_dibayar, 0, ',', '.') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
+                                Rp {{ number_format($item->sisa_tagihan, 0, ',', '.') }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                @if($item->status_pembayaran == 'lunas')
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        Lunas
+                                    </span>
+                                @elseif($item->status_pembayaran == 'sebagian')
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        Sebagian
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        Belum Bayar
+                                    </span>
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="bg-gray-50 font-medium">
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 text-right text-gray-900">Subtotal Tunggakan Tahun Sebelumnya:</td>
+                            <td class="px-6 py-4 text-lg font-bold text-red-600">Rp {{ number_format($totalTunggakanTahunSebelumnya, 0, ',', '.') }}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            @else
+            <div class="p-8 text-center">
+                <div class="text-gray-500 text-lg mb-4">Tidak ada tunggakan tahun sebelumnya.</div>
+                <div class="text-gray-400">Semua tagihan tahun sebelumnya sudah dilunasi.</div>
+            </div>
+            @endif
+        </div>
     </div>
 </div>
 @endsection
