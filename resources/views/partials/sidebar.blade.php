@@ -95,6 +95,38 @@
                     <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/tagihan-santri*') ? 'text-white' : 'text-blue-400' }}">receipt_long</span>
                     <span class="menu-label">Tagihan Santri</span>
                 </a>
+                <a href="{{ route('keuangan.keringanan-tagihan.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/keringanan-tagihan*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/keringanan-tagihan*') ? 'text-white' : 'text-blue-400' }}">price_check</span>
+                    <span class="menu-label">Keringanan Tagihan</span>
+                </a>
+                
+                <!-- Tunggakan Menu -->
+                <div x-data="{ openTunggakan: {{ request()->is('keuangan/tunggakan*') ? 'true' : 'false' }} }" class="pl-0">
+                    <button @click="openTunggakan = !openTunggakan" class="flex items-center space-x-3 w-full px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/tunggakan*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                        <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/tunggakan*') ? 'text-white' : 'text-blue-400' }}">warning</span>
+                        <span class="menu-label flex-1 text-left">Tunggakan</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform transition-transform duration-200" :class="{ 'rotate-90': openTunggakan }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                    
+                    <div x-show="openTunggakan" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" class="pl-10 space-y-1 mt-1">
+                        <a href="{{ route('keuangan.tunggakan.santri-aktif') }}" class="flex items-center space-x-2 px-3 py-1.5 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/tunggakan/santri-aktif*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <span class="material-icons-outlined text-sm opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/tunggakan/santri-aktif*') ? 'text-white' : 'text-blue-400' }}">person</span>
+                            <span class="menu-label">Santri Aktif</span>
+                        </a>
+                        
+                        <a href="{{ route('keuangan.tunggakan.santri-mutasi') }}" class="flex items-center space-x-2 px-3 py-1.5 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/tunggakan/santri-mutasi*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <span class="material-icons-outlined text-sm opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/tunggakan/santri-mutasi*') ? 'text-white' : 'text-blue-400' }}">swap_horiz</span>
+                            <span class="menu-label">Mutasi</span>
+                        </a>
+                        
+                        <a href="{{ route('keuangan.tunggakan.santri-alumni') }}" class="flex items-center space-x-2 px-3 py-1.5 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/tunggakan/santri-alumni*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <span class="material-icons-outlined text-sm opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/tunggakan/santri-alumni*') ? 'text-white' : 'text-blue-400' }}">school</span>
+                            <span class="menu-label">Alumni</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
 

@@ -85,4 +85,20 @@ public function rfidTag()
         return $this->hasMany(TagihanSantri::class);
     }
 
+    /**
+     * Relasi dengan KeringananTagihan 
+     */
+    public function keringananTagihans()
+    {
+        return $this->hasMany(KeringananTagihan::class);
+    }
+
+    /**
+     * Relasi dengan KeringananTagihan di mana santri ini menjadi tertanggung
+     */
+    public function keringananTertanggung()
+    {
+        return $this->hasMany(KeringananTagihan::class, 'santri_tertanggung_id');
+    }
+
 }

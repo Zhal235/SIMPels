@@ -14,10 +14,22 @@ class PembayaranSantriController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+        // Check if santri_id is provided in the request
+        $selectedSantriId = $request->input('santri_id');
+        
         // Ambil semua santri aktif dengan relasi asrama dan kelas
-        $santris = Santri::where('status', 'aktif')
+        $santris = Santri::where(function($query) {
+            // Include active students by default
+            $query->where('status', 'aktif');
+            
+            // Also include mutasi and alumni students if they have unpaid bills
+            $query->orWhereHas('tagihan', function($tagihan) {
+                $tagihan->whereRaw('nominal_dibayar + nominal_keringanan < nominal_tagihan')
+                       ->where('status', 'aktif');
+            });
+        })
             ->with(['asrama', 'asrama_anggota_terakhir.asrama', 'kelasRelasi'])
             ->orderBy('nama_santri')
             ->get()
@@ -57,8 +69,25 @@ class PembayaranSantriController extends Controller
                 ->unique('id')
                 ->values();
         }
+        
+        // Handle selected santri if santri_id is provided
+        $selectedSantri = null;
+        if ($selectedSantriId) {
+            $selectedSantri = $santris->where('id', $selectedSantriId)->first();
+            
+            // If found, pre-select this santri's payment data
+            if ($selectedSantri) {
+                $this->getPaymentData($selectedSantriId); // This data will be loaded via AJAX
+            }
+        }
 
-        return view('keuangan.pembayaran_santri.index', compact('santris', 'jenisTagihans', 'activeTahunAjaran'));
+        return view('keuangan.pembayaran_santri.index', compact(
+            'santris', 
+            'jenisTagihans', 
+            'activeTahunAjaran',
+            'selectedSantri',
+            'selectedSantriId'
+        ));
     }
 
     /**

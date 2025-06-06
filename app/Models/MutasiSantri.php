@@ -13,12 +13,20 @@ class MutasiSantri extends Model
     protected $table = 'mutasi_santris';
 
     protected $fillable = [
-    'santri_id',
-    'nama',
-    'alasan',
-    'tujuan_mutasi',
-    'tanggal_mutasi',   // jangan lupa ini
-];
+        'santri_id',
+        'nama',
+        'alasan',
+        'tujuan_mutasi',
+        'tanggal_mutasi',
+        'keterangan'
+    ];
+    
+    // Cast tanggal mutasi sebagai date
+    protected $dates = [
+        'tanggal_mutasi',
+        'created_at',
+        'updated_at'
+    ];
 
 
 

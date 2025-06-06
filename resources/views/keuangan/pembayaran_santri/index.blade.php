@@ -685,9 +685,19 @@ togglePaymentSelection(paymentId) {
     // Ensure selectedPayments contains unique, numeric IDs
     this.selectedPayments = [...new Set(this.selectedPayments.map(id => Number(id)))];
     console.log('[togglePaymentSelection] selectedPayments after toggle:', JSON.parse(JSON.stringify(this.selectedPayments)));
-},
-init() {
+},        init() {
     console.log('[Alpine init] Component initializing and setting up watchers.');
+    
+    // Check if we have a pre-selected santri from the backend
+    const preSelectedSantriId = @json($selectedSantriId ?? null);
+    if (preSelectedSantriId) {
+        const foundSantri = this.santriList.find(s => s.id == preSelectedSantriId);
+        if (foundSantri) {
+            this.selectedSantri = foundSantri;
+            this.loadPaymentData(foundSantri.id);
+        }
+    }
+    
     this.$watch('selectedPayments', (currentSelectedIdsOriginal) => {
         // Ensure all IDs in currentSelectedIds are numbers for consistent comparison
         const currentSelectedIds = currentSelectedIdsOriginal.map(id => Number(id));

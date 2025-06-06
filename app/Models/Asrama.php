@@ -19,9 +19,15 @@ class Asrama extends Model
         return $this->hasMany(\App\Models\Santri::class, 'asrama_id');
     }
 
+    // Relasi ke AsramaAnggota
+    public function anggota_asrama()
+    {
+        return $this->hasMany(\App\Models\AsramaAnggota::class, 'asrama_id');
+    }
+
     // Alias anggota() agar controller bisa pakai nama anggota()
     public function anggota()
     {
-        return $this->santris();
+        return $this->anggota_asrama();
     }
 }

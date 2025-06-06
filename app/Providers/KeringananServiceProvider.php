@@ -5,12 +5,14 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use App\Models\Services\KeringananTagihanService;
 
-class AppServiceProvider extends ServiceProvider
+class KeringananServiceProvider extends ServiceProvider
 {
     /**
-     * Register any application services.
+     * Register services.
+     *
+     * @return void
      */
-    public function register(): void
+    public function register()
     {
         $this->app->singleton(KeringananTagihanService::class, function ($app) {
             return new KeringananTagihanService();
@@ -18,9 +20,11 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Bootstrap any application services.
+     * Bootstrap services.
+     *
+     * @return void
      */
-    public function boot(): void
+    public function boot()
     {
         //
     }

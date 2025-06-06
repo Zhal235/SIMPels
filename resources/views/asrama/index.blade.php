@@ -219,7 +219,7 @@
                     <td class="px-4 py-3 text-center">{{ $row->kode }}</td>
                     <td class="px-4 py-3">{{ $row->nama }}</td>
                     <td class="px-4 py-3">{{ $row->wali_asrama ?? '-' }}</td>
-                    <td class="px-4 py-3 text-center">{{ $row->santris_count }}</td>
+                    <td class="px-4 py-3 text-center">{{ $row->anggota_asrama_count }}</td>
                     <td class="px-4 py-3 text-center">
                         <div class="flex justify-center items-center gap-2">
                         <button onclick="openEditModal({{ $row->id }}, '{{ $row->kode }}', '{{ addslashes($row->nama) }}', '{{ addslashes($row->wali_asrama ?? '') }}')" title="Edit Asrama"

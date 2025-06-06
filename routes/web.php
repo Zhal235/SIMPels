@@ -242,4 +242,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/santris-with-asrama', [AsramaController::class, 'getSantrisWithAsrama'])->name('api.santris-with-asrama');
 }); // Close auth middleware group
 
+// Include route keringanan tagihan
+require __DIR__.'/keringanan-tagihan.php';
+
+// Include route tunggakan santri
+require __DIR__.'/tunggakan.php';
+
 require __DIR__.'/auth.php';

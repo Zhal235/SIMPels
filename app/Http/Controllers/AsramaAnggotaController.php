@@ -12,14 +12,16 @@ class AsramaAnggotaController extends Controller
     {
         $asrama = Asrama::findOrFail($asrama_id);
 
-        // Anggota asrama dengan status bukan mutasi
-        $anggota = Santri::where('asrama_id', $asrama_id)
-                         ->where('status', '<>', 'mutasi')
-                         ->get();
-
-        // Santri yang belum punya asrama dan status bukan mutasi
-        $santriNotIn = Santri::whereNull('asrama_id')
-                             ->where('status', '<>', 'mutasi')
+        // Anggota asrama dengan status aktif melalui tabel relasi
+        $anggota = Santri::whereHas('asrama_anggota', function($query) use ($asrama_id) {
+                        $query->where('asrama_id', $asrama_id);
+                    })
+                    ->where('status', 'aktif')
+                    ->get();
+        
+        // Santri yang belum punya asrama dan status aktif
+        $santriNotIn = Santri::whereDoesntHave('asrama_anggota')
+                             ->where('status', 'aktif')
                              ->get();
 
         return view('asrama.anggota', compact('asrama', 'anggota', 'santriNotIn'));
@@ -31,8 +33,23 @@ class AsramaAnggotaController extends Controller
             'santri_id' => 'required|array',
         ]);
 
-        Santri::whereIn('id', $request->santri_id)
-              ->update(['asrama_id' => $asrama_id]);
+        $asrama = Asrama::findOrFail($asrama_id);
+        $tahunAjaran = \App\Models\TahunAjaran::getActive();
+        
+        if (!$tahunAjaran) {
+            return redirect()->back()->with('error', 'Tidak ada tahun ajaran aktif.');
+        }
+
+        // Tambahkan ke tabel asrama_anggotas
+        foreach ($request->santri_id as $santri_id) {
+            \App\Models\AsramaAnggota::create([
+                'santri_id' => $santri_id,
+                'asrama_id' => $asrama_id,
+                'tahun_ajaran_id' => $tahunAjaran->id,
+                'tanggal_masuk' => now(),
+                'status' => 'aktif'
+            ]);
+        }
 
         return redirect()->route('asrama.anggota.index', $asrama_id)
                          ->with('success', 'Santri berhasil ditambahkan ke asrama.');
@@ -40,12 +57,15 @@ class AsramaAnggotaController extends Controller
 
     public function destroy($asrama_id, $santri_id)
     {
-        $santri = Santri::where('id', $santri_id)
+        $asramaAnggota = \App\Models\AsramaAnggota::where('santri_id', $santri_id)
                         ->where('asrama_id', $asrama_id)
+                        ->where('status', 'aktif')
                         ->firstOrFail();
-
-        $santri->asrama_id = null;
-        $santri->save();
+        
+        // Set status ke 'nonaktif' dan tanggal keluar
+        $asramaAnggota->status = 'nonaktif';
+        $asramaAnggota->tanggal_keluar = now();
+        $asramaAnggota->save();
 
         return redirect()->route('asrama.anggota.index', $asrama_id)
                          ->with('success', 'Santri berhasil dikeluarkan dari asrama.');

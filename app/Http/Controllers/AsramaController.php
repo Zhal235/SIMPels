@@ -12,8 +12,10 @@ class AsramaController extends Controller
 {
     public function index()
 {
-    $asrama = Asrama::withCount(['santris' => function($query) {
-        $query->where('status', 'aktif');
+    $asrama = Asrama::withCount(['anggota_asrama' => function($query) {
+        $query->whereHas('santri', function($q) {
+            $q->where('status', 'aktif');
+        });
     }])->paginate(10);
     return view('asrama.index', compact('asrama'));
 }
@@ -64,20 +66,36 @@ class AsramaController extends Controller
     }
 
     public function destroy($id)
-{
-    $asrama = Asrama::findOrFail($id);
+    {
+        $asrama = Asrama::findOrFail($id);
 
-    // Set asrama_id semua santri yang ada di asrama ini menjadi NULL
-    foreach ($asrama->santris as $santri) {
-        $santri->asrama_id = null;
-        $santri->save();
+        // Nonaktifkan semua anggota asrama yang aktif
+        foreach ($asrama->anggota_asrama()->where('status', 'aktif')->get() as $anggota) {
+            $anggota->status = 'nonaktif';
+            $anggota->tanggal_keluar = now();
+            $anggota->save();
+        }
+
+        // Hapus asrama
+        $asrama->delete();
+
+        return redirect()->route('asrama.index')->with('success', 'Asrama dan anggotanya berhasil dihapus!');
     }
-
-    // Hapus asrama
-    $asrama->delete();
-
-    return redirect()->route('asrama.index')->with('success', 'Asrama dan anggotanya berhasil dihapus!');
-}
+    
+    // Menampilkan detail asrama dan anggota
+    public function show(Asrama $asrama)
+    {
+        // Load santri aktif di asrama ini melalui relasi anggota_asrama
+        $anggotaAsrama = $asrama->anggota_asrama()
+            ->with('santri')
+            ->whereHas('santri', function($query) {
+                $query->where('status', 'aktif');
+            })
+            ->where('status', 'aktif')
+            ->get();
+            
+        return view('asrama.show', compact('asrama', 'anggotaAsrama'));
+    }
 
 
     // Form pindah asrama
@@ -95,23 +113,61 @@ class AsramaController extends Controller
             'santri_id' => 'required|array',
             'asrama_id' => 'required|exists:asrama,id',
         ]);
-
-        Santri::whereIn('id', $request->santri_id)->update(['asrama_id' => $request->asrama_id]);
-
-        if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'message' => 'Santri berhasil dipindahkan ke asrama baru.']);
+        
+        $asramaBaruId = $request->asrama_id;
+        $tahunAjaran = \App\Models\TahunAjaran::getActive();
+        
+        if (!$tahunAjaran) {
+            return redirect()->back()->with('error', 'Tidak ada tahun ajaran aktif.');
         }
 
-        return redirect()->route('asrama.pindah.form')->with('success', 'Santri berhasil dipindahkan ke asrama baru.');
+        $successCount = 0;
+        
+        foreach ($request->santri_id as $santriId) {
+            // Nonaktifkan asrama anggota yang lama
+            \App\Models\AsramaAnggota::where('santri_id', $santriId)
+                ->where('status', 'aktif')
+                ->update([
+                    'status' => 'nonaktif',
+                    'tanggal_keluar' => now()
+                ]);
+                
+            // Buat asrama anggota baru
+            \App\Models\AsramaAnggota::create([
+                'santri_id' => $santriId,
+                'asrama_id' => $asramaBaruId,
+                'tahun_ajaran_id' => $tahunAjaran->id,
+                'tanggal_masuk' => now(),
+                'status' => 'aktif'
+            ]);
+            
+            $successCount++;
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => $successCount . ' santri berhasil dipindahkan ke asrama baru.']);
+        }
+
+        return redirect()->route('asrama.pindah.form')->with('success', $successCount . ' santri berhasil dipindahkan ke asrama baru.');
     }
 
     // API endpoint untuk mendapatkan data santri dengan asrama
     public function getSantrisWithAsrama()
     {
-        $santris = Santri::with('asrama:id,kode,nama')
+        $santris = Santri::with(['asrama_anggota_terakhir.asrama' => function ($query) {
+                $query->select('id', 'kode', 'nama');
+            }])
             ->where('status', 'aktif')
-            ->select('id', 'nis', 'nama_santri', 'asrama_id')
-            ->get();
+            ->select('id', 'nis', 'nama_santri')
+            ->get()
+            ->map(function($santri) {
+                return [
+                    'id' => $santri->id,
+                    'nis' => $santri->nis,
+                    'nama_santri' => $santri->nama_santri,
+                    'asrama' => $santri->asrama_anggota_terakhir->asrama ?? null
+                ];
+            });
         
         return response()->json($santris);
     }

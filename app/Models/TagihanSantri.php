@@ -18,6 +18,7 @@ class TagihanSantri extends Model
         'bulan',
         'nominal_tagihan',
         'nominal_dibayar',
+        'nominal_keringanan', // Tambahkan kolom ini
         'status',
         'keterangan'
     ];
@@ -25,6 +26,14 @@ class TagihanSantri extends Model
     protected $casts = [
         'nominal_tagihan' => 'decimal:2',
         'nominal_dibayar' => 'decimal:2',
+        'nominal_keringanan' => 'decimal:2', // Tambahkan casting
+    ];
+
+    protected $appends = [
+        'sisa_tagihan', 
+        'status_pembayaran', 
+        'persentase_pembayaran',
+        'nominal_harus_dibayar' // Nominal setelah dikurangi keringanan
     ];
 
     /**
@@ -92,7 +101,7 @@ class TagihanSantri extends Model
      */
     public function getSisaTagihanAttribute()
     {
-        return $this->nominal_tagihan - $this->nominal_dibayar;
+        return $this->nominal_tagihan - $this->nominal_dibayar - $this->nominal_keringanan;
     }
 
     /**
@@ -100,11 +109,24 @@ class TagihanSantri extends Model
      */
     public function getStatusPembayaranAttribute()
     {
+        // Hitung total yang sudah terpenuhi (dibayar + keringanan)
+        $totalTerpenuhi = $this->nominal_dibayar + $this->nominal_keringanan;
+        
+        // Jika pembebasan penuh (gratis)
+        if ($this->nominal_keringanan >= $this->nominal_tagihan) {
+            return 'lunas';
+        }
+        
+        // Jika belum ada pembayaran sama sekali
         if ($this->nominal_dibayar == 0) {
             return 'belum_bayar';
-        } elseif ($this->nominal_dibayar >= $this->nominal_tagihan) {
+        } 
+        // Jika sudah lunas (dibayar + keringanan >= nominal tagihan)
+        elseif ($totalTerpenuhi >= $this->nominal_tagihan) {
             return 'lunas';
-        } else {
+        } 
+        // Jika sudah bayar sebagian
+        else {
             return 'sebagian';
         }
     }
@@ -117,7 +139,10 @@ class TagihanSantri extends Model
         if ($this->nominal_tagihan == 0) {
             return 0;
         }
-        return round(($this->nominal_dibayar / $this->nominal_tagihan) * 100, 2);
+        
+        // Hitung persentase berdasarkan pembayaran + keringanan
+        $totalTerpenuhi = $this->nominal_dibayar + $this->nominal_keringanan;
+        return round(($totalTerpenuhi / $this->nominal_tagihan) * 100, 2);
     }
 
     /**
@@ -143,6 +168,14 @@ class TagihanSantri extends Model
     }
 
     /**
+     * Get nominal yang harus dibayar (setelah keringanan)
+     */
+    public function getNominalHarusDibayarAttribute()
+    {
+        return $this->nominal_tagihan - $this->nominal_keringanan;
+    }
+
+    /**
      * Update nominal dibayar berdasarkan transaksi
      */
     public function updateNominalDibayar()
@@ -164,6 +197,84 @@ class TagihanSantri extends Model
         $this->update([
             'nominal_dibayar' => $totalDibayar
         ]);
+        
+        return $this;
+    }
+
+    /**
+     * Update nominal keringanan
+     * 
+     * @param float $nominalKeringanan
+     * @return $this
+     */
+    public function updateNominalKeringanan($nominalKeringanan)
+    {
+        // Pastikan nilai keringanan tidak melebihi nominal tagihan
+        $nominalKeringanan = min($nominalKeringanan, $this->nominal_tagihan);
+        
+        // Update nilai keringanan
+        $this->update([
+            'nominal_keringanan' => $nominalKeringanan
+        ]);
+        
+        return $this;
+    }
+
+    /**
+     * Check apakah tagihan memiliki keringanan
+     * 
+     * @return bool
+     */
+    public function hasKeringanan()
+    {
+        return $this->nominal_keringanan > 0;
+    }
+    
+    /**
+     * Relasi dengan keringanan tagihan
+     */
+    public function keringanan()
+    {
+        return $this->hasMany(\App\Models\KeringananTagihan::class, 'santri_id', 'santri_id')
+            ->where('tahun_ajaran_id', $this->tahun_ajaran_id)
+            ->where('status', 'aktif')
+            ->where(function($query) {
+                $query->whereNull('jenis_tagihan_id')
+                    ->orWhere('jenis_tagihan_id', $this->jenis_tagihan_id);
+            });
+    }
+    
+    /**
+     * Mendapatkan keringanan aktif untuk tagihan ini
+     * 
+     * @return \App\Models\KeringananTagihan|null
+     */
+    public function getKeringananAktif()
+    {
+        $keringanan = $this->keringanan()->first();
+        
+        if ($keringanan && !$keringanan->isValidByDate()) {
+            return null;
+        }
+        
+        return $keringanan;
+    }
+
+    /**
+     * Aplikasikan keringanan berdasarkan model KeringananTagihan
+     */
+    public function aplikasikanKeringanan(KeringananTagihan $keringanan)
+    {
+        // Pastikan keringanan masih berlaku berdasarkan tanggal
+        if (!$keringanan->isValidByDate()) {
+            return $this;
+        }
+        
+        // Hitung nilai keringanan berdasarkan jenis keringanan
+        $nominalKeringanan = $keringanan->hitungNilaiKeringanan($this->nominal_tagihan);
+        
+        // Update nominal keringanan
+        $this->updateNominalKeringanan($nominalKeringanan);
         
         return $this;
     }
