@@ -89,20 +89,6 @@
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-center">
-                                    @if($tagihan->kategori_tagihan == 'Rutin')
-                                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
-                                        Tanggal 10 setiap bulan
-                                    </span>
-                                    @else
-                                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
-                                        Tanggal {{ $tagihan->tanggal_jatuh_tempo ?? 10 }}
-                                        @if(($tagihan->bulan_jatuh_tempo ?? 0) > 0)
-                                        + {{ $tagihan->bulan_jatuh_tempo }} bulan
-                                        @endif
-                                    </span>
-                                    @endif
-                                </td>
-                                <td class="px-4 py-3 text-center">
                                     @if($tagihan->bukuKas)
                                     <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
                                         {{ $tagihan->bukuKas->nama_kas }}
@@ -112,9 +98,30 @@
                                     @endif
                                 </td>
                                 <td class="px-4 py-3 text-center">
-                                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">
-                                        {{ $tagihan->default_jatuh_tempo_hari ?? 30 }} hari
+                                    @if($tagihan->kategori_tagihan == 'Rutin')
+                                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">
+                                        Tanggal 10 setiap bulan
                                     </span>
+                                    @else
+                                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
+                                        @php
+                                            $tanggal = $tagihan->tanggal_jatuh_tempo ?? 10;
+                                            $bulanTambahan = $tagihan->bulan_jatuh_tempo ?? 0;
+                                        @endphp
+                                        <div class="flex flex-col">
+                                            <span>Tanggal {{ $tanggal }}</span>
+                                            @if($bulanTambahan > 0)
+                                                <span class="text-xs mt-0.5">
+                                                    @if($bulanTambahan == 1)
+                                                        (bulan berikutnya)
+                                                    @else
+                                                        (+{{ $bulanTambahan }} bulan)
+                                                    @endif
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </span>
+                                    @endif
                                 </td>
                                 <td class="px-4 py-3 text-center">
                                     @if($tagihan->is_nominal_per_kelas)
@@ -659,7 +666,6 @@ function openEditModal(id) {
             document.getElementById('edit_is_bulanan').value = data.jenisTagihan.is_bulanan;
             document.getElementById('edit_nominal').value = data.jenisTagihan.nominal;
             document.getElementById('edit_is_nominal_per_kelas').value = data.jenisTagihan.is_nominal_per_kelas;
-            document.getElementById('edit_default_jatuh_tempo_hari').value = data.jenisTagihan.default_jatuh_tempo_hari || 30;
             
             // Update buku kas dropdown with fresh data from server
             const bukuKasSelect = document.getElementById('edit_buku_kas_id');
@@ -692,14 +698,50 @@ function openEditModal(id) {
                 document.getElementById('edit_buku_kas_id').value = data.jenisTagihan.buku_kas_id || '';
             }
             
-            // Update form untuk tanggal dan bulan jatuh tempo
-            document.getElementById('edit_tanggal_jatuh_tempo').value = data.jenisTagihan.tanggal_jatuh_tempo || 10;
-            document.getElementById('edit_bulan_jatuh_tempo').value = data.jenisTagihan.bulan_jatuh_tempo || 0;
+            // Update form untuk tanggal dan bulan jatuh tempo dengan menggunakan try-catch untuk menghindari error
+            try {
+                // Set nilai default jika data belum ada
+                const defaultTanggal = 10;
+                const defaultBulan = 0;
+                
+                // Ambil elemen form
+                const tanggalJatuhTempoEl = document.getElementById('edit_tanggal_jatuh_tempo');
+                const bulanJatuhTempoEl = document.getElementById('edit_bulan_jatuh_tempo');
+                
+                // Set nilai dengan aman, dengan fallback ke default jika data tidak ada
+                if (tanggalJatuhTempoEl) {
+                    tanggalJatuhTempoEl.value = data.jenisTagihan.tanggal_jatuh_tempo !== null && 
+                                              data.jenisTagihan.tanggal_jatuh_tempo !== undefined ? 
+                                              data.jenisTagihan.tanggal_jatuh_tempo : defaultTanggal;
+                }
+                
+                if (bulanJatuhTempoEl) {
+                    bulanJatuhTempoEl.value = data.jenisTagihan.bulan_jatuh_tempo !== null && 
+                                           data.jenisTagihan.bulan_jatuh_tempo !== undefined ? 
+                                           data.jenisTagihan.bulan_jatuh_tempo : defaultBulan;
+                }
+            } catch (error) {
+                console.error("Error setting jatuh tempo values:", error);
+                // Use default values in case of error
+                if (document.getElementById('edit_tanggal_jatuh_tempo')) {
+                    document.getElementById('edit_tanggal_jatuh_tempo').value = 10;
+                }
+                if (document.getElementById('edit_bulan_jatuh_tempo')) {
+                    document.getElementById('edit_bulan_jatuh_tempo').value = 0;
+                }
+            }
             
-            // Setup event listener untuk kategori tagihan
-            document.getElementById('edit_kategori_tagihan').addEventListener('change', handleEditJatuhTempoDisplay);
-            // Inisialisasi tampilan jatuh tempo
-            handleEditJatuhTempoDisplay();
+            // Setup event listener untuk kategori tagihan dengan penanganan error
+            try {
+                const kategoriEl = document.getElementById('edit_kategori_tagihan');
+                if (kategoriEl) {
+                    kategoriEl.addEventListener('change', handleEditJatuhTempoDisplay);
+                }
+                // Inisialisasi tampilan jatuh tempo
+                handleEditJatuhTempoDisplay();
+            } catch (error) {
+                console.error("Error setting up jatuh tempo event listener:", error);
+            }
             
             // Show modal (it was already shown for loading, but ensure it's visible)
             document.getElementById('editModal').classList.remove('hidden');
@@ -724,28 +766,46 @@ function closeEditModal() {
 
 // Fungsi untuk mengelola tampilan field jatuh tempo berdasarkan kategori tagihan
 function handleJatuhTempoDisplay() {
-    const kategoriTagihan = document.getElementById('kategori_tagihan').value;
-    const jatuhTempoInfo = document.querySelector('.jatuh-tempo-settings p');
-    
-    if (kategoriTagihan === 'Rutin') {
-        // Untuk tagihan rutin, tampilkan pesan bahwa jatuh tempo selalu tanggal 10
-        jatuhTempoInfo.innerHTML = 'Untuk tagihan <strong>rutin</strong>, jatuh tempo selalu tanggal 10 setiap bulan. Input di atas akan diabaikan.';
-    } else {
-        // Untuk tagihan insidental, tampilkan pesan normal
-        jatuhTempoInfo.innerHTML = 'Untuk tagihan <strong>insidentil</strong>, Anda bisa memilih tanggal dan bulan jatuh tempo.';
+    try {
+        const kategoriEl = document.getElementById('kategori_tagihan');
+        if (!kategoriEl) return;
+        
+        const kategoriTagihan = kategoriEl.value;
+        const jatuhTempoInfo = document.querySelector('#createModal .jatuh-tempo-settings p');
+        
+        if (!jatuhTempoInfo) return;
+        
+        if (kategoriTagihan === 'Rutin') {
+            // Untuk tagihan rutin, tampilkan pesan bahwa jatuh tempo selalu tanggal 10
+            jatuhTempoInfo.innerHTML = 'Untuk tagihan <strong>rutin</strong>, jatuh tempo selalu tanggal 10 setiap bulan. Input di atas akan diabaikan.';
+        } else {
+            // Untuk tagihan insidental, tampilkan pesan normal
+            jatuhTempoInfo.innerHTML = 'Untuk tagihan <strong>insidentil</strong>, Anda bisa memilih tanggal dan bulan jatuh tempo.';
+        }
+    } catch (error) {
+        console.error("Error updating jatuh tempo display:", error);
     }
 }
 
 function handleEditJatuhTempoDisplay() {
-    const kategoriTagihan = document.getElementById('edit_kategori_tagihan').value;
-    const jatuhTempoInfo = document.querySelector('#editModal .jatuh-tempo-settings p');
-    
-    if (kategoriTagihan === 'Rutin') {
-        // Untuk tagihan rutin, tampilkan pesan bahwa jatuh tempo selalu tanggal 10
-        jatuhTempoInfo.innerHTML = 'Untuk tagihan <strong>rutin</strong>, jatuh tempo selalu tanggal 10 setiap bulan. Input di atas akan diabaikan.';
-    } else {
-        // Untuk tagihan insidental, tampilkan pesan normal
-        jatuhTempoInfo.innerHTML = 'Untuk tagihan <strong>insidentil</strong>, Anda bisa memilih tanggal dan bulan jatuh tempo.';
+    try {
+        const kategoriEl = document.getElementById('edit_kategori_tagihan');
+        if (!kategoriEl) return;
+        
+        const kategoriTagihan = kategoriEl.value;
+        const jatuhTempoInfo = document.querySelector('#editModal .jatuh-tempo-settings p');
+        
+        if (!jatuhTempoInfo) return;
+        
+        if (kategoriTagihan === 'Rutin') {
+            // Untuk tagihan rutin, tampilkan pesan bahwa jatuh tempo selalu tanggal 10
+            jatuhTempoInfo.innerHTML = 'Untuk tagihan <strong>rutin</strong>, jatuh tempo selalu tanggal 10 setiap bulan. Input di atas akan diabaikan.';
+        } else {
+            // Untuk tagihan insidental, tampilkan pesan normal
+            jatuhTempoInfo.innerHTML = 'Untuk tagihan <strong>insidentil</strong>, Anda bisa memilih tanggal dan bulan jatuh tempo.';
+        }
+    } catch (error) {
+        console.error("Error updating jatuh tempo display:", error);
     }
 }
 
