@@ -31,7 +31,13 @@ class AsramaController extends Controller
             'nama' => 'required|string|max:100',
             'wali_asrama' => 'nullable|string|max:100',
         ]);
+        
         Asrama::create($data);
+        
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Asrama berhasil ditambahkan.']);
+        }
+        
         return redirect()->route('asrama.index')->with('success', 'Asrama berhasil ditambahkan.');
     }
 
@@ -47,7 +53,13 @@ class AsramaController extends Controller
             'nama' => 'required|string|max:100',
             'wali_asrama' => 'nullable|string|max:100',
         ]);
+        
         $asrama->update($data);
+        
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Asrama berhasil diperbarui.']);
+        }
+        
         return redirect()->route('asrama.index')->with('success', 'Asrama berhasil diperbarui.');
     }
 
@@ -86,7 +98,22 @@ class AsramaController extends Controller
 
         Santri::whereIn('id', $request->santri_id)->update(['asrama_id' => $request->asrama_id]);
 
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Santri berhasil dipindahkan ke asrama baru.']);
+        }
+
         return redirect()->route('asrama.pindah.form')->with('success', 'Santri berhasil dipindahkan ke asrama baru.');
+    }
+
+    // API endpoint untuk mendapatkan data santri dengan asrama
+    public function getSantrisWithAsrama()
+    {
+        $santris = Santri::with('asrama:id,kode,nama')
+            ->where('status', 'aktif')
+            ->select('id', 'nis', 'nama_santri', 'asrama_id')
+            ->get();
+        
+        return response()->json($santris);
     }
 
     public function importForm()

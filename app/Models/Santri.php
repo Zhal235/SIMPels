@@ -20,7 +20,7 @@ class Santri extends Model
         'pekerjaan_ayah', 'hp_ayah', 'nama_ibu', 'nik_ibu', 'pendidikan_ibu',
         'pekerjaan_ibu', 'hp_ibu', 'no_bpjs', 'no_pkh', 'no_kip',
         'npsn_sekolah', 'no_blanko_skhu', 'no_seri_ijazah', 'status',
-        'total_nilai_un', 'tanggal_kelulusan', 'foto',// ← WAJIB
+        'total_nilai_un', 'tanggal_kelulusan', 'foto', 'asrama_id', 'kelas_id',// ← WAJIB
     ];
 
     public function pekerjaanAyah()

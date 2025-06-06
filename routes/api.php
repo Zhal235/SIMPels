@@ -4,10 +4,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Models\Santri;
 use App\Models\KelasAnggota;
+use App\Http\Controllers\AsramaController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
+
+// API untuk mengambil data santri dengan asrama untuk modal pindah
+Route::get('/santris-with-asrama', [AsramaController::class, 'getSantrisWithAsrama']);
 
 // API untuk mengambil santri berdasarkan kelas
 Route::get('/santri-by-kelas', function (Request $request) {
@@ -54,3 +58,6 @@ Route::get('/santri-by-kelas', function (Request $request) {
         ]);
     }
 });
+
+// API untuk mengambil data santri dengan asrama untuk modal pindah
+Route::get('/santris-with-asrama', [AsramaController::class, 'getSantrisWithAsrama']);

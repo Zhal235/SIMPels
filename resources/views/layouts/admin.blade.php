@@ -11,6 +11,11 @@
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Alpine.js cloak style -->
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
 <body class="bg-gray-100 font-sans antialiased">
     <!-- Alpine.js for small interactions -->

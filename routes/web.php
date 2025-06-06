@@ -122,6 +122,9 @@ Route::middleware(['auth'])->group(function () {
     // User Management
     Route::resource('users', \App\Http\Controllers\UserController::class)->middleware(['role:admin']);
     Route::resource('roles', \App\Http\Controllers\RoleController::class)->middleware(['role:admin']);
+
+    // API untuk mengambil data santri dengan asrama untuk modal pindah
+    Route::get('/api/santris-with-asrama', [AsramaController::class, 'getSantrisWithAsrama'])->name('api.santris-with-asrama');
 }); // Close auth middleware group
 
 require __DIR__.'/auth.php';

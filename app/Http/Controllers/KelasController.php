@@ -7,6 +7,7 @@ use App\Models\Santri;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\KelasImport;
+use Illuminate\Validation\ValidationException;
 
 class KelasController extends Controller
 {
@@ -24,8 +25,9 @@ class KelasController extends Controller
     // Form Buat Kelas
     public function create()
 {
-    // Misal guru ada di tabel users dengan role guru
-    $waliList = \App\Models\User::where('role', 'guru')->get();
+    // Kosongkan dulu karena menu kepegawaian belum dibuat
+    // Nanti akan diisi ketika menu kepegawaian sudah tersedia
+    $waliList = [];
 
     return view('kelas.create', compact('waliList'));
 }
@@ -33,34 +35,80 @@ class KelasController extends Controller
     // Simpan Kelas
     public function store(Request $request)
     {
-        $request->validate([
-            'nama' => 'required|string|max:100',
-            'kode' => 'required|string|max:20|unique:kelas,kode',
-            'tingkat' => 'required',
-            'wali_kelas' => 'nullable|string|max:100'
-        ]);
-        Kelas::create($request->all());
-        return redirect()->route('kelas.index')->with('success', 'Kelas berhasil ditambahkan.');
+        try {
+            $request->validate([
+                'nama' => 'required|string|max:100',
+                'kode' => 'required|string|max:20|unique:kelas,kode',
+                'tingkat' => 'required',
+                'wali_kelas' => 'nullable|string|max:100' // Sementara string karena menu kepegawaian belum ada
+            ]);
+            
+            $kelas = Kelas::create($request->all());
+            
+            // Check if request is AJAX
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Kelas berhasil ditambahkan.',
+                    'kelas' => $kelas
+                ]);
+            }
+            
+            return redirect()->route('kelas.index')->with('success', 'Kelas berhasil ditambahkan.');
+            
+        } catch (ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            throw $e;
+        }
     }
 
     // Edit Kelas
     public function edit(Kelas $kelas)
     {
-        $waliList = []; // Kosongkan dulu, nanti jika sudah ada data guru/pegawai bisa diisi.
+        // Kosongkan dulu karena menu kepegawaian belum dibuat
+        // Nanti akan diisi ketika menu kepegawaian sudah tersedia
+        $waliList = [];
         return view('kelas.edit', compact('kelas', 'waliList'));
     }
 
     // Update Kelas
     public function update(Request $request, Kelas $kelas)
     {
-        $request->validate([
-            'nama' => 'required|string|max:100',
-            'kode' => 'required|string|max:20|unique:kelas,kode,'.$kelas->id,
-            'tingkat' => 'required',
-            'wali_kelas' => 'nullable|string|max:100'
-        ]);
-        $kelas->update($request->all());
-        return redirect()->route('kelas.index')->with('success', 'Kelas berhasil diperbarui.');
+        try {
+            $request->validate([
+                'nama' => 'required|string|max:100',
+                'kode' => 'required|string|max:20|unique:kelas,kode,'.$kelas->id,
+                'tingkat' => 'required',
+                'wali_kelas' => 'nullable|string|max:100'
+            ]);
+            
+            $kelas->update($request->all());
+            
+            // Handle AJAX request
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Kelas berhasil diperbarui.',
+                    'kelas' => $kelas
+                ]);
+            }
+            
+            return redirect()->route('kelas.index')->with('success', 'Kelas berhasil diperbarui.');
+            
+        } catch (ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            throw $e;
+        }
     }
 
     // Hapus Kelas

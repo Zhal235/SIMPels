@@ -45,15 +45,9 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Wali Kelas</label>
-                <select name="wali_kelas"
-                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring focus:ring-opacity-50">
-                    <option value="">-- Pilih Guru --</option>
-                    @foreach($waliList as $guru)
-                        <option value="{{ $guru->id }}" {{ old('wali_kelas') == $guru->id ? 'selected' : '' }}>
-                            {{ $guru->name }}
-                        </option>
-                    @endforeach
-                </select>
+                <input type="text" name="wali_kelas" value="{{ old('wali_kelas') }}" placeholder="Akan diisi ketika menu kepegawaian tersedia"
+                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring focus:ring-opacity-50" disabled />
+                <p class="text-sm text-gray-500 mt-1">*Akan diisi ketika menu kepegawaian sudah tersedia</p>
             </div>
         </div>
 
