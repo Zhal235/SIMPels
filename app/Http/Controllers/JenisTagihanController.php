@@ -50,6 +50,8 @@ class JenisTagihanController extends Controller
             'nominal' => 'required|numeric|min:0',
             'is_nominal_per_kelas' => 'required|in:0,1',
             'buku_kas_id' => 'required|exists:buku_kas,id',
+            'tanggal_jatuh_tempo' => 'required|integer|min:1|max:31',
+            'bulan_jatuh_tempo' => 'required|integer|min:0|max:12',
         ];
 
         $validator = \Validator::make($request->all(), $rules);
@@ -73,6 +75,8 @@ class JenisTagihanController extends Controller
                 'nominal' => $request->nominal,
                 'is_nominal_per_kelas' => $request->is_nominal_per_kelas,
                 'buku_kas_id' => $request->buku_kas_id,
+                'tanggal_jatuh_tempo' => $request->tanggal_jatuh_tempo,
+                'bulan_jatuh_tempo' => $request->bulan_jatuh_tempo,
             ]);
 
             // Generate tagihan santri untuk jenis tagihan baru
@@ -132,6 +136,8 @@ class JenisTagihanController extends Controller
                     'is_nominal_per_kelas' => (int) $jenisTagihan->is_nominal_per_kelas,
                     'buku_kas_id' => $jenisTagihan->buku_kas_id ?? null,
                     'tahun_ajaran_id' => $jenisTagihan->tahun_ajaran_id,
+                    'tanggal_jatuh_tempo' => $jenisTagihan->tanggal_jatuh_tempo,
+                    'bulan_jatuh_tempo' => $jenisTagihan->bulan_jatuh_tempo,
                     'created_at' => $jenisTagihan->created_at,
                     'updated_at' => $jenisTagihan->updated_at,
                 ];
@@ -179,6 +185,8 @@ class JenisTagihanController extends Controller
             'nominal' => 'required|numeric|min:0',
             'is_nominal_per_kelas' => 'required|in:0,1',
             'buku_kas_id' => 'required|exists:buku_kas,id',
+            'tanggal_jatuh_tempo' => 'required|integer|min:1|max:31',
+            'bulan_jatuh_tempo' => 'required|integer|min:0|max:12',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -202,6 +210,8 @@ class JenisTagihanController extends Controller
                 'nominal' => $request->nominal,
                 'is_nominal_per_kelas' => $request->is_nominal_per_kelas,
                 'buku_kas_id' => $request->buku_kas_id,
+                'tanggal_jatuh_tempo' => $request->tanggal_jatuh_tempo,
+                'bulan_jatuh_tempo' => $request->bulan_jatuh_tempo,
             ]);
 
             // Generate tagihan santri jika ada perubahan yang mempengaruhi

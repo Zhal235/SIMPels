@@ -20,7 +20,9 @@ class JenisTagihan extends Model
         'deskripsi',
         'tahun_ajaran_id',
         'kategori_tagihan',
-        'buku_kas_id'
+        'buku_kas_id',
+        'tanggal_jatuh_tempo',
+        'bulan_jatuh_tempo'
     ];
 
     protected $casts = [

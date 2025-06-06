@@ -117,6 +117,20 @@ class GenerateTagihanSantri extends Command
                                     ->delete();
                             }
 
+                            // Untuk tagihan rutin, jatuh tempo selalu tanggal 10 setiap bulan
+                            $tahunBulan = explode('-', $bulan);
+                            $tahun = $tahunBulan[0] ?? date('Y');
+                            $bulanAngka = $tahunBulan[1] ?? date('m');
+                            
+                            // Pastikan tanggalnya valid (jika bulan hanya punya 28-30 hari)
+                            $tanggal = 10;
+                            $lastDayOfMonth = cal_days_in_month(CAL_GREGORIAN, (int)$bulanAngka, (int)$tahun);
+                            if ($tanggal > $lastDayOfMonth) {
+                                $tanggal = $lastDayOfMonth;
+                            }
+                            
+                            $tanggalJatuhTempo = "{$tahun}-{$bulanAngka}-{$tanggal}"; // Format: YYYY-MM-DD (tanggal 10)
+                            
                             TagihanSantri::create([
                                 'santri_id' => $santri->id,
                                 'jenis_tagihan_id' => $jenisTagihan->id,
@@ -124,7 +138,8 @@ class GenerateTagihanSantri extends Command
                                 'bulan' => $bulan,
                                 'nominal_tagihan' => $nominal,
                                 'nominal_dibayar' => 0,
-                                'status' => 'aktif'
+                                'status' => 'aktif',
+                                'tanggal_jatuh_tempo' => $tanggalJatuhTempo
                             ]);
                             
                             $totalCreated++;
@@ -146,14 +161,42 @@ class GenerateTagihanSantri extends Command
                                 ->where('jenis_tagihan_id', $jenisTagihan->id)
                                 ->where('tahun_ajaran_id', $tahunAjaranId)
                                 ->delete();
-                        }                        TagihanSantri::create([
+                        }                        // Untuk tagihan insidental, gunakan setting tanggal jatuh tempo dari jenis tagihan
+                        $bulanTagihan = $activeTahunAjaran->tahun_mulai . '-07'; // Format bulan yang konsisten (Juli tahun mulai)
+                        $tahunBulan = explode('-', $bulanTagihan);
+                        $tahun = $tahunBulan[0] ?? date('Y');
+                        $bulanAngka = $tahunBulan[1] ?? date('m');
+                        
+                        // Tentukan bulan jatuh tempo (tambahkan bulan sesuai setting)
+                        $bulanJatuhTempo = $bulanAngka;
+                        if (($jenisTagihan->bulan_jatuh_tempo ?? 0) > 0) {
+                            // Tambahkan bulan sesuai setting
+                            $date = \Carbon\Carbon::createFromDate($tahun, $bulanAngka, 1);
+                            $date->addMonths((int)$jenisTagihan->bulan_jatuh_tempo);
+                            $tahun = $date->format('Y');
+                            $bulanJatuhTempo = $date->format('m');
+                        }
+                        
+                        // Gunakan tanggal jatuh tempo dari setting (default: 10)
+                        $tanggal = $jenisTagihan->tanggal_jatuh_tempo ?? 10;
+                        
+                        // Pastikan tanggalnya valid (jika bulan hanya punya 28-30 hari)
+                        $lastDayOfMonth = cal_days_in_month(CAL_GREGORIAN, (int)$bulanJatuhTempo, (int)$tahun);
+                        if ($tanggal > $lastDayOfMonth) {
+                            $tanggal = $lastDayOfMonth;
+                        }
+                        
+                        $tanggalJatuhTempo = "{$tahun}-{$bulanJatuhTempo}-{$tanggal}";
+                        
+                        TagihanSantri::create([
                             'santri_id' => $santri->id,
                             'jenis_tagihan_id' => $jenisTagihan->id,
                             'tahun_ajaran_id' => $tahunAjaranId,
-                            'bulan' => $activeTahunAjaran->tahun_mulai . '-07', // Format bulan yang konsisten (Juli tahun mulai)
+                            'bulan' => $bulanTagihan,
                             'nominal_tagihan' => $nominal,
                             'nominal_dibayar' => 0,
-                            'status' => 'aktif'
+                            'status' => 'aktif',
+                            'tanggal_jatuh_tempo' => $tanggalJatuhTempo
                         ]);
                         
                         $totalCreated++;
