@@ -25,7 +25,7 @@ class PembayaranSantriController extends Controller
             $query->where('status', 'aktif');
             
             // Also include mutasi and alumni students if they have unpaid bills
-            $query->orWhereHas('tagihan', function($tagihan) {
+            $query->orWhereHas('tagihanSantris', function($tagihan) {
                 $tagihan->whereRaw('nominal_dibayar + nominal_keringanan < nominal_tagihan')
                        ->where('status', 'aktif');
             });
