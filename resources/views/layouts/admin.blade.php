@@ -12,6 +12,9 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined" rel="stylesheet">
+    
     <!-- Alpine.js cloak style -->
     <style>
         [x-cloak] { display: none !important; }
@@ -52,5 +55,6 @@
         </div>
     </div>
     @yield('scripts')
+    @stack('scripts')
 </body>
 </html>

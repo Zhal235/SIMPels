@@ -56,7 +56,15 @@ class TagihanSantri extends Model
      */
     public function transaksis()
     {
-        return $this->hasMany(Transaksi::class, 'tagihan_santri_id');
+        return $this->hasMany(Transaksi::class);
+    }
+    
+    /**
+     * Relasi dengan TransaksiKas
+     */
+    public function transaksiKas()
+    {
+        return $this->hasMany(\App\Models\TransaksiKas::class);
     }
 
     /**

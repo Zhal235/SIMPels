@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Models\Santri;
 use App\Models\KelasAnggota;
 use App\Http\Controllers\AsramaController;
+use App\Http\Controllers\BukuKasController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -59,5 +60,18 @@ Route::get('/santri-by-kelas', function (Request $request) {
     }
 });
 
-// API untuk mengambil data santri dengan asrama untuk modal pindah
-Route::get('/santris-with-asrama', [AsramaController::class, 'getSantrisWithAsrama']);
+// API untuk Buku Kas
+Route::get('buku-kas/{id}', function($id) {
+    try {
+        $bukuKas = \App\Models\BukuKas::findOrFail($id);
+        return response()->json([
+            'success' => true,
+            'data' => $bukuKas
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Buku kas tidak ditemukan'
+        ], 404);
+    }
+})->name('api.buku-kas.show');

@@ -19,7 +19,8 @@ class JenisTagihan extends Model
         'bulan_pembayaran',
         'deskripsi',
         'tahun_ajaran_id',
-        'kategori_tagihan'
+        'kategori_tagihan',
+        'buku_kas_id'
     ];
 
     protected $casts = [
@@ -34,6 +35,14 @@ class JenisTagihan extends Model
     public function tahunAjaran()
     {
         return $this->belongsTo(TahunAjaran::class);
+    }
+
+    /**
+     * Relasi dengan BukuKas
+     */
+    public function bukuKas()
+    {
+        return $this->belongsTo(BukuKas::class);
     }
 
     /**

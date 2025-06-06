@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Test Modal - Buku Kas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-8">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h1 class="text-2xl font-bold mb-6">Auto Test: Buku Kas Modal Edit</h1>
+            <p class="mb-4">This script will automatically test the modal functionality on the main Buku Kas page.</p>
+            
+            <div class="space-y-4">
+                <button id="openMainPage" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Open Main Buku Kas Page
+                </button>
+                
+                <div id="testResults" class="mt-6 space-y-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('openMainPage').addEventListener('click', function() {
+            // Open the main page in a new tab/window
+            const newWindow = window.open('http://localhost:8000/keuangan/buku-kas', '_blank');
+            
+            // Wait a bit for the page to load, then run tests
+            setTimeout(() => {
+                runAutomatedTests(newWindow);
+            }, 3000);
+        });
+        
+        function runAutomatedTests(targetWindow) {
+            const resultsDiv = document.getElementById('testResults');
+            
+            if (!targetWindow || targetWindow.closed) {
+                resultsDiv.innerHTML = '<div class="text-red-500">❌ Could not access target window</div>';
+                return;
+            }
+            
+            try {
+                // Test if the window has the expected functions
+                const hasOpenEditModal = typeof targetWindow.openEditModal === 'function';
+                const hasCloseEditModal = typeof targetWindow.closeEditModal === 'function';
+                
+                resultsDiv.innerHTML = `
+                    <div class="border rounded p-4">
+                        <h3 class="font-semibold mb-2">Function Availability Test</h3>
+                        <div class="space-y-1 text-sm">
+                            <div class="${hasOpenEditModal ? 'text-green-600' : 'text-red-600'}">
+                                ${hasOpenEditModal ? '✓' : '❌'} openEditModal function
+                            </div>
+                            <div class="${hasCloseEditModal ? 'text-green-600' : 'text-red-600'}">
+                                ${hasCloseEditModal ? '✓' : '❌'} closeEditModal function
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                if (hasOpenEditModal) {
+                    // Try to trigger the modal
+                    setTimeout(() => {
+                        try {
+                            targetWindow.openEditModal(1); // Test with ID 1
+                            
+                            resultsDiv.innerHTML += `
+                                <div class="border rounded p-4 mt-4">
+                                    <h3 class="font-semibold mb-2">Modal Trigger Test</h3>
+                                    <div class="text-green-600 text-sm">✓ Modal opened successfully for ID 1</div>
+                                    <div class="text-xs text-gray-500 mt-1">Check the main window to see the modal</div>
+                                </div>
+                            `;
+                        } catch (error) {
+                            resultsDiv.innerHTML += `
+                                <div class="border rounded p-4 mt-4">
+                                    <h3 class="font-semibold mb-2">Modal Trigger Test</h3>
+                                    <div class="text-red-600 text-sm">❌ Error: ${error.message}</div>
+                                </div>
+                            `;
+                        }
+                    }, 1000);
+                }
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="text-red-500">❌ Error accessing target window: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

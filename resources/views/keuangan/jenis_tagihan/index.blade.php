@@ -50,6 +50,7 @@
                                 <th class="px-4 py-3 text-center">Nominal Default</th>
                                 <th class="px-4 py-3 text-center">Kategori</th>
                                 <th class="px-4 py-3 text-center">Tipe Pembayaran</th>
+                                <th class="px-4 py-3 text-center">Buku Kas</th>
                                 <th class="px-4 py-3 text-center">Nominal per Kelas</th>
                                 <th class="px-4 py-3 text-center">Aksi</th>
                             </tr>
@@ -78,6 +79,15 @@
                                     <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full {{ $tagihan->is_bulanan ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700' }}">
                                         {{ $tagihan->is_bulanan ? 'Bulanan' : 'Sekali Bayar' }}
                                     </span>
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    @if($tagihan->bukuKas)
+                                    <span class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                                        {{ $tagihan->bukuKas->nama_kas }}
+                                    </span>
+                                    @else
+                                    <span class="text-gray-500">-</span>
+                                    @endif
                                 </td>
                                 <td class="px-4 py-3 text-center">
                                     @if($tagihan->is_nominal_per_kelas)
@@ -114,7 +124,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="text-center py-10 text-gray-500">
+                                <td colspan="7" class="text-center py-10 text-gray-500">
                                     <div class="flex flex-col items-center">
                                         <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -204,6 +214,18 @@
                         <option value="1">Ya</option>
                     </select>
                     <span class="text-red-500 text-xs hidden" id="error-is_nominal_per_kelas"></span>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Buku Kas <span class="text-red-500">*</span></label>
+                    <select name="buku_kas_id" id="buku_kas_id" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm">
+                        <option value="">Pilih Buku Kas</option>
+                        @foreach($bukuKasList as $bukuKas)
+                        <option value="{{ $bukuKas->id }}">{{ $bukuKas->nama_kas }} ({{ $bukuKas->jenis_kas }})</option>
+                        @endforeach
+                    </select>
+                    <span class="text-red-500 text-xs hidden" id="error-buku_kas_id"></span>
                 </div>
             </form>
 
@@ -297,6 +319,18 @@
                     </select>
                     <span class="text-red-500 text-xs hidden" id="edit-error-is_nominal_per_kelas"></span>
                 </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Buku Kas <span class="text-red-500">*</span></label>
+                    <select name="buku_kas_id" id="edit_buku_kas_id" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 sm:text-sm">
+                        <option value="">Pilih Buku Kas</option>
+                        @foreach($bukuKasList as $bukuKas)
+                        <option value="{{ $bukuKas->id }}">{{ $bukuKas->nama_kas }} ({{ $bukuKas->jenis_kas }})</option>
+                        @endforeach
+                    </select>
+                    <span class="text-red-500 text-xs hidden" id="edit-error-buku_kas_id"></span>
+                </div>
             </form>
 
             {{-- Modal Footer --}}
@@ -329,6 +363,15 @@ function closeCreateModal() {
 }
 
 function openEditModal(id) {
+    console.log('Opening edit modal for ID:', id);
+    
+    // Show loading state
+    const editModal = document.getElementById('editModal');
+    if (editModal) {
+        editModal.classList.remove('hidden');
+        // Could add a loading spinner here
+    }
+    
     // Fetch data for the selected jenis tagihan
     fetch(`/keuangan/jenis-tagihan/${id}/edit`, {
         method: 'GET',
@@ -372,7 +415,12 @@ function openEditModal(id) {
     .then(data => {
         if (!data) return; // Handle early returns from auth errors
         
+        console.log('Received data:', data);
+        
         if (data.success) {
+            console.log('JenisTagihan data:', data.jenisTagihan);
+            console.log('BukuKas list:', data.bukuKasList);
+            
             // Populate form fields
             document.getElementById('edit_id').value = data.jenisTagihan.id;
             document.getElementById('edit_nama').value = data.jenisTagihan.nama;
@@ -382,16 +430,50 @@ function openEditModal(id) {
             document.getElementById('edit_nominal').value = data.jenisTagihan.nominal;
             document.getElementById('edit_is_nominal_per_kelas').value = data.jenisTagihan.is_nominal_per_kelas;
             
-            // Show modal
+            // Update buku kas dropdown with fresh data from server
+            const bukuKasSelect = document.getElementById('edit_buku_kas_id');
+            if (bukuKasSelect && data.bukuKasList) {
+                console.log('Updating buku kas dropdown with', data.bukuKasList.length, 'options');
+                
+                // Clear existing options
+                bukuKasSelect.innerHTML = '<option value="">Pilih Buku Kas</option>';
+                
+                // Add new options from server data
+                data.bukuKasList.forEach(bukuKas => {
+                    const option = document.createElement('option');
+                    option.value = bukuKas.id;
+                    option.textContent = `${bukuKas.nama_kas} (${bukuKas.kode_kas})`;
+                    bukuKasSelect.appendChild(option);
+                });
+                
+                // Set selected value
+                const selectedBukuKasId = data.jenisTagihan.buku_kas_id;
+                console.log('Setting selected buku_kas_id to:', selectedBukuKasId);
+                bukuKasSelect.value = selectedBukuKasId || '';
+                
+                // Verify selection was successful
+                if (selectedBukuKasId && bukuKasSelect.value !== selectedBukuKasId.toString()) {
+                    console.warn('Failed to select buku kas ID:', selectedBukuKasId, 'Available options:', Array.from(bukuKasSelect.options).map(o => o.value));
+                }
+            } else {
+                console.warn('BukuKas select element not found or bukuKasList not provided');
+                // Fallback to original method if bukuKasList not available
+                document.getElementById('edit_buku_kas_id').value = data.jenisTagihan.buku_kas_id || '';
+            }
+            
+            // Show modal (it was already shown for loading, but ensure it's visible)
             document.getElementById('editModal').classList.remove('hidden');
             clearEditForm();
         } else {
-            alert('Gagal memuat data untuk diedit.');
+            console.error('Failed response:', data);
+            closeEditModal(); // Close modal on error
+            alert('Gagal memuat data untuk diedit: ' + (data.message || 'Unknown error'));
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Terjadi kesalahan saat memuat data.');
+        closeEditModal(); // Close modal on error
+        alert('Terjadi kesalahan saat memuat data: ' + error.message);
     });
 }
 
@@ -504,8 +586,15 @@ function submitEditForm() {
     const formData = new FormData(form);
     const id = document.getElementById('edit_id').value;
     
+    console.log('Submitting edit form for ID:', id);
+    
     // Add PUT method override for Laravel
     formData.append('_method', 'PUT');
+    
+    // Debug form data
+    for (let [key, value] of formData.entries()) {
+        console.log('Form data:', key, '=', value);
+    }
     
     // Show loading state
     document.getElementById('edit-loading-spinner').classList.remove('hidden');

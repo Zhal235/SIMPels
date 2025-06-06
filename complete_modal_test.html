@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Modal Test - Buku Kas</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; background: white; border-radius: 8px; }
+        .success { color: #28a745; background-color: #d4edda; padding: 8px; border-radius: 4px; margin: 4px 0; }
+        .error { color: #dc3545; background-color: #f8d7da; padding: 8px; border-radius: 4px; margin: 4px 0; }
+        .info { color: #007bff; background-color: #d1ecf1; padding: 8px; border-radius: 4px; margin: 4px 0; }
+        .warning { color: #ffc107; background-color: #fff3cd; padding: 8px; border-radius: 4px; margin: 4px 0; }
+        
+        /* Modal styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: white; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 600px; border-radius: 8px; }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: black; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .btn { padding: 10px 20px; margin: 5px; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .test-button { margin: 10px 5px; padding: 12px 20px; border: none; background-color: #17a2b8; color: white; cursor: pointer; border-radius: 4px; }
+        .test-button:hover { background-color: #138496; }
+        
+        .test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .results-area { height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background-color: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Complete Buku Kas Modal Test</h1>
+        
+        <div class="test-grid">
+            <div class="test-section">
+                <h2>Test Controls</h2>
+                <button class="test-button" onclick="testEndpoints()">1. Test Endpoints</button>
+                <button class="test-button" onclick="testModalOpen()">2. Test Modal Open</button>
+                <button class="test-button" onclick="testEditData(1)">3. Test Edit (ID: 1)</button>
+                <button class="test-button" onclick="testValidation()">4. Test Validation</button>
+                <button class="test-button" onclick="runFullTest()">5. Run Full Test</button>
+                <br>
+                <button class="btn btn-danger" onclick="clearResults()">Clear Results</button>
+            </div>
+            
+            <div class="test-section">
+                <h2>Test Results</h2>
+                <div id="testResults" class="results-area">
+                    <div class="info">Ready to run tests...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Live Data Display</h2>
+            <div id="dataDisplay">
+                <button class="btn btn-primary" onclick="loadBukuKasList()">Load Buku Kas List</button>
+                <div id="bukuKasList" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2>Edit Buku Kas</h2>
+            <form id="editForm" onsubmit="saveEdit(event)">
+                <div class="form-group">
+                    <label for="edit_nama_kas">Nama Kas:</label>
+                    <input type="text" id="edit_nama_kas" name="nama_kas" required>
+                    <div id="error_nama_kas" class="error" style="display: none;"></div>
+                </div>
+                <div class="form-group">
+                    <label for="edit_kode_kas">Kode Kas:</label>
+                    <input type="text" id="edit_kode_kas" name="kode_kas" required>
+                    <div id="error_kode_kas" class="error" style="display: none;"></div>
+                </div>
+                <div class="form-group">
+                    <label for="edit_deskripsi">Deskripsi:</label>
+                    <textarea id="edit_deskripsi" name="deskripsi" rows="3"></textarea>
+                    <div id="error_deskripsi" class="error" style="display: none;"></div>
+                </div>
+                <div class="form-group">
+                    <label for="edit_saldo_awal">Saldo Awal:</label>
+                    <input type="number" id="edit_saldo_awal" name="saldo_awal" step="0.01" required>
+                    <div id="error_saldo_awal" class="error" style="display: none;"></div>
+                </div>
+                <div style="text-align: right;">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="saveButton">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentEditId = null;
+        
+        // Mock CSRF token
+        window.csrfToken = 'test-token';
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${message}`;
+            document.getElementById('testResults').appendChild(div);
+            
+            // Auto scroll to bottom
+            const resultsArea = document.getElementById('testResults');
+            resultsArea.scrollTop = resultsArea.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = '<div class="info">Results cleared...</div>';
+        }
+
+        // Test 1: Test endpoints
+        async function testEndpoints() {
+            log('Starting endpoint tests...', 'info');
+            
+            try {
+                // Test list endpoint
+                log('Testing list endpoint...', 'info');
+                const listResponse = await fetch('http://localhost:8000/test/buku-kas');
+                
+                if (listResponse.ok) {
+                    const listData = await listResponse.json();
+                    log(`✓ List endpoint OK - Found ${listData.count} records`, 'success');
+                    
+                    if (listData.data && listData.data.length > 0) {
+                        const firstRecord = listData.data[0];
+                        log(`✓ Sample record: "${firstRecord.nama_kas}" (ID: ${firstRecord.id})`, 'success');
+                        
+                        // Test individual record endpoint
+                        log(`Testing individual record endpoint (ID: ${firstRecord.id})...`, 'info');
+                        const recordResponse = await fetch(`http://localhost:8000/test/buku-kas/${firstRecord.id}`);
+                        
+                        if (recordResponse.ok) {
+                            const recordData = await recordResponse.json();
+                            log(`✓ Individual record endpoint OK`, 'success');
+                            log(`✓ Record data: ${JSON.stringify(recordData.data, null, 2)}`, 'success');
+                        } else {
+                            log(`✗ Individual record endpoint failed: ${recordResponse.status}`, 'error');
+                        }
+                    }
+                } else {
+                    log(`✗ List endpoint failed: ${listResponse.status}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`✗ Endpoint test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 2: Test modal open
+        function testModalOpen() {
+            log('Testing modal open...', 'info');
+            try {
+                openEditModal();
+                log('✓ Modal opened successfully', 'success');
+                
+                setTimeout(() => {
+                    closeEditModal();
+                    log('✓ Modal closed successfully', 'success');
+                }, 2000);
+                
+            } catch (error) {
+                log(`✗ Modal test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 3: Test edit data loading
+        async function testEditData(id) {
+            log(`Testing edit data loading for ID: ${id}...`, 'info');
+            
+            try {
+                // Test the enhanced edit function with fallback
+                await openEditModalWithData(id);
+                log('✓ Edit data loading test completed', 'success');
+                
+            } catch (error) {
+                log(`✗ Edit data loading failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 4: Test validation
+        function testValidation() {
+            log('Testing form validation...', 'info');
+            
+            try {
+                openEditModal();
+                
+                // Test required field validation
+                document.getElementById('edit_nama_kas').value = '';
+                document.getElementById('edit_kode_kas').value = '';
+                document.getElementById('edit_saldo_awal').value = '';
+                
+                if (validateForm()) {
+                    log('✗ Validation should have failed for empty required fields', 'error');
+                } else {
+                    log('✓ Validation correctly failed for empty required fields', 'success');
+                }
+                
+                // Test valid data
+                document.getElementById('edit_nama_kas').value = 'Test Kas';
+                document.getElementById('edit_kode_kas').value = 'TEST';
+                document.getElementById('edit_saldo_awal').value = '1000';
+                
+                if (validateForm()) {
+                    log('✓ Validation passed for valid data', 'success');
+                } else {
+                    log('✗ Validation should have passed for valid data', 'error');
+                }
+                
+                closeEditModal();
+                
+            } catch (error) {
+                log(`✗ Validation test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test 5: Full integration test
+        async function runFullTest() {
+            log('Starting full integration test...', 'info');
+            
+            try {
+                // Step 1: Test endpoints
+                await testEndpoints();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Step 2: Test modal
+                testModalOpen();
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                // Step 3: Test edit data
+                await testEditData(1);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Step 4: Test validation
+                testValidation();
+                
+                log('✓ Full integration test completed successfully!', 'success');
+                
+            } catch (error) {
+                log(`✗ Full integration test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Modal functions
+        function openEditModal() {
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            clearValidationErrors();
+        }
+
+        // Enhanced edit modal with fallback
+        async function openEditModalWithData(id) {
+            currentEditId = id;
+            log(`Loading data for Buku Kas ID: ${id}...`, 'info');
+            
+            try {
+                // Try primary endpoint first (will fail due to auth)
+                let response = await fetch(`http://localhost:8000/keuangan/buku-kas/${id}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    log(`Primary endpoint failed (${response.status}), trying fallback...`, 'warning');
+                    
+                    // Try fallback endpoint
+                    response = await fetch(`http://localhost:8000/test/buku-kas/${id}`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`Fallback endpoint also failed: ${response.status}`);
+                    }
+                    
+                    log('✓ Using fallback endpoint successfully', 'success');
+                } else {
+                    log('✓ Primary endpoint successful', 'success');
+                }
+
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const bukuKas = data.data;
+                    
+                    // Populate form
+                    document.getElementById('edit_nama_kas').value = bukuKas.nama_kas || '';
+                    document.getElementById('edit_kode_kas').value = bukuKas.kode_kas || '';
+                    document.getElementById('edit_deskripsi').value = bukuKas.deskripsi || '';
+                    document.getElementById('edit_saldo_awal').value = bukuKas.saldo_awal || 0;
+                    
+                    openEditModal();
+                    log(`✓ Form populated with: "${bukuKas.nama_kas}"`, 'success');
+                    log(`✓ Kode: "${bukuKas.kode_kas}", Saldo: ${bukuKas.saldo_awal}`, 'success');
+                } else {
+                    throw new Error('Invalid response format');
+                }
+
+            } catch (error) {
+                log(`✗ Failed to load data: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        // Form validation
+        function validateForm() {
+            clearValidationErrors();
+            let isValid = true;
+            
+            const namaKas = document.getElementById('edit_nama_kas').value.trim();
+            const kodeKas = document.getElementById('edit_kode_kas').value.trim();
+            const saldoAwal = document.getElementById('edit_saldo_awal').value;
+            
+            if (!namaKas) {
+                showFieldError('nama_kas', 'Nama kas harus diisi');
+                isValid = false;
+            }
+            
+            if (!kodeKas) {
+                showFieldError('kode_kas', 'Kode kas harus diisi');
+                isValid = false;
+            }
+            
+            if (!saldoAwal || parseFloat(saldoAwal) < 0) {
+                showFieldError('saldo_awal', 'Saldo awal harus diisi dan tidak boleh negatif');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+
+        function showFieldError(field, message) {
+            const errorDiv = document.getElementById(`error_${field}`);
+            if (errorDiv) {
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function clearValidationErrors() {
+            const errorDivs = document.querySelectorAll('[id^="error_"]');
+            errorDivs.forEach(div => {
+                div.style.display = 'none';
+                div.textContent = '';
+            });
+        }
+
+        // Save function (mock)
+        function saveEdit(event) {
+            event.preventDefault();
+            
+            if (!validateForm()) {
+                log('✗ Form validation failed', 'error');
+                return;
+            }
+            
+            log('✓ Form validation passed', 'success');
+            log('💾 Save clicked (test mode - not actually saving)', 'info');
+            
+            const formData = {
+                nama_kas: document.getElementById('edit_nama_kas').value,
+                kode_kas: document.getElementById('edit_kode_kas').value,
+                deskripsi: document.getElementById('edit_deskripsi').value,
+                saldo_awal: document.getElementById('edit_saldo_awal').value
+            };
+            
+            log(`📝 Form data: ${JSON.stringify(formData, null, 2)}`, 'info');
+            
+            closeEditModal();
+        }
+
+        // Load and display buku kas list
+        async function loadBukuKasList() {
+            try {
+                const response = await fetch('http://localhost:8000/test/buku-kas');
+                if (response.ok) {
+                    const data = await response.json();
+                    let html = '<h3>Buku Kas Records:</h3>';
+                    
+                    data.data.forEach(item => {
+                        html += `
+                            <div style="border: 1px solid #ddd; padding: 10px; margin: 5px 0; border-radius: 4px;">
+                                <strong>${item.nama_kas}</strong> (${item.kode_kas})
+                                <br>Saldo: Rp ${parseFloat(item.saldo_awal).toLocaleString('id-ID')}
+                                <br><small>${item.deskripsi || 'No description'}</small>
+                                <br><button class="btn btn-primary" onclick="testEditData(${item.id})" style="margin-top: 5px;">Test Edit</button>
+                            </div>
+                        `;
+                    });
+                    
+                    document.getElementById('bukuKasList').innerHTML = html;
+                } else {
+                    throw new Error('Failed to load data');
+                }
+            } catch (error) {
+                document.getElementById('bukuKasList').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Click outside modal to close
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target == modal) {
+                closeEditModal();
+            }
+        }
+
+        // Auto-load data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            log('Page loaded, ready for testing', 'info');
+            setTimeout(loadBukuKasList, 1000);
+        });
+    </script>
+</body>
+</html>

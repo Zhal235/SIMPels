@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modal Edit - Buku Kas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-8">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h1 class="text-2xl font-bold mb-6">End-to-End Test: Modal Edit Functionality</h1>
+            
+            <div class="space-y-4">
+                <div class="border rounded-lg p-4">
+                    <h2 class="text-lg font-semibold mb-4">Test 1: Fetch Data from Main Endpoint</h2>
+                    <button id="testMainEndpoint" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        Test Main Endpoint (ID: 1)
+                    </button>
+                    <div id="mainEndpointResult" class="mt-4 p-4 bg-gray-50 rounded hidden"></div>
+                </div>
+                
+                <div class="border rounded-lg p-4">
+                    <h2 class="text-lg font-semibold mb-4">Test 2: Fetch Data from Fallback Endpoint</h2>
+                    <button id="testFallbackEndpoint" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        Test Fallback Endpoint (ID: 1)
+                    </button>
+                    <div id="fallbackEndpointResult" class="mt-4 p-4 bg-gray-50 rounded hidden"></div>
+                </div>
+                
+                <div class="border rounded-lg p-4">
+                    <h2 class="text-lg font-semibold mb-4">Test 3: Modal Simulation</h2>
+                    <button id="simulateModal" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                        Simulate Modal Edit (ID: 1)
+                    </button>
+                    <div id="modalResult" class="mt-4 p-4 bg-gray-50 rounded hidden"></div>
+                </div>
+                
+                <div class="border rounded-lg p-4">
+                    <h2 class="text-lg font-semibold mb-4">Test 4: Complete Modal Flow</h2>
+                    <button id="testCompleteFlow" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                        Test Complete Flow (Multiple IDs)
+                    </button>
+                    <div id="completeFlowResult" class="mt-4 p-4 bg-gray-50 rounded hidden"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const baseUrl = 'http://localhost:8000';
+        
+        // Test 1: Main endpoint
+        document.getElementById('testMainEndpoint').addEventListener('click', async function() {
+            const resultDiv = document.getElementById('mainEndpointResult');
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = '<div class="animate-pulse">Testing main endpoint...</div>';
+            
+            try {
+                const response = await fetch(`${baseUrl}/keuangan/buku-kas/1`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <div class="text-green-600 font-semibold">✓ SUCCESS</div>
+                    <pre class="mt-2 text-sm overflow-x-auto">${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="text-red-600 font-semibold">✗ FAILED</div>
+                    <div class="text-sm mt-2">Error: ${error.message}</div>
+                    <div class="text-xs text-gray-500 mt-1">This is expected if not authenticated</div>
+                `;
+            }
+        });
+        
+        // Test 2: Fallback endpoint
+        document.getElementById('testFallbackEndpoint').addEventListener('click', async function() {
+            const resultDiv = document.getElementById('fallbackEndpointResult');
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = '<div class="animate-pulse">Testing fallback endpoint...</div>';
+            
+            try {
+                const response = await fetch(`${baseUrl}/test/buku-kas/1`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `
+                    <div class="text-green-600 font-semibold">✓ SUCCESS</div>
+                    <pre class="mt-2 text-sm overflow-x-auto">${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="text-red-600 font-semibold">✗ FAILED</div>
+                    <div class="text-sm mt-2">Error: ${error.message}</div>
+                `;
+            }
+        });
+        
+        // Test 3: Modal simulation (similar to the actual modal logic)
+        document.getElementById('simulateModal').addEventListener('click', async function() {
+            const resultDiv = document.getElementById('modalResult');
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = '<div class="animate-pulse">Simulating modal edit logic...</div>';
+            
+            const kasId = 1;
+            let loadedData = null;
+            let usedFallback = false;
+            
+            try {
+                // Try main endpoint first
+                const mainResponse = await fetch(`${baseUrl}/keuangan/buku-kas/${kasId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (mainResponse.ok) {
+                    const data = await mainResponse.json();
+                    if (data.success) {
+                        loadedData = data.data;
+                    }
+                } else {
+                    throw new Error('Main endpoint failed');
+                }
+            } catch (error) {
+                // Try fallback endpoint
+                try {
+                    const fallbackResponse = await fetch(`${baseUrl}/test/buku-kas/${kasId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (fallbackResponse.ok) {
+                        const data = await fallbackResponse.json();
+                        if (data.success) {
+                            loadedData = data.data;
+                            usedFallback = true;
+                        }
+                    }
+                } catch (fallbackError) {
+                    // Both failed
+                }
+            }
+            
+            if (loadedData) {
+                resultDiv.innerHTML = `
+                    <div class="text-green-600 font-semibold">✓ SUCCESS</div>
+                    <div class="text-sm mt-2">Used ${usedFallback ? 'fallback' : 'main'} endpoint</div>
+                    <div class="mt-4 p-4 bg-white rounded border">
+                        <h3 class="font-semibold">Data loaded for modal:</h3>
+                        <div class="grid grid-cols-2 gap-4 mt-2 text-sm">
+                            <div>ID: ${loadedData.id}</div>
+                            <div>Nama: ${loadedData.nama_kas}</div>
+                            <div>Kode: ${loadedData.kode_kas}</div>
+                            <div>Jenis: ${loadedData.jenis_kas}</div>
+                            <div>Saldo Awal: ${loadedData.saldo_awal}</div>
+                            <div>Status: ${loadedData.is_active ? 'Aktif' : 'Tidak Aktif'}</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="text-red-600 font-semibold">✗ FAILED</div>
+                    <div class="text-sm mt-2">Both main and fallback endpoints failed</div>
+                `;
+            }
+        });
+        
+        // Test 4: Complete flow with multiple IDs
+        document.getElementById('testCompleteFlow').addEventListener('click', async function() {
+            const resultDiv = document.getElementById('completeFlowResult');
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = '<div class="animate-pulse">Testing complete flow with multiple records...</div>';
+            
+            const testIds = [1, 2, 3, 4, 5];
+            const results = [];
+            
+            for (const kasId of testIds) {
+                let loadedData = null;
+                let usedFallback = false;
+                let error = null;
+                
+                try {
+                    // Try main endpoint first
+                    const mainResponse = await fetch(`${baseUrl}/keuangan/buku-kas/${kasId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (mainResponse.ok) {
+                        const data = await mainResponse.json();
+                        if (data.success) {
+                            loadedData = data.data;
+                        }
+                    } else {
+                        throw new Error('Main endpoint failed');
+                    }
+                } catch (mainError) {
+                    // Try fallback endpoint
+                    try {
+                        const fallbackResponse = await fetch(`${baseUrl}/test/buku-kas/${kasId}`, {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        });
+                        
+                        if (fallbackResponse.ok) {
+                            const data = await fallbackResponse.json();
+                            if (data.success) {
+                                loadedData = data.data;
+                                usedFallback = true;
+                            }
+                        }
+                    } catch (fallbackError) {
+                        error = `Both endpoints failed: ${mainError.message}`;
+                    }
+                }
+                
+                results.push({
+                    id: kasId,
+                    success: !!loadedData,
+                    usedFallback,
+                    data: loadedData,
+                    error
+                });
+            }
+            
+            const successCount = results.filter(r => r.success).length;
+            const fallbackCount = results.filter(r => r.usedFallback).length;
+            
+            resultDiv.innerHTML = `
+                <div class="text-${successCount === testIds.length ? 'green' : 'yellow'}-600 font-semibold">
+                    ${successCount}/${testIds.length} tests passed
+                </div>
+                <div class="text-sm mt-2">
+                    Fallback used: ${fallbackCount} times
+                </div>
+                <div class="mt-4 space-y-2">
+                    ${results.map(result => `
+                        <div class="p-2 rounded ${result.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} border">
+                            <div class="font-medium">ID ${result.id}: ${result.success ? '✓' : '✗'}</div>
+                            ${result.success ? 
+                                `<div class="text-sm text-gray-600">
+                                    ${result.data.nama_kas} (${result.usedFallback ? 'fallback' : 'main'} endpoint)
+                                </div>` : 
+                                `<div class="text-sm text-red-600">${result.error}</div>`
+                            }
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>

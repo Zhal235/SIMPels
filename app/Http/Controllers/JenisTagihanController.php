@@ -7,6 +7,7 @@ use App\Models\TahunAjaran;
 use App\Models\Santri;
 use App\Models\TagihanSantri;
 use App\Models\JenisTagihanKelas;
+use App\Models\BukuKas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -17,9 +18,10 @@ class JenisTagihanController extends Controller
      */
     public function index()
     {
-        $jenisTagihans = JenisTagihan::with('tahunAjaran')->paginate(10);
+        $jenisTagihans = JenisTagihan::with(['tahunAjaran', 'bukuKas'])->paginate(10);
         $activeTahunAjaran = TahunAjaran::getActive();
-        return view('keuangan.jenis_tagihan.index', compact('jenisTagihans', 'activeTahunAjaran'));
+        $bukuKasList = BukuKas::where('is_active', true)->orderBy('nama_kas')->get();
+        return view('keuangan.jenis_tagihan.index', compact('jenisTagihans', 'activeTahunAjaran', 'bukuKasList'));
     }
 
     /**
@@ -28,7 +30,8 @@ class JenisTagihanController extends Controller
     public function create()
     {
         $tahunAjarans = TahunAjaran::all();
-        return view('keuangan.jenis_tagihan.create', compact('tahunAjarans'));
+        $bukuKasList = BukuKas::orderBy('nama_kas')->get();
+        return view('keuangan.jenis_tagihan.create', compact('tahunAjarans', 'bukuKasList'));
     }
 
     /**
@@ -44,6 +47,7 @@ class JenisTagihanController extends Controller
             'is_bulanan' => 'required|in:0,1',
             'nominal' => 'required|numeric|min:0',
             'is_nominal_per_kelas' => 'required|in:0,1',
+            'buku_kas_id' => 'required|exists:buku_kas,id',
         ];
 
         $validator = \Validator::make($request->all(), $rules);
@@ -66,6 +70,7 @@ class JenisTagihanController extends Controller
                 'is_bulanan' => $request->is_bulanan,
                 'nominal' => $request->nominal,
                 'is_nominal_per_kelas' => $request->is_nominal_per_kelas,
+                'buku_kas_id' => $request->buku_kas_id,
             ]);
 
             // Generate tagihan santri untuk jenis tagihan baru
@@ -109,22 +114,46 @@ class JenisTagihanController extends Controller
     public function edit($id)
     {
         try {
-            $jenisTagihan = JenisTagihan::findOrFail($id);
+            $jenisTagihan = JenisTagihan::with('bukuKas')->findOrFail($id);
             
             if (request()->expectsJson() || request()->ajax() || request()->header('X-Requested-With') === 'XMLHttpRequest') {
+                $bukuKasList = BukuKas::where('is_active', true)->orderBy('nama_kas')->get(['id', 'nama_kas', 'kode_kas', 'jenis_kas_id']);
+                
+                // Ensure all required fields are present with proper values
+                $jenisTagihanData = [
+                    'id' => $jenisTagihan->id,
+                    'nama' => $jenisTagihan->nama,
+                    'deskripsi' => $jenisTagihan->deskripsi ?? '',
+                    'kategori_tagihan' => $jenisTagihan->kategori_tagihan,
+                    'is_bulanan' => (int) $jenisTagihan->is_bulanan,
+                    'nominal' => $jenisTagihan->nominal,
+                    'is_nominal_per_kelas' => (int) $jenisTagihan->is_nominal_per_kelas,
+                    'buku_kas_id' => $jenisTagihan->buku_kas_id ?? null,
+                    'tahun_ajaran_id' => $jenisTagihan->tahun_ajaran_id,
+                    'created_at' => $jenisTagihan->created_at,
+                    'updated_at' => $jenisTagihan->updated_at,
+                ];
+                
                 return response()->json([
                     'success' => true,
-                    'jenisTagihan' => $jenisTagihan
+                    'jenisTagihan' => $jenisTagihanData,
+                    'bukuKasList' => $bukuKasList
                 ]);
             }
             
             $tahunAjarans = TahunAjaran::all();
-            return view('keuangan.jenis_tagihan.edit', compact('jenisTagihan', 'tahunAjarans'));
+            $bukuKasList = BukuKas::where('is_active', true)->orderBy('nama_kas')->get();
+            return view('keuangan.jenis_tagihan.edit', compact('jenisTagihan', 'tahunAjarans', 'bukuKasList'));
         } catch (\Exception $e) {
+            \Log::error('Error in JenisTagihanController@edit: ' . $e->getMessage(), [
+                'id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             if (request()->expectsJson() || request()->ajax() || request()->header('X-Requested-With') === 'XMLHttpRequest') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Data tidak ditemukan: ' . $e->getMessage()
+                    'message' => 'Data tidak ditemukan atau terjadi kesalahan: ' . $e->getMessage()
                 ], 404);
             }
             
@@ -147,6 +176,7 @@ class JenisTagihanController extends Controller
             'is_bulanan' => 'required|in:0,1',
             'nominal' => 'required|numeric|min:0',
             'is_nominal_per_kelas' => 'required|in:0,1',
+            'buku_kas_id' => 'required|exists:buku_kas,id',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -169,6 +199,7 @@ class JenisTagihanController extends Controller
                 'is_bulanan' => $request->is_bulanan,
                 'nominal' => $request->nominal,
                 'is_nominal_per_kelas' => $request->is_nominal_per_kelas,
+                'buku_kas_id' => $request->buku_kas_id,
             ]);
 
             // Generate tagihan santri jika ada perubahan yang mempengaruhi

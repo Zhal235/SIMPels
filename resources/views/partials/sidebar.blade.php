@@ -79,6 +79,18 @@
                     <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/jenis-tagihan*') ? 'text-white' : 'text-blue-400' }}">category</span>
                     <span class="menu-label">Jenis Tagihan</span>
                 </a>
+                <a href="{{ route('keuangan.buku-kas.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/buku-kas*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/buku-kas*') ? 'text-white' : 'text-blue-400' }}">account_balance</span>
+                    <span class="menu-label">Buku Kas</span>
+                </a>
+                <a href="{{ route('keuangan.jenis-buku-kas.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/jenis-buku-kas*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/jenis-buku-kas*') ? 'text-white' : 'text-blue-400' }}">folder_special</span>
+                    <span class="menu-label">Jenis Buku Kas</span>
+                </a>
+                <a href="{{ route('keuangan.transaksi-kas.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/transaksi-kas*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/transaksi-kas*') ? 'text-white' : 'text-blue-400' }}">receipt</span>
+                    <span class="menu-label">Transaksi Kas</span>
+                </a>
                 <a href="{{ route('keuangan.tagihan-santri.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/tagihan-santri*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/tagihan-santri*') ? 'text-white' : 'text-blue-400' }}">receipt_long</span>
                     <span class="menu-label">Tagihan Santri</span>

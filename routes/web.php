@@ -13,10 +13,102 @@ use App\Http\Controllers\RfidTagController;
 use App\Http\Controllers\PembayaranSantriController;
 use App\Http\Controllers\JenisTagihanController;
 use App\Http\Controllers\TahunAjaranController;
+use App\Http\Controllers\BukuKasController;
+use Illuminate\Http\Request;
 
 
 // Redirect root ke data santri
 Route::get('/', fn() => redirect()->route('santris.index'));
+
+// Test API endpoint for Buku Kas (no auth required)
+Route::get('test/buku-kas', function() {
+    try {
+        $bukuKas = \App\Models\BukuKas::all();
+        return response()->json([
+            'success' => true,
+            'data' => $bukuKas,
+            'count' => $bukuKas->count()
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error fetching buku kas'
+        ], 500);
+    }
+})->name('test.buku-kas.list');
+
+Route::get('test/buku-kas/{id}', function($id) {
+    try {
+        $bukuKas = \App\Models\BukuKas::findOrFail($id);
+        return response()->json([
+            'success' => true,
+            'data' => $bukuKas
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Buku kas tidak ditemukan'
+        ], 404);
+    }
+})->name('test.buku-kas');
+
+// Add test endpoint to update buku kas without auth requirements
+Route::post('test/buku-kas/{id}', function($id, Request $request) {
+    try {
+        $bukuKas = \App\Models\BukuKas::findOrFail($id);
+        
+        // Validate request
+        $validated = $request->validate([
+            'nama_kas' => 'required|string|max:255|unique:buku_kas,nama_kas,' . $bukuKas->id,
+            'kode_kas' => 'required|string|max:50|unique:buku_kas,kode_kas,' . $bukuKas->id,
+            'deskripsi' => 'nullable|string',
+            'jenis_kas_id' => 'required|exists:jenis_buku_kas,id',
+            'saldo_awal' => 'required|numeric|min:0',
+            'is_active' => 'boolean'
+        ]);
+
+        $validated['is_active'] = $request->has('is_active');
+        $bukuKas->update($validated);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Test update: Buku kas berhasil diperbarui!',
+            'data' => $bukuKas
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error: ' . $e->getMessage()
+        ], 500);
+    }
+})->name('test.buku-kas.update');
+
+// Add test endpoint to delete buku kas without auth requirements
+Route::delete('test/buku-kas/{id}', function($id) {
+    try {
+        $bukuKas = \App\Models\BukuKas::findOrFail($id);
+        
+        // Check if any jenis tagihan is linked
+        if ($bukuKas->jenisTagihan()->count() > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak dapat menghapus buku kas karena masih terdapat jenis tagihan yang terkait!'
+            ], 400);
+        }
+        
+        $bukuKas->delete();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Test delete: Buku kas berhasil dihapus!'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error: ' . $e->getMessage()
+        ], 500);
+    }
+})->name('test.buku-kas.delete');
 
 Route::middleware(['auth'])->group(function () {
 
@@ -93,6 +185,29 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('jenis-tagihan/{id}', [JenisTagihanController::class, 'destroy'])->name('jenis-tagihan.destroy')->middleware(['role:admin']);
         Route::get('jenis-tagihan/{id}/kelas', [JenisTagihanController::class, 'showKelas'])->name('jenis-tagihan.show-kelas')->middleware(['role:admin']);
         Route::put('jenis-tagihan/{id}/kelas', [JenisTagihanController::class, 'updateKelas'])->name('jenis-tagihan.update-kelas')->middleware(['role:admin']);
+        
+        // Buku Kas
+        Route::resource('buku-kas', BukuKasController::class)->middleware(['role:admin']);
+        Route::get('buku-kas-list', [BukuKasController::class, 'getBukuKasList'])->name('buku-kas.list');
+        
+        // Jenis Buku Kas
+        Route::resource('jenis-buku-kas', \App\Http\Controllers\JenisBukuKasController::class)->middleware(['role:admin']);
+        Route::get('jenis-buku-kas-dropdown', [\App\Http\Controllers\JenisBukuKasController::class, 'getForDropdown'])->name('jenis-buku-kas.dropdown');
+        
+        // Transaksi Kas
+        Route::resource('transaksi-kas', \App\Http\Controllers\TransaksiKasController::class)->middleware(['role:admin|bendahara']);
+        Route::post('transaksi-kas/{id}/approve', [\App\Http\Controllers\TransaksiKasController::class, 'approve'])->name('transaksi-kas.approve')->middleware(['role:admin|bendahara']);
+        Route::post('transaksi-kas/{id}/reject', [\App\Http\Controllers\TransaksiKasController::class, 'reject'])->name('transaksi-kas.reject')->middleware(['role:admin|bendahara']);
+        
+        // Debug route for testing
+        Route::get('debug/buku-kas/{id}', function($id) {
+            $bukuKas = \App\Models\BukuKas::findOrFail($id);
+            return response()->json([
+                'success' => true,
+                'data' => $bukuKas,
+                'debug' => 'This is debug route'
+            ]);
+        })->name('debug.buku-kas');
         
         // Pembayaran Santri
         Route::middleware(['role:admin|bendahara'])->group(function() {

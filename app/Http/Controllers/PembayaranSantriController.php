@@ -147,6 +147,13 @@ class PembayaranSantriController extends Controller
                     DB::rollBack();
                     return response()->json(['success' => false, 'message' => 'Tidak ada tahun ajaran aktif'], 400);
                 }
+                
+                // Ambil data santri untuk referensi
+                $santri = Santri::find($request->santri_id);
+                if (!$santri) {
+                    DB::rollBack();
+                    return response()->json(['success' => false, 'message' => 'Santri tidak ditemukan'], 400);
+                }
 
                 foreach ($request->payments as $payment) {
                     // Ambil data tagihan santri
@@ -197,6 +204,33 @@ class PembayaranSantriController extends Controller
 
                     // Update tagihan santri
                     $tagihanSantri->updatePembayaran();
+                    
+                    // Buat Transaksi Kas untuk mencatat pemasukan di buku kas terkait
+                    if ($jenisTagihan->buku_kas_id) {
+                        // Buat TransaksiKas baru untuk mencatat pemasukan pembayaran
+                        $transaksiKas = new \App\Models\TransaksiKas();
+                        $transaksiKas->buku_kas_id = $jenisTagihan->buku_kas_id;
+                        $transaksiKas->jenis_transaksi = 'pemasukan';
+                        $transaksiKas->kategori = 'Pembayaran Santri';
+                        $transaksiKas->kode_transaksi = \App\Models\TransaksiKas::generateKodeTransaksi('pemasukan');
+                        $transaksiKas->jumlah = $payment['nominal'];
+                        $transaksiKas->keterangan = 'Pembayaran ' . $jenisTagihan->nama . ' oleh ' . $santri->nama_santri . ' (' . $santri->nis . ')';
+                        $transaksiKas->metode_pembayaran = 'Tunai';
+                        $transaksiKas->tanggal_transaksi = now();
+                        $transaksiKas->status = 'approved';
+                        $transaksiKas->created_by = auth()->id();
+                        $transaksiKas->approved_by = auth()->id();
+                        $transaksiKas->tagihan_santri_id = $payment['tagihan_santri_id'];
+                        $transaksiKas->save();
+                        
+                        // Update saldo buku kas
+                        $bukuKas = \App\Models\BukuKas::find($jenisTagihan->buku_kas_id);
+                        if ($bukuKas) {
+                            $bukuKas->updateSaldo($payment['nominal'], 'masuk');
+                        }
+                    } else {
+                        \Log::warning('Pembayaran tagihan tanpa buku kas terkait: Tagihan #' . $payment['tagihan_santri_id']);
+                    }
                 }
                 
                 DB::commit();
