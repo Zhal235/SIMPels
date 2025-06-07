@@ -207,97 +207,105 @@
                                 <div class="overflow-x-auto pb-4">
                                     <!-- Tab Content: Tagihan Rutin -->
                                     <div x-show="activeTab === 'rutin'">
-                                        <!-- Monthly Payment Boxes for Unpaid Rutin -->
-                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                            <template x-for="month in ['2024-07', '2024-08', '2024-09', '2024-10', '2024-11', '2024-12', '2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06'].filter(m => payments.some(p => p.bulan === m && p.status !== 'lunas' && (p.kategori_tagihan === 'Rutin' || p.is_bulanan)))" :key="month">
-                                                <div class="border rounded-lg overflow-hidden shadow-sm">
-                                                    <!-- Month Header with Checkbox -->
-                                                    <div class="bg-blue-50 px-4 py-3 border-b flex justify-between items-center">
-                                                        <h3 class="font-medium text-gray-900" x-text="formatMonthDisplay(month)"></h3>
-                                                        <label class="flex items-center">
-                                                            <input type="checkbox" 
-                                                                   @change="toggleMonthSelection(month, 'rutin')"
-                                                                   :checked="isMonthSelected(month, 'rutin')"
-                                                                   class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                                            <span class="ml-2 text-xs text-gray-700">Pilih Semua</span>
-                                                        </label>
-                                                    </div>
-                                                    
-                                                    <!-- Month Payments (Only Unpaid Rutin) -->
-                                                    <div class="divide-y divide-gray-200">
-                                                        <template x-for="payment in payments.filter(p => p.bulan === month && p.status !== 'lunas' && (p.kategori_tagihan === 'Rutin' || p.is_bulanan))" :key="payment.id">
-                                                            <div class="p-4" :class="payment.status === 'sebagian' ? 'bg-yellow-50' : ''">
-                                                                <div class="flex justify-between items-start mb-2">
-                                                                    <div>
-                                                                        <div class="font-medium text-gray-900" x-text="payment.jenis_tagihan"></div>
-                                                                        <div class="text-xs text-blue-600 font-medium">Rutin</div>
-                                                                    </div>
-                                                                    <div>
-                                                                        <input type="checkbox"
-                                                                            :value="payment.id" 
-                                                                            :checked="selectedPayments.includes(Number(payment.id))"
-                                                                            @change="togglePaymentSelection(Number(payment.id))"
-                                                                            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                <!-- Payment Details -->
-                                                                <div class="mt-2 space-y-1 text-sm">
-                                                                    <div class="flex justify-between">
-                                                                        <span class="text-gray-600">Tagihan:</span>
-                                                                        <span class="font-medium" x-text="formatRupiah(payment.tagihan)"></span>
-                                                                    </div>
-                                                                    <div class="flex justify-between">
-                                                                        <span class="text-gray-600">Dibayar:</span>
-                                                                        <span class="font-medium" x-text="formatRupiah(payment.dibayar)"></span>
-                                                                    </div>
-                                                                    <div class="flex justify-between">
-                                                                        <span class="text-gray-600">Sisa:</span>
-                                                                        <span class="font-medium text-red-600" x-text="formatRupiah(payment.sisa)"></span>
-                                                                    </div>
-                                                                    <!-- Tanggal Jatuh Tempo -->
-                                                                    <div x-show="payment.tanggal_jatuh_tempo" class="flex justify-between pt-1 border-t border-gray-100">
-                                                                        <span class="text-gray-600">Jatuh Tempo:</span>
-                                                                        <span class="font-medium text-xs" 
-                                                                              :class="payment.is_jatuh_tempo ? 'text-red-600' : 'text-gray-700'"
-                                                                              x-text="formatDate(payment.tanggal_jatuh_tempo)"></span>
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                <!-- Status Badge dengan Indikator Jatuh Tempo -->
-                                                                <div class="mt-3 space-y-1">
-                                                                    <!-- Badge Jatuh Tempo (jika sudah jatuh tempo) -->
-                                                                    <div x-show="payment.is_jatuh_tempo" class="text-center">
-                                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 w-full justify-center">
-                                                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                                                            </svg>
-                                                                            Jatuh Tempo
-                                                                        </span>
-                                                                    </div>
-                                                                    <!-- Badge Status Pembayaran -->
-                                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-full justify-center"
-                                                                        :class="{
-                                                                            'bg-red-100 text-red-800': payment.status === 'belum_bayar',
-                                                                            'bg-yellow-100 text-yellow-800': payment.status === 'sebagian'
-                                                                        }"
-                                                                        x-text="payment.status === 'sebagian' ? 'Sebagian' : 'Belum Bayar'">
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </template>
-                                                        
-                                                        <!-- Empty state if no unpaid rutin payments for this month -->
-                                                        <div x-show="!payments.some(p => p.bulan === month && p.status !== 'lunas' && (p.kategori_tagihan === 'Rutin' || p.is_bulanan))" class="p-4 text-center text-gray-500 text-sm">
-                                                            Semua tagihan rutin bulan ini telah lunas
+                                        <!-- Tagihan Rutin menggunakan data dari payments (tagihan santri) -->
+                                        <div x-show="payments.filter(p => p.status !== 'lunas' && (p.kategori_tagihan === 'Rutin' || p.is_bulanan)).length > 0">
+                                            <!-- Group by Tahun Ajaran (mirip dengan tunggakan) -->
+                                            <div class="mb-8">
+                                                <!-- Tahun Ajaran Header untuk Rutin -->
+                                                <div class="bg-blue-100 px-6 py-4 rounded-t-lg border border-blue-200">
+                                                    <div class="flex justify-between items-center">
+                                                        <div>
+                                                            <h3 class="text-lg font-semibold text-blue-900">Tagihan Rutin Tahun Ajaran Aktif</h3>
+                                                            <p class="text-sm text-blue-700" x-text="payments.filter(p => p.status !== 'lunas' && (p.kategori_tagihan === 'Rutin' || p.is_bulanan)).length + ' tagihan belum lunas'"></p>
+                                                        </div>
+                                                        <div class="text-right">
+                                                            <p class="text-sm text-blue-700">Total Tagihan:</p>
+                                                            <p class="text-xl font-bold text-blue-900" x-text="formatRupiah(payments.filter(p => p.status !== 'lunas' && (p.kategori_tagihan === 'Rutin' || p.is_bulanan)).reduce((total, p) => total + (p.sisa || 0), 0))"></p>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </template>
+                                                
+                                                <!-- Monthly Payment Boxes for Rutin -->
+                                                <div class="border-l border-r border-b border-blue-200 rounded-b-lg bg-blue-50/30 p-6">
+                                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                                        <template x-for="month in [...new Set(payments.filter(p => p.status !== 'lunas' && (p.kategori_tagihan === 'Rutin' || p.is_bulanan) && p.bulan).map(p => p.bulan))].sort()" :key="month">
+                                                            <div class="border border-blue-200 rounded-lg overflow-hidden shadow-sm bg-white">
+                                                                <!-- Month Header with Checkbox -->
+                                                                <div class="bg-blue-50 px-4 py-3 border-b border-blue-200 flex justify-between items-center">
+                                                                    <h3 class="font-medium text-blue-900" x-text="formatMonthDisplay(month)"></h3>
+                                                                    <label class="flex items-center">
+                                                                        <input type="checkbox" 
+                                                                               @change="toggleMonthSelection(month, 'rutin')"
+                                                                               :checked="isMonthSelected(month, 'rutin')"
+                                                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                                                        <span class="ml-2 text-xs text-blue-700">Pilih Semua</span>
+                                                                    </label>
+                                                                </div>
+                                                                
+                                                                <!-- Month Payments -->
+                                                                <div class="divide-y divide-blue-100">
+                                                                    <template x-for="payment in payments.filter(p => p.bulan === month && p.status !== 'lunas' && (p.kategori_tagihan === 'Rutin' || p.is_bulanan))" :key="payment.id">
+                                                                        <div class="p-4">
+                                                                            <div class="flex justify-between items-start mb-2">
+                                                                                <div>
+                                                                                    <div class="font-medium text-gray-900" x-text="payment.jenis_tagihan"></div>
+                                                                                    <div class="text-xs text-blue-600 font-medium" x-text="payment.kategori_tagihan || (payment.is_bulanan ? 'Rutin' : 'Lainnya')"></div>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <input type="checkbox"
+                                                                                        :value="payment.id" 
+                                                                                        :checked="selectedPayments.includes(Number(payment.id))"
+                                                                                        @change="togglePaymentSelection(Number(payment.id))"
+                                                                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                                                                </div>
+                                                                            </div>
+                                                                            
+                                                                            <!-- Payment Details -->
+                                                                            <div class="mt-2 space-y-1 text-sm">
+                                                                                <div class="flex justify-between">
+                                                                                    <span class="text-gray-600">Tagihan:</span>
+                                                                                    <span class="font-medium" x-text="formatRupiah(payment.tagihan)"></span>
+                                                                                </div>
+                                                                                <div class="flex justify-between" x-show="payment.dibayar > 0">
+                                                                                    <span class="text-gray-600">Dibayar:</span>
+                                                                                    <span class="text-green-600" x-text="formatRupiah(payment.dibayar)"></span>
+                                                                                </div>
+                                                                                <div class="flex justify-between border-t border-gray-100 pt-1">
+                                                                                    <span class="text-gray-600">Sisa:</span>
+                                                                                    <span class="font-medium text-blue-600" x-text="formatRupiah(payment.sisa)"></span>
+                                                                                </div>
+                                                                            </div>
+                                                                            
+                                                                            <!-- Due Date & Status -->
+                                                                            <div class="mt-3 space-y-2">
+                                                                                <div x-show="payment.tanggal_jatuh_tempo" class="text-xs text-blue-500">
+                                                                                    Jatuh Tempo: <span x-text="formatDate(payment.tanggal_jatuh_tempo)"></span>
+                                                                                </div>
+                                                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-full justify-center"
+                                                                                    :class="{
+                                                                                        'bg-red-100 text-red-800': payment.status === 'belum_bayar',
+                                                                                        'bg-yellow-100 text-yellow-800': payment.status === 'sebagian'
+                                                                                    }"
+                                                                                    x-text="payment.status === 'sebagian' ? 'Sebagian' : 'Belum Bayar'">
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </template>
+                                                                    
+                                                                    <!-- Empty state if no payments for this month -->
+                                                                    <div x-show="!payments.some(p => p.bulan === month && p.status !== 'lunas' && (p.kategori_tagihan === 'Rutin' || p.is_bulanan))" class="p-4 text-center text-gray-500 text-sm">
+                                                                        Tidak ada tagihan rutin
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                         
-                                        <!-- Empty state if no rutin payments at all -->
-                                        <div x-show="!payments.some(p => p.status !== 'lunas' && (p.kategori_tagihan === 'Rutin' || p.is_bulanan))" class="text-center py-12">
+                                        <!-- Empty state if no rutin payments -->
+                                        <div x-show="payments.filter(p => p.status !== 'lunas' && (p.kategori_tagihan === 'Rutin' || p.is_bulanan)).length === 0" class="text-center py-12">
                                             <div class="text-gray-400 mb-4">
                                                 <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />

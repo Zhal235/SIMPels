@@ -108,14 +108,10 @@ class PembayaranSantriController extends Controller
 
             $today = now()->format('Y-m-d');
 
-            // Ambil tagihan santri untuk tahun ajaran aktif yang belum jatuh tempo
+            // Ambil SEMUA tagihan santri untuk tahun ajaran aktif (tidak filter jatuh tempo)
+            // Filter jatuh tempo hanya untuk tab tunggakan, bukan untuk tab tagihan rutin
             $tagihanSantri = TagihanSantri::where('santri_id', $santriId)
                 ->where('tahun_ajaran_id', $activeTahunAjaran->id)
-                ->where(function($query) use ($today) {
-                    // Tagihan yang belum jatuh tempo atau tanggal jatuh tempo masih di masa depan
-                    $query->whereNull('tanggal_jatuh_tempo')
-                          ->orWhere('tanggal_jatuh_tempo', '>=', $today);
-                })
                 ->with(['jenisTagihan', 'tahunAjaran', 'transaksis'])
                 ->orderBy('jenis_tagihan_id')
                 ->get();
@@ -131,7 +127,12 @@ class PembayaranSantriController extends Controller
                         'nominal_tagihan' => $tagihan->nominal_tagihan,
                         'nominal_dibayar' => $tagihan->nominal_dibayar,
                         'sisa_tagihan' => $tagihan->sisa_tagihan,
+                        // Frontend compatibility fields
+                        'tagihan' => (float) $tagihan->nominal_tagihan,
+                        'dibayar' => (float) $tagihan->nominal_dibayar,
+                        'sisa' => (float) $tagihan->sisa_tagihan,
                         'status_pembayaran' => $tagihan->status_pembayaran,
+                        'status' => $tagihan->status_pembayaran, // Add status field for frontend compatibility
                         'tanggal_jatuh_tempo' => $tagihan->tanggal_jatuh_tempo,
                         'is_jatuh_tempo' => $tagihan->is_jatuh_tempo,
                         'keterangan' => $tagihan->keterangan,
