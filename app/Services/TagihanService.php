@@ -419,30 +419,81 @@ class TagihanService
                     
                     if ($existingTagihan) {
                         if ($replaceExisting) {
-                            // Update existing tagihan
-                            $existingTagihan->update([
-                                'nominal_tagihan' => $sourceTagihan->nominal_tagihan,
-                                'tanggal_jatuh_tempo' => $this->calculateDueDate($jenisTagihan, $targetYear),
-                                'status' => 'aktif',
-                                'keterangan' => 'Disalin dari ' . $sourceYear->nama_tahun_ajaran
-                            ]);
-                            $updatedCount++;
+                            // For monthly bills, we should delete existing and create new ones for all months
+                            if ($jenisTagihan->is_bulanan) {
+                                // Delete existing monthly tagihan for this santri, jenis, and year
+                                TagihanSantri::where('santri_id', $santri->id)
+                                    ->where('jenis_tagihan_id', $jenisTagihan->id)
+                                    ->where('tahun_ajaran_id', $targetYear->id)
+                                    ->delete();
+                                
+                                // Create new tagihan for each month
+                                $bulanList = $this->generateBulanList($targetYear);
+                                foreach ($bulanList as $bulan) {
+                                    TagihanSantri::create([
+                                        'santri_id' => $santri->id,
+                                        'jenis_tagihan_id' => $jenisTagihan->id,
+                                        'tahun_ajaran_id' => $targetYear->id,
+                                        'bulan' => $bulan, // Use generated month from target year
+                                        'nominal_tagihan' => $sourceTagihan->nominal_tagihan,
+                                        'nominal_dibayar' => 0,
+                                        'nominal_keringanan' => 0,
+                                        'tanggal_jatuh_tempo' => $this->calculateDueDateForBulanan($bulan),
+                                        'status' => 'aktif',
+                                        'keterangan' => 'Disalin dari ' . $sourceYear->nama_tahun_ajaran
+                                    ]);
+                                }
+                                $updatedCount++;
+                            } else {
+                                // For non-monthly bills, just update the existing record
+                                $existingTagihan->update([
+                                    'nominal_tagihan' => $sourceTagihan->nominal_tagihan,
+                                    'bulan' => $targetYear->tahun_mulai . '-07', // Default to July of start year for annual bills
+                                    'tanggal_jatuh_tempo' => $this->calculateDueDate($jenisTagihan, $targetYear),
+                                    'status' => 'aktif',
+                                    'keterangan' => 'Disalin dari ' . $sourceYear->nama_tahun_ajaran
+                                ]);
+                                $updatedCount++;
+                            }
                         }
                         continue; // Skip if exists and not replacing
                     }
                     
-                    // Create new tagihan
-                    $newTagihan = TagihanSantri::create([
-                        'santri_id' => $santri->id,
-                        'jenis_tagihan_id' => $jenisTagihan->id,
-                        'tahun_ajaran_id' => $targetYear->id,
-                        'nominal_tagihan' => $sourceTagihan->nominal_tagihan,
-                        'nominal_dibayar' => 0,
-                        'nominal_keringanan' => 0,
-                        'tanggal_jatuh_tempo' => $this->calculateDueDate($jenisTagihan, $targetYear),
-                        'status' => 'aktif',
-                        'keterangan' => 'Disalin dari ' . $sourceYear->nama_tahun_ajaran
-                    ]);
+                    // For monthly bills, we need to generate all months in the academic year
+                    if ($jenisTagihan->is_bulanan) {
+                        $bulanList = $this->generateBulanList($targetYear);
+                        
+                        foreach ($bulanList as $bulan) {
+                            $newTagihan = TagihanSantri::create([
+                                'santri_id' => $santri->id,
+                                'jenis_tagihan_id' => $jenisTagihan->id,
+                                'tahun_ajaran_id' => $targetYear->id,
+                                'bulan' => $bulan, // Use generated month from target year
+                                'nominal_tagihan' => $sourceTagihan->nominal_tagihan,
+                                'nominal_dibayar' => 0,
+                                'nominal_keringanan' => 0,
+                                'tanggal_jatuh_tempo' => $this->calculateDueDateForBulanan($bulan),
+                                'status' => 'aktif',
+                                'keterangan' => 'Disalin dari ' . $sourceYear->nama_tahun_ajaran
+                            ]);
+                            $createdCount++;
+                        }
+                    } else {
+                        // For non-monthly bills, create a single record
+                        $newTagihan = TagihanSantri::create([
+                            'santri_id' => $santri->id,
+                            'jenis_tagihan_id' => $jenisTagihan->id,
+                            'tahun_ajaran_id' => $targetYear->id,
+                            'bulan' => $targetYear->tahun_mulai . '-07', // Default to July of start year for annual bills
+                            'nominal_tagihan' => $sourceTagihan->nominal_tagihan,
+                            'nominal_dibayar' => 0,
+                            'nominal_keringanan' => 0,
+                            'tanggal_jatuh_tempo' => $this->calculateDueDate($jenisTagihan, $targetYear),
+                            'status' => 'aktif',
+                            'keterangan' => 'Disalin dari ' . $sourceYear->nama_tahun_ajaran
+                        ]);
+                        $createdCount++;
+                    }
                     
                     if ($newTagihan) {
                         $createdCount++;
@@ -482,5 +533,24 @@ class TagihanService
             // For annual payments, set to 3 months after year start
             return Carbon::createFromDate($tahunAjaran->tahun_mulai, 1, 1)->addMonths(3);
         }
+    }
+
+    /**
+     * Calculate due date for specific month
+     */
+    private function calculateDueDateForBulanan($bulan)
+    {
+        // Format bulan: YYYY-MM
+        $parts = explode('-', $bulan);
+        if (count($parts) === 2) {
+            $tahun = (int) $parts[0];
+            $bulanInt = (int) $parts[1];
+            
+            // Set jatuh tempo pada tanggal 15 setiap bulan
+            return Carbon::createFromDate($tahun, $bulanInt, 15);
+        }
+        
+        // Fallback: 30 hari dari sekarang
+        return Carbon::now()->addDays(30);
     }
 }

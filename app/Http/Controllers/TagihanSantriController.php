@@ -16,10 +16,23 @@ class TagihanSantriController extends Controller
      */
     public function index(Request $request)
     {
+        // Clear any potential caching issues
+        TahunAjaran::clearCache();
+        
         $activeTahunAjaran = TahunAjaran::getActive();
         
         if (!$activeTahunAjaran) {
-            return redirect()->back()->with('error', 'Tidak ada tahun ajaran aktif');
+            return redirect()->back()->with('error', 'Tidak ada tahun ajaran aktif. Silakan aktifkan tahun ajaran terlebih dahulu.');
+        }
+
+        // Add debugging information in development
+        if (config('app.debug')) {
+            \Log::info('TagihanSantriController: Using active academic year', [
+                'id' => $activeTahunAjaran->id,
+                'nama' => $activeTahunAjaran->nama_tahun_ajaran,
+                'tahun_mulai' => $activeTahunAjaran->tahun_mulai,
+                'tahun_selesai' => $activeTahunAjaran->tahun_selesai
+            ]);
         }
 
         $kelasFilter = $request->get('kelas');
@@ -44,11 +57,16 @@ class TagihanSantriController extends Controller
             $kelas = $santri->kelasRelasi->pluck('nama')->join(', ') ?: 'Belum ada kelas';
             $asrama = $santri->asrama_anggota_terakhir ? $santri->asrama_anggota_terakhir->asrama->nama_asrama : 'Belum ada asrama';
 
-            // Ambil tagihan santri untuk tahun ajaran aktif
+            // Ambil tagihan santri untuk tahun ajaran aktif dengan explicit filtering
             $tagihanSantris = TagihanSantri::where('santri_id', $santri->id)
-                ->where('tahun_ajaran_id', $activeTahunAjaran->id)
-                ->with(['jenisTagihan', 'transaksis'])
+                ->byTahunAjaran($activeTahunAjaran->id) // Use scope method
+                ->with(['jenisTagihan', 'transaksis', 'tahunAjaran']) // Include tahunAjaran to verify
                 ->get();
+
+            // Additional verification - ensure all tagihan belong to the correct academic year
+            $tagihanSantris = $tagihanSantris->filter(function($tagihan) use ($activeTahunAjaran) {
+                return $tagihan->tahun_ajaran_id == $activeTahunAjaran->id;
+            });
 
             $summaryRutin = ['total_tagihan' => 0, 'total_pembayaran' => 0, 'sisa_tagihan' => 0];
             $summaryInsidentil = ['total_tagihan' => 0, 'total_pembayaran' => 0, 'sisa_tagihan' => 0];
@@ -140,14 +158,33 @@ class TagihanSantriController extends Controller
             ->sort()
             ->values();
 
+        // Format period for display (Juli YYYY - Juni YYYY)
+        $periodDisplay = $this->formatAcademicYearPeriod($activeTahunAjaran);
+
         return view('keuangan.tagihan_santri.index', compact(
             'santris', 
             'activeTahunAjaran',
             'kelasFilter',
             'asramaFilter',
             'allKelas',
-            'allAsrama'
+            'allAsrama',
+            'periodDisplay'
         ));
+    }
+
+    /**
+     * Format academic year period for display
+     */
+    private function formatAcademicYearPeriod($tahunAjaran)
+    {
+        if (!$tahunAjaran) {
+            return 'Periode tidak tersedia';
+        }
+
+        $startYear = $tahunAjaran->tahun_mulai;
+        $endYear = $tahunAjaran->tahun_selesai;
+        
+        return "Juli {$startYear} - Juni {$endYear}";
     }
 
     /**
@@ -162,9 +199,9 @@ class TagihanSantriController extends Controller
             return response()->json(['error' => 'Tidak ada tahun ajaran aktif'], 400);
         }
 
-        // Get TagihanSantri untuk santri ini
+        // Get TagihanSantri untuk santri ini dengan scope aktif
         $tagihanSantris = TagihanSantri::where('santri_id', $santri->id)
-            ->where('tahun_ajaran_id', $activeTahunAjaran->id)
+            ->byTahunAjaran($activeTahunAjaran->id)
             ->with(['jenisTagihan', 'transaksis'])
             ->get()
             ->map(function($tagihan) {

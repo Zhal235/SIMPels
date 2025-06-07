@@ -36,11 +36,36 @@ class TahunAjaran extends Model
     }
 
     /**
-     * Get tahun ajaran aktif
+     * Get tahun ajaran aktif with cache clearing capability
      */
-    public static function getActive()
+    public static function getActive($forceRefresh = false)
     {
-        return self::where('is_active', true)->first();
+        if ($forceRefresh) {
+            // Clear any potential model cache if using caching
+            \Cache::forget('active_tahun_ajaran');
+        }
+        
+        $active = self::where('is_active', true)->first();
+        
+        // Fallback: if no active academic year, get the most recent one
+        if (!$active) {
+            $active = self::orderBy('tahun_mulai', 'desc')->first();
+            if ($active) {
+                \Log::warning('No active academic year found, using most recent: ' . $active->nama_tahun_ajaran);
+            }
+        }
+        
+        return $active;
+    }
+    
+    /**
+     * Clear any cached academic year data
+     */
+    public static function clearCache()
+    {
+        \Cache::forget('active_tahun_ajaran');
+        // Clear other potential caches if using any caching mechanism
+        return true;
     }
 
     /**

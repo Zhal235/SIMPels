@@ -2,58 +2,96 @@
 
 @section('content')
 <div>
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 pb-4 border-b border-gray-200">
-        <div class="mb-4 sm:mb-0">
-            <h1 class="text-3xl font-bold text-gray-800 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+    <div class="flex flex-col xl:flex-row items-start xl:items-center justify-between mb-4 pb-3 border-b border-gray-200 gap-3">
+        <div class="flex-1 min-w-0">
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mr-3 text-blue-600 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zM14 6a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h8zM6 10a2 2 0 012-2h4a2 2 0 012 2v2a2 2 0 01-2 2H8a2 2 0 01-2-2v-2z" />
                 </svg>
-                Tagihan Santri
-            </h1>
-            <p class="text-sm text-gray-500 mt-1">Rincian tagihan santri tahun ajaran {{ $activeTahunAjaran->nama_tahun_ajaran }}.</p>
-        </div>
-        <div class="flex items-center gap-2 w-full sm:w-auto">
-            <a href="{{ route('keuangan.tagihan-santri.export', request()->all()) }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Export Excel
-            </a>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">
+                        Tagihan Santri
+                    </h1>
+                    <p class="text-sm text-gray-600 mt-1">
+                        <span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-xs font-medium">
+                            Juli {{ $activeTahunAjaran->tahun_mulai }} - Juni {{ $activeTahunAjaran->tahun_selesai }}
+                        </span>
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-        <div class="p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Filter Data</h3>
+    <!-- Filter Section -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-4">
+        <div class="p-4">
             <form method="GET" action="{{ route('keuangan.tagihan-santri.index') }}">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div>
-                        <label for="kelas" class="block text-sm font-medium text-gray-700 mb-2">Kelas</label>
-                        <select name="kelas" id="kelas" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <div class="grid grid-cols-12 gap-4 items-end">
+                    <!-- Filter Label -->
+                    <div class="col-span-12 mb-2">
+                        <h3 class="text-sm font-medium text-gray-700">Filter & Pencarian</h3>
+                    </div>
+                    
+                    <!-- Kelas Filter -->
+                    <div class="col-span-12 md:col-span-3">
+                        <label for="kelas" class="block text-xs font-medium text-gray-600 mb-1">Kelas</label>
+                        <select name="kelas" id="kelas" class="w-full py-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                             <option value="">Semua Kelas</option>
                             @foreach($allKelas as $kelas)
                                 <option value="{{ $kelas }}" {{ $kelasFilter == $kelas ? 'selected' : '' }}>{{ $kelas }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="flex items-end">
-                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition">
+                    
+                    <!-- Search Input -->
+                    <div class="col-span-12 md:col-span-4">
+                        <label for="searchSantri" class="block text-xs font-medium text-gray-600 mb-1">Cari Santri</label>
+                        <input type="text" id="searchSantri" placeholder="Nama santri atau NIS..." 
+                               class="w-full py-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                    </div>
+                    
+                    <!-- Filter Button -->
+                    <div class="col-span-12 md:col-span-2">
+                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707v4.586a1 1 0 01-.293.707L11 21.414a1 1 0 01-.707.293H9a1 1 0 01-1-1v-7a1 1 0 00-.293-.707L1.293 7.293A1 1 0 011 6.586V4z" />
                             </svg>
                             Filter
                         </button>
                     </div>
+                    
+                    <!-- Reset Button -->
+                    <div class="col-span-12 md:col-span-2">
+                        <a href="{{ route('keuangan.tagihan-santri.index') }}" class="w-full inline-flex justify-center items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Reset
+                        </a>
+                    </div>
+                    
+                    <!-- Export Button -->
+                    <div class="col-span-12 md:col-span-1">
+                        <a href="{{ route('keuangan.tagihan-santri.export', request()->all()) }}" 
+                           class="w-full inline-flex justify-center items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200"
+                           title="Export Excel">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </a>
+                    </div>
                 </div>
             </form>
         </div>
-    </div>    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-medium text-gray-900">Data Tagihan Santri (Juli 2024 - Juni 2025)</h3>
-                <!-- Search Box -->                <div class="w-1/3">
-                    <input type="text" id="searchSantri" placeholder="Cari nama santri atau NIS..." 
-                           class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+    </div>    <!-- Data Table -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="p-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800">Data Tagihan Santri</h3>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Total data: <span id="totalRecords" class="font-medium">{{ count($santris) }}</span> santri
+                    </p>
                 </div>
             </div>
             
@@ -161,25 +199,33 @@
 
 <script>
 const santriData = @json($santris);
+const activeTahunAjaran = @json($activeTahunAjaran);
 
-// Debug untuk melihat data
-console.log('Santri Data:', santriData);
-
-// Handle search functionality
+// Handle search functionality with record counting
 function handleSearch() {
     const searchInput = document.getElementById('searchSantri');
+    const totalRecords = document.getElementById('totalRecords');
+    
     if (searchInput) {
         searchInput.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();
             const rows = document.querySelectorAll('.santri-row');
+            let visibleCount = 0;
+            
             rows.forEach(row => {
                 const searchData = row.getAttribute('data-search');
                 if (searchData && searchData.includes(searchTerm)) {
                     row.style.display = 'table-row';
+                    visibleCount++;
                 } else {
                     row.style.display = 'none';
                 }
             });
+            
+            // Update record counter
+            if (totalRecords) {
+                totalRecords.textContent = visibleCount;
+            }
         });
     }
 }
@@ -198,14 +244,12 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function showDetailModal(santriId) {
-    console.log('Clicked santri ID:', santriId);
-    console.log('Available santri data:', santriData);
     const santri = santriData.find(s => s.id == santriId);
     if (!santri) {
         console.error('Santri not found with ID:', santriId);
         return;
     }
-    console.log('Found santri:', santri);
+    
     document.getElementById('modalTitle').textContent = `Detail Tagihan - ${santri.nama_santri || 'Unknown'}`;
     let html = `
         <div class="mb-4 p-4 bg-gray-50 rounded-lg">
@@ -242,7 +286,7 @@ function showDetailModal(santriId) {
     `;
     // Tagihan Rutin Tab
     html += `<div id="rutin-detail" class="tab-content">
-        <h4 class="font-medium mb-3">Tagihan Rutin (Juli 2024 - Juni 2025)</h4>
+        <h4 class="font-medium mb-3">Tagihan Rutin (Juli ${activeTahunAjaran.tahun_mulai} - Juni ${activeTahunAjaran.tahun_selesai})</h4>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
@@ -256,10 +300,11 @@ function showDetailModal(santriId) {
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">`;
+    
     if (!santri.tagihan_rutin || santri.tagihan_rutin.length === 0) {
         html += `<tr><td colspan="6" class="px-3 py-4 text-center text-gray-400">Tidak ada tagihan rutin</td></tr>`;
     } else {
-        santri.tagihan_rutin.forEach(bulan => {
+        santri.tagihan_rutin.forEach((bulan, index) => {
             if (bulan.tagihan_items && bulan.tagihan_items.length > 0) {
                 bulan.tagihan_items.forEach(item => {
                     const status = (item.total_dibayar || 0) == 0 ? 'Belum Bayar' : ((item.sisa_bayar || 0) == 0 ? 'Lunas' : 'Sebagian');
@@ -335,7 +380,6 @@ function showDetailModal(santriId) {
     try {
         document.getElementById('modalContent').innerHTML = html;
         document.getElementById('detailModal').classList.remove('hidden');
-        console.log('Modal should be visible now');
     } catch (error) {
         console.error('Error showing modal:', error);
     }

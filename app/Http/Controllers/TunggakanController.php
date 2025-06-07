@@ -32,13 +32,15 @@ class TunggakanController extends Controller
         if (!$tahunAjaran) {
             return redirect()->route('keuangan.dashboard')->with('error', 'Tidak ada tahun ajaran aktif');
         }        // Query tunggakan santri aktif
-        $tunggakan = TagihanSantri::with(['santri', 'jenisTagihan'])
+        // Tambahkan filter untuk hanya mengambil tagihan yang sudah jatuh tempo
+        $tunggakan = TagihanSantri::with(['santri', 'jenisTagihan', 'tahunAjaran'])
             ->whereHas('santri', function($q) {
                 $q->where('status', 'aktif');
             })
             ->where('tahun_ajaran_id', $tahunAjaran->id)
             ->where('status', 'aktif')
             ->whereRaw('nominal_dibayar + nominal_keringanan < nominal_tagihan')
+            ->whereDate('tanggal_jatuh_tempo', '<', now()) // Filter tagihan yang sudah jatuh tempo
             ->get()
             ->groupBy('santri_id');
 

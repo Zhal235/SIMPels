@@ -96,7 +96,17 @@ class TagihanSantri extends Model
      */
     public function scopeAktif($query)
     {
-        return $query->where('status', 'aktif');
+        return $query->whereHas('tahunAjaran', function ($q) {
+            $q->where('is_active', true);
+        });
+    }
+
+    /**
+     * Scope untuk filter berdasarkan tahun ajaran tertentu
+     */
+    public function scopeByTahunAjaran($query, $tahunAjaranId)
+    {
+        return $query->where('tahun_ajaran_id', $tahunAjaranId);
     }
 
     /**
@@ -197,13 +207,33 @@ class TagihanSantri extends Model
 
     /**
      * Cek apakah tagihan sudah jatuh tempo
+     * dengan memperhatikan apakah tahun ajaran sudah dimulai
      */
     public function getIsJatuhTempoAttribute()
     {
+        // Jika tanggal jatuh tempo tidak ada, tidak dianggap jatuh tempo
         if (!$this->tanggal_jatuh_tempo) {
             return false;
         }
         
+        // Cek tahun ajaran apakah sudah dimulai
+        $tahunAjaran = $this->tahunAjaran;
+        if ($tahunAjaran) {
+            // Format tahun ajaran: 2025-07-01
+            $tanggalMulaiTahunAjaran = \Carbon\Carbon::createFromDate(
+                $tahunAjaran->tahun_mulai, 
+                7, // Juli
+                1  // Tanggal 1
+            );
+            
+            // Jika sekarang belum mencapai tanggal mulai tahun ajaran
+            // maka tagihan belum dianggap jatuh tempo
+            if (now()->lessThan($tanggalMulaiTahunAjaran)) {
+                return false;
+            }
+        }
+        
+        // Jika tanggal sekarang > tanggal jatuh tempo, maka jatuh tempo
         return now()->greaterThan($this->tanggal_jatuh_tempo);
     }
 
