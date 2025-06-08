@@ -381,15 +381,23 @@ class JenisTagihanController extends Controller
                     'tahun_ajaran_id' => $jenisTagihan->tahun_ajaran_id,
                     'tanggal_jatuh_tempo' => $jenisTagihan->tanggal_jatuh_tempo,
                     'bulan_jatuh_tempo' => $jenisTagihan->bulan_jatuh_tempo,
-                    'bulan_pembayaran' => is_array($jenisTagihan->bulan_pembayaran) ? $jenisTagihan->bulan_pembayaran : json_decode($jenisTagihan->bulan_pembayaran ?? '[]', true),
+                    'bulan_pembayaran' => $jenisTagihan->bulan_pembayaran ? array_map('strval', $jenisTagihan->bulan_pembayaran) : [],
                     'target_type' => $jenisTagihan->target_type ?? 'all',
-                    'kelas_ids' => is_array($jenisTagihan->target_kelas) ? $jenisTagihan->target_kelas : json_decode($jenisTagihan->target_kelas ?? '[]', true),
-                    'santri_ids' => is_array($jenisTagihan->target_santri) ? $jenisTagihan->target_santri : json_decode($jenisTagihan->target_santri ?? '[]', true),
+                    'kelas_ids' => $jenisTagihan->target_kelas ? array_map('strval', $jenisTagihan->target_kelas) : [],
+                    'santri_ids' => $jenisTagihan->target_santri ? array_map('strval', $jenisTagihan->target_santri) : [],
                     'kelas_data' => $kelasData,
                     'santri_data' => $santriData,
                     'created_at' => $jenisTagihan->created_at,
                     'updated_at' => $jenisTagihan->updated_at,
                 ];
+                
+                // Debug logging
+                \Log::info('JenisTagihan edit response data:', [
+                    'original_bulan_pembayaran' => $jenisTagihan->bulan_pembayaran,
+                    'original_target_kelas' => $jenisTagihan->target_kelas,
+                    'processed_bulan_pembayaran' => $jenisTagihanData['bulan_pembayaran'],
+                    'processed_kelas_ids' => $jenisTagihanData['kelas_ids']
+                ]);
                 
                 return response()->json([
                     'success' => true,
@@ -424,6 +432,9 @@ class JenisTagihanController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // Debug: Log incoming request data
+        \Log::info('Update request data:', $request->all());
+        
         $jenisTagihan = JenisTagihan::findOrFail($id);
         
         $rules = [
@@ -440,7 +451,7 @@ class JenisTagihanController extends Controller
 
         // Add validation for insidental specific fields
         if ($request->kategori_tagihan === 'Insidental') {
-            $rules['bulan_pembayaran'] = 'required|array|min:1';
+            $rules['bulan_pembayaran'] = 'nullable|array';
             $rules['bulan_pembayaran.*'] = 'string';
             $rules['target_type'] = 'required|in:all,kelas,santri';
             
@@ -451,6 +462,7 @@ class JenisTagihanController extends Controller
                 $rules['santri_ids'] = 'required|array|min:1';
                 $rules['santri_ids.*'] = 'exists:santris,id';
             }
+            // For target_type 'all', no additional validation needed
         }
 
         $validator = Validator::make($request->all(), $rules);
@@ -486,28 +498,29 @@ class JenisTagihanController extends Controller
                 // Untuk tagihan insidental, gunakan input user
                 $updateData['tanggal_jatuh_tempo'] = $request->tanggal_jatuh_tempo ?? 10;
                 $updateData['bulan_jatuh_tempo'] = $request->bulan_jatuh_tempo ?? 0;
-                $updateData['bulan_pembayaran'] = json_encode($request->bulan_pembayaran);
+                $updateData['bulan_pembayaran'] = $request->bulan_pembayaran ? json_encode($request->bulan_pembayaran) : null;
                 $updateData['target_type'] = $request->target_type;
             }
             
             $jenisTagihan->update($updateData);
 
-            // Handle target relationships for insidental
+            // Simpan target_kelas dan target_santri langsung ke field array
             if ($request->kategori_tagihan === 'Insidental') {
-                // Clear existing relationships
-                $jenisTagihan->kelas()->detach();
-                $jenisTagihan->santris()->detach();
-                
-                // Set new relationships based on target type
                 if ($request->target_type === 'kelas' && $request->has('kelas_ids')) {
-                    $jenisTagihan->kelas()->attach($request->kelas_ids);
+                    $jenisTagihan->target_kelas = $request->kelas_ids;
+                    $jenisTagihan->target_santri = null;
                 } elseif ($request->target_type === 'santri' && $request->has('santri_ids')) {
-                    $jenisTagihan->santris()->attach($request->santri_ids);
+                    $jenisTagihan->target_santri = $request->santri_ids;
+                    $jenisTagihan->target_kelas = null;
+                } else {
+                    $jenisTagihan->target_kelas = null;
+                    $jenisTagihan->target_santri = null;
                 }
+                $jenisTagihan->save();
             } else {
-                // Clear relationships for routine bills
-                $jenisTagihan->kelas()->detach();
-                $jenisTagihan->santris()->detach();
+                $jenisTagihan->target_kelas = null;
+                $jenisTagihan->target_santri = null;
+                $jenisTagihan->save();
             }
 
             if ($request->expectsJson() || $request->ajax()) {
