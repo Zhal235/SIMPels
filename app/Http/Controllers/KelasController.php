@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\KelasImport;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
 
 class KelasController extends Controller
 {
@@ -44,6 +45,14 @@ class KelasController extends Controller
             ]);
             
             $kelas = Kelas::create($request->all());
+            
+            // Tambahkan kelas baru sebagai aktif di tabel pivot kelas_anggota
+            DB::table('kelas_anggota')->insert([
+                'kelas_id' => $kelas->id,
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
             
             // Check if request is AJAX
             if ($request->ajax()) {

@@ -104,20 +104,14 @@ class PembayaranSantriController extends Controller
                 return response()->json(['error' => 'Tidak ada tahun ajaran aktif'], 400);
             }
             
-            \Log::info('Active tahun ajaran: ' . $activeTahunAjaran->id);
+            \Log::info('Active tahun ajaran: ' . $activeTahunAjaran->id);            $today = now()->format('Y-m-d');
 
-            $today = now()->format('Y-m-d');
-
-            // Ambil tagihan rutin yang belum jatuh tempo untuk tahun ajaran aktif
-            // Filter: tahun ajaran aktif DAN (belum jatuh tempo ATAU jatuh tempo di masa depan)
+            // Ambil tagihan santri untuk tahun ajaran aktif
+            // FILTER: Hanya tagihan yang belum jatuh tempo (untuk tab Tagihan Rutin)
+            // Tagihan yang sudah jatuh tempo akan ditampilkan di tab Tunggakan
             $tagihanSantri = TagihanSantri::where('santri_id', $santriId)
                 ->where('tahun_ajaran_id', $activeTahunAjaran->id)
-                ->where(function($query) use ($today) {
-                    // Tagihan yang belum jatuh tempo (tanggal jatuh tempo di masa depan atau hari ini)
-                    $query->where('tanggal_jatuh_tempo', '>=', $today)
-                          // Atau tagihan yang tidak memiliki tanggal jatuh tempo (untuk jaga-jaga)
-                          ->orWhereNull('tanggal_jatuh_tempo');
-                })
+                ->where('tanggal_jatuh_tempo', '>=', $today) // Hanya yang belum jatuh tempo
                 ->with(['jenisTagihan', 'tahunAjaran', 'transaksis'])
                 ->orderBy('jenis_tagihan_id')
                 ->get();
@@ -365,8 +359,7 @@ class PembayaranSantriController extends Controller
                         // Insidentil umumnya sekali bayar
                         $tipePembayaran = 'sekali_bayar';
                     }
-                    
-                    // Jika pembayaran tidak penuh, maka ini cicilan
+                      // Jika pembayaran tidak penuh, maka ini cicilan
                     if ($payment['nominal'] < $tagihanSantri->sisa_tagihan) {
                         $tipePembayaran = 'cicilan';
                     }
@@ -375,10 +368,11 @@ class PembayaranSantriController extends Controller
                     $transaksi = Transaksi::create([
                         'santri_id' => $request->santri_id,
                         'tagihan_santri_id' => $payment['tagihan_santri_id'],
+                        'jenis_tagihan_id' => $tagihanSantri->jenis_tagihan_id,
                         'tipe_pembayaran' => $tipePembayaran,
                         'nominal' => $payment['nominal'],
                         'tanggal' => now(),
-                        'keterangan' => $payment['keterangan'] ?? 'Pembayaran ' . $tagihanSantri->jenisTagihan->nama_tagihan,
+                        'keterangan' => $payment['keterangan'] ?? 'Pembayaran ' . $tagihanSantri->jenisTagihan->nama,
                         'tahun_ajaran_id' => $activeTahunAjaran->id,
                     ]);
 

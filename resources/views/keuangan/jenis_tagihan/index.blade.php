@@ -255,14 +255,22 @@
                                     Rp {{ number_format($tagihan->nominal, 0, ',', '.') }}
                                 </td>
                                 <td class="px-4 py-3 text-center">
-                                    @if($tagihan->bulan_pembayaran && is_array($tagihan->bulan_pembayaran))
-                                        <div class="flex flex-wrap gap-1 justify-center">
-                                            @foreach($tagihan->bulan_pembayaran as $bulan)
-                                                <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
-                                                    {{ $tagihan->bulan_names[array_search($bulan, $tagihan->bulan_pembayaran_list)] ?? $bulan }}
-                                                </span>
-                                            @endforeach
-                                        </div>
+                                    @if($tagihan->bulan_pembayaran && is_array($tagihan->bulan_pembayaran) && count($tagihan->bulan_pembayaran) > 0)
+                                        @if(count($tagihan->bulan_pembayaran) <= 3)
+                                            {{-- Show all months if 3 or less --}}
+                                            <div class="flex flex-wrap gap-1 justify-center">
+                                                @foreach($tagihan->bulan_names as $bulanName)
+                                                    <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
+                                                        {{ $bulanName }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            {{-- Show compact format for many months --}}
+                                            <span class="text-sm text-gray-600">
+                                                {{ $tagihan->bulan_names_string }}
+                                            </span>
+                                        @endif
                                     @else
                                         <span class="text-gray-500">-</span>
                                     @endif
@@ -614,15 +622,14 @@
                 {{-- Target Kelas --}}
                 <div id="target-kelas" class="hidden">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Kelas <span class="text-red-500">*</span></label>
-                    <select id="target_kelas_select" multiple name="target_kelas[]"
+                    <select id="target_kelas_select" multiple name="kelas_ids[]"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
                             style="height: 120px;">
                         @foreach($kelasList as $kelas)
                         <option value="{{ $kelas->id }}">{{ $kelas->tingkat }} - {{ $kelas->nama }}</option>
                         @endforeach
                     </select>
-                    <p class="text-xs text-gray-500 mt-1">Tahan Ctrl (Windows) atau Cmd (Mac) untuk memilih beberapa kelas</p>
-                    <span class="text-red-500 text-xs hidden" id="insidental-error-target_kelas"></span>
+                    <p class="text-xs text-gray-500 mt-1">Tahan Ctrl (Windows) atau Cmd (Mac) untuk memilih beberapa kelas</p>                        <span class="text-red-500 text-xs hidden" id="insidental-error-kelas_ids"></span>
                 </div>
 
                 {{-- Target Santri --}}
@@ -645,10 +652,14 @@
                                 <!-- Selected santri tags will appear here -->
                             </div>
                             
+                            <!-- Hidden inputs for selected santri -->
+                            <div id="santri-hidden-inputs">
+                                <!-- Hidden inputs will be added here dynamically -->
+                            </div>
+                            
                             <p class="text-xs text-gray-500 mt-2">Ketik nama santri untuk mencari, lalu klik untuk memilih. Santri yang dipilih akan muncul sebagai tag di atas.</p>
                         </div>
-                    </div>
-                    <span class="text-red-500 text-xs hidden" id="insidental-error-target_santri"></span>
+                    </div>                        <span class="text-red-500 text-xs hidden" id="insidental-error-santri_ids"></span>
                 </div>
             </form>
 
@@ -799,8 +810,6 @@
                 @method('PUT')
                 <input type="hidden" name="id" id="edit_insidental_id">
                 <input type="hidden" name="kategori_tagihan" value="Insidental">
-                <input type="hidden" name="is_bulanan" value="0">
-                <input type="hidden" name="is_nominal_per_kelas" value="0">>
                 
                 {{-- Basic Information --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1112,6 +1121,8 @@
 <script>
 // Tab switching functionality
 function switchTab(tabName) {
+    console.log('Switching to tab:', tabName);
+    
     // Remove active class from all tabs and hide all content
     document.querySelectorAll('.tab-button').forEach(button => {
         button.classList.remove('border-purple-500', 'text-purple-600');
@@ -1130,29 +1141,25 @@ function switchTab(tabName) {
         activeTab.classList.remove('border-transparent', 'text-gray-500');
         activeTab.classList.add('border-purple-500', 'text-purple-600');
         activeContent.classList.remove('hidden');
+        console.log('Tab switched successfully to:', tabName);
+    } else {
+        console.error('Tab elements not found for:', tabName);
     }
 }
 
-// Initialize with "rutin" tab active on page load
+// Initialize with "rutin" tab active on page load and set up event listeners
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tab
     switchTab('rutin');
-});
-
-// Add event listeners when document is ready
-document.addEventListener('DOMContentLoaded', function() {
+    
     // Add event listeners for target type radio buttons
     const targetRadios = document.querySelectorAll('#insidentalModal input[name="target_type"]');
     targetRadios.forEach(radio => {
         radio.addEventListener('change', handleTargetChange);
     });
     
-    // Add event listeners for edit modal target type radio buttons
-    const editTargetRadios = document.querySelectorAll('#editInsidentalModal input[name="target_type"]');
-    editTargetRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            handleEditTargetTypeChange(this.value);
-        });
-    });
+    // Add event listeners for edit modal target type radio buttons - but don't duplicate
+    // This will be set up when the modal is opened to avoid conflicts
 });
 
 function handleTargetChange() {
@@ -1413,7 +1420,7 @@ function clearInsidentalForm() {
         if (santriTargets) santriTargets.classList.add('hidden');
         
         // Clear selected santri tags and hidden inputs
-        const tagsContainer = document.getElementById('selected-santri-tags');
+        const tagsContainer = document.getElementById('selected_santri_tags');
         const hiddenInputsContainer = document.getElementById('santri-hidden-inputs');
         if (tagsContainer) tagsContainer.innerHTML = '';
         if (hiddenInputsContainer) hiddenInputsContainer.innerHTML = '';
@@ -1524,7 +1531,7 @@ function addSelectedSantri(santri) {
     tag.setAttribute('data-santri-id', santri.id);
     tag.innerHTML = `
         <span>${santri.nama}</span>
-        <input type="hidden" name="target_santri[]" value="${santri.id}">
+        <input type="hidden" name="santri_ids[]" value="${santri.id}">
         <button type="button" onclick="removeSelectedSantri(${santri.id})" class="text-orange-600 hover:text-orange-800">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -1576,46 +1583,76 @@ function openEditInsidentalModal(id) {
         console.log('Edit Insidental Response data:', data);
         if (data.success) {
             console.log('Insidental tagihan data:', data.jenisTagihan);
+            console.log('Kelas IDs from backend:', data.jenisTagihan.kelas_ids);
+            console.log('Bulan pembayaran from backend:', data.jenisTagihan.bulan_pembayaran);
+            console.log('Target type from backend:', data.jenisTagihan.target_type);
             
             // Populate form fields for insidental
-            document.getElementById('edit_insidental_id').value = data.jenisTagihan.id;
-            document.getElementById('edit_insidental_nama').value = data.jenisTagihan.nama;
+            document.getElementById('edit_insidental_id').value = data.jenisTagihan.id || '';
+            document.getElementById('edit_insidental_nama').value = data.jenisTagihan.nama || '';
             document.getElementById('edit_insidental_deskripsi').value = data.jenisTagihan.deskripsi || '';
-            document.getElementById('edit_insidental_nominal').value = data.jenisTagihan.nominal;
-            document.getElementById('edit_insidental_tanggal_jatuh_tempo').value = data.jenisTagihan.tanggal_jatuh_tempo;
+            document.getElementById('edit_insidental_nominal').value = data.jenisTagihan.nominal || '';
+            document.getElementById('edit_insidental_tanggal_jatuh_tempo').value = data.jenisTagihan.tanggal_jatuh_tempo || 10;
             document.getElementById('edit_insidental_bulan_jatuh_tempo').value = data.jenisTagihan.bulan_jatuh_tempo || 0;
             
-            console.log('Setting target_type:', data.jenisTagihan.target_type);
-            // Set target type
+            // Set target type with fallback
+            const targetType = data.jenisTagihan.target_type || 'all';
+            console.log('Setting target type:', targetType);
             const targetRadios = document.querySelectorAll('#editInsidentalModal input[name="target_type"]');
             targetRadios.forEach(radio => {
-                radio.checked = radio.value === data.jenisTagihan.target_type;
-                console.log(`Radio ${radio.value}: ${radio.checked}`);
+                radio.checked = radio.value === targetType;
+                if (radio.checked) {
+                    console.log('Target type set to:', radio.value);
+                }
             });
             
             // Handle target-specific selections
-            if (data.jenisTagihan.target_type === 'kelas') {
-                // Populate kelas selection
+            if (targetType === 'kelas') {
+                // Populate kelas selection - clear all first, then set selected ones
                 const kelasSelect = document.getElementById('edit_kelas_ids');
-                if (kelasSelect && data.jenisTagihan.kelas_ids && Array.isArray(data.jenisTagihan.kelas_ids)) {
+                console.log('Kelas select element found:', !!kelasSelect);
+                if (kelasSelect && data.jenisTagihan.kelas_ids) {
                     console.log('Setting kelas selection:', data.jenisTagihan.kelas_ids);
-                    console.log('Type of kelas_ids:', typeof data.jenisTagihan.kelas_ids);
-                    console.log('Is array:', Array.isArray(data.jenisTagihan.kelas_ids));
+                    console.log('Available options in select:', Array.from(kelasSelect.options).map(o => ({value: o.value, text: o.text})));
                     
+                    // Clear all options first
                     Array.from(kelasSelect.options).forEach(option => {
-                        console.log(`Checking option ${option.value} (type: ${typeof option.value})`);
-                        // Convert to string for reliable comparison
-                        const isSelected = data.jenisTagihan.kelas_ids.includes(option.value.toString());
-                        option.selected = isSelected;
-                        console.log(`Kelas option ${option.value}: ${isSelected}`);
+                        option.selected = false;
                     });
+                    
+                    // Select the appropriate options
+                    const kelasIds = Array.isArray(data.jenisTagihan.kelas_ids) 
+                        ? data.jenisTagihan.kelas_ids 
+                        : [data.jenisTagihan.kelas_ids];
+                    
+                    console.log('Processing kelas IDs:', kelasIds);
+                    
+                    let selectedCount = 0;
+                    Array.from(kelasSelect.options).forEach(option => {
+                        const optionValue = option.value;
+                        const optionValueInt = parseInt(option.value);
+                        // Check both string and integer values to handle type mismatches
+                        if (kelasIds.includes(optionValue) || kelasIds.includes(optionValueInt) || 
+                            kelasIds.includes(optionValue.toString()) || kelasIds.includes(optionValueInt.toString())) {
+                            option.selected = true;
+                            selectedCount++;
+                            console.log('Selected kelas:', optionValue, option.text);
+                        }
+                    });
+                    
+                    console.log('Total kelas selected:', selectedCount);
+                    
+                    // Trigger change event to update the UI
+                    kelasSelect.dispatchEvent(new Event('change'));
+                } else if (!kelasSelect) {
+                    console.error('Kelas select element not found!');
                 } else {
-                    console.log('No kelas select element, kelas_ids data, or not an array');
+                    console.log('No kelas_ids data available');
                 }
-            } else if (data.jenisTagihan.target_type === 'santri') {
+            } else if (targetType === 'santri') {
                 // Populate santri tags
                 const tagsContainer = document.getElementById('edit-selected-santri-tags');
-                if (tagsContainer && data.jenisTagihan.santri_data) {
+                if (tagsContainer && data.jenisTagihan.santri_data && Array.isArray(data.jenisTagihan.santri_data)) {
                     tagsContainer.innerHTML = '';
                     data.jenisTagihan.santri_data.forEach(santri => {
                         const tag = document.createElement('div');
@@ -1623,7 +1660,7 @@ function openEditInsidentalModal(id) {
                         tag.setAttribute('data-santri-id', santri.id);
                         tag.innerHTML = `
                             <span>${santri.nama_lengkap}</span>
-                            <input type="hidden" name="target_santri[]" value="${santri.id}">
+                            <input type="hidden" name="santri_ids[]" value="${santri.id}">
                             <button type="button" onclick="removeEditSelectedSantri(${santri.id})" class="text-orange-600 hover:text-orange-800">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -1635,22 +1672,61 @@ function openEditInsidentalModal(id) {
                 }
             }
             
-            // Set bulan pembayaran
+            // Set bulan pembayaran - clear all first, then set selected ones
+            const bulanCheckboxes = document.querySelectorAll('#edit-bulan-pembayaran-container input[name="bulan_pembayaran[]"]');
+            console.log('Found bulan checkboxes:', bulanCheckboxes.length);
+            console.log('Available bulan options:', Array.from(bulanCheckboxes).map(cb => ({value: cb.value, checked: cb.checked})));
+            
+            bulanCheckboxes.forEach(checkbox => {
+                checkbox.checked = false; // Clear all first
+            });
+            
             if (data.jenisTagihan.bulan_pembayaran && Array.isArray(data.jenisTagihan.bulan_pembayaran)) {
-                console.log('Setting bulan pembayaran:', data.jenisTagihan.bulan_pembayaran);
-                console.log('Type of bulan_pembayaran:', typeof data.jenisTagihan.bulan_pembayaran);
-                console.log('Is array:', Array.isArray(data.jenisTagihan.bulan_pembayaran));
-                
-                const bulanCheckboxes = document.querySelectorAll('#editInsidentalModal input[name="bulan_pembayaran[]"]');
+                console.log('Setting bulan pembayaran (array):', data.jenisTagihan.bulan_pembayaran);
+                let checkedCount = 0;
                 bulanCheckboxes.forEach(checkbox => {
-                    console.log(`Checking checkbox ${checkbox.value} (type: ${typeof checkbox.value})`);
-                    // Convert to string for reliable comparison
-                    const isChecked = data.jenisTagihan.bulan_pembayaran.includes(checkbox.value.toString());
-                    checkbox.checked = isChecked;
-                    console.log(`Checkbox ${checkbox.value}: ${isChecked}`);
+                    const checkboxValue = checkbox.value;
+                    const checkboxValueInt = parseInt(checkbox.value);
+                    // Check both string and integer values to handle type mismatches
+                    if (data.jenisTagihan.bulan_pembayaran.includes(checkboxValue) || 
+                        data.jenisTagihan.bulan_pembayaran.includes(checkboxValueInt) ||
+                        data.jenisTagihan.bulan_pembayaran.includes(checkboxValue.toString()) ||
+                        data.jenisTagihan.bulan_pembayaran.includes(checkboxValueInt.toString())) {
+                        checkbox.checked = true;
+                        checkedCount++;
+                        console.log('Checked bulan:', checkboxValue);
+                    }
                 });
+                console.log('Total bulan checked:', checkedCount);
+            } else if (data.jenisTagihan.bulan_pembayaran) {
+                // Handle case where bulan_pembayaran might be a string
+                console.log('Bulan pembayaran is not array, trying to parse:', data.jenisTagihan.bulan_pembayaran);
+                try {
+                    const bulanArray = typeof data.jenisTagihan.bulan_pembayaran === 'string' 
+                        ? JSON.parse(data.jenisTagihan.bulan_pembayaran) 
+                        : data.jenisTagihan.bulan_pembayaran;
+                    if (Array.isArray(bulanArray)) {
+                        let checkedCount = 0;
+                        bulanCheckboxes.forEach(checkbox => {
+                            const checkboxValue = checkbox.value;
+                            const checkboxValueInt = parseInt(checkbox.value);
+                            // Check both string and integer values to handle type mismatches
+                            if (bulanArray.includes(checkboxValue) || 
+                                bulanArray.includes(checkboxValueInt) ||
+                                bulanArray.includes(checkboxValue.toString()) ||
+                                bulanArray.includes(checkboxValueInt.toString())) {
+                                checkbox.checked = true;
+                                checkedCount++;
+                                console.log('Checked bulan (parsed):', checkboxValue);
+                            }
+                        });
+                        console.log('Total bulan checked (parsed):', checkedCount);
+                    }
+                } catch (e) {
+                    console.error('Error parsing bulan_pembayaran:', e);
+                }
             } else {
-                console.log('No bulan_pembayaran data or not an array');
+                console.log('No bulan_pembayaran data available');
             }
             
             // Populate buku kas
@@ -1671,36 +1747,55 @@ function openEditInsidentalModal(id) {
             }
             
             // Trigger target type change to show/hide sections
-            const checkedRadio = document.querySelector('#editInsidentalModal input[name="target_type"]:checked');
+            console.log('About to trigger target type change...');
+            const checkedRadio = document.querySelector(`input[name="target_type"][value="${targetType}"]`);
             if (checkedRadio) {
-                checkedRadio.dispatchEvent(new Event('change'));
+                console.log('Triggering change event for target type:', checkedRadio.value);
+                // Use setTimeout to ensure all DOM updates are processed first
+                setTimeout(() => {
+                    console.log('Executing handleEditTargetTypeChange with delay...');
+                    handleEditTargetTypeChange(targetType);
+                    
+                    // Additional delay for DOM updates before setting selections
+                    setTimeout(() => {
+                        console.log('Re-applying target-specific selections after target type change...');
+                        
+                        // Re-apply kelas selection if target is kelas
+                        if (targetType === 'kelas' && data.jenisTagihan.kelas_ids) {
+                            const kelasSelect = document.getElementById('edit_kelas_ids');
+                            if (kelasSelect) {
+                                console.log('Re-setting kelas selection after target type change');
+                                const kelasIds = Array.isArray(data.jenisTagihan.kelas_ids) 
+                                    ? data.jenisTagihan.kelas_ids 
+                                    : [data.jenisTagihan.kelas_ids];
+                                
+                                Array.from(kelasSelect.options).forEach(option => {
+                                    const optionValue = option.value;
+                                    const optionValueInt = parseInt(option.value);
+                                    // Check both string and integer values to handle type mismatches
+                                    if (kelasIds.includes(optionValue) || kelasIds.includes(optionValueInt) || 
+                                        kelasIds.includes(optionValue.toString()) || kelasIds.includes(optionValueInt.toString())) {
+                                        option.selected = true;
+                                        console.log('Re-selected kelas:', optionValue, option.text);
+                                    }
+                                });
+                            }
+                        }
+                    }, 200);
+                }, 100);
+            } else {
+                console.error('Could not find radio button for target type:', targetType);
             }
             
-            // Set up event listeners for target type changes in edit modal
-            const editTargetRadios = document.querySelectorAll('#editInsidentalModal input[name="target_type"]');
-            editTargetRadios.forEach(radio => {
-                radio.addEventListener('change', function() {
-                    const targetSelection = document.getElementById('edit-target-selection');
-                    const kelasSelection = document.getElementById('edit-kelas-selection');
-                    const santriSelection = document.getElementById('edit-santri-selection');
-                    
-                    // Hide all sections first
-                    if (targetSelection) targetSelection.classList.add('hidden');
-                    if (kelasSelection) kelasSelection.classList.add('hidden');
-                    if (santriSelection) santriSelection.classList.add('hidden');
-                    
-                    // Show appropriate section based on selection
-                    if (this.value === 'kelas') {
-                        if (targetSelection) targetSelection.classList.remove('hidden');
-                        if (kelasSelection) kelasSelection.classList.remove('hidden');
-                    } else if (this.value === 'santri') {
-                        if (targetSelection) targetSelection.classList.remove('hidden');
-                        if (santriSelection) santriSelection.classList.remove('hidden');
-                        // Initialize santri search for edit modal
-                        initializeEditSantriSearch();
-                    }
-                });
-            });
+            // Set up event listeners for target type changes in edit modal if not already set
+            if (!window.editModalListenersSet) {
+                try {
+                    setupEditModalListeners();
+                    window.editModalListenersSet = true;
+                } catch (error) {
+                    console.error('Error setting up edit modal listeners:', error);
+                }
+            }
             
         } else {
             console.error('Failed to load tagihan data:', data.message);
@@ -1743,53 +1838,11 @@ function submitEditInsidentalForm() {
     const formData = new FormData(form);
     const id = formData.get('id');
     
-    // Convert FormData to regular object for JSON
-    const data = {};
-    
-    // Handle regular fields
-    formData.forEach((value, key) => {
-        // Skip array fields, handle them separately
-        if (!key.endsWith('[]')) {
-            data[key] = value;
-        }
-    });
-    
-    // Handle array fields specifically
-    const bulanPembayaran = formData.getAll('bulan_pembayaran[]');
-    if (bulanPembayaran.length > 0) {
-        data.bulan_pembayaran = bulanPembayaran;
+    // Debug: Log form data
+    console.log('Form data being sent:');
+    for (let [key, value] of formData.entries()) {
+        console.log(key, value);
     }
-    
-    // Handle target-specific arrays
-    const targetType = data.target_type;
-    
-    if (targetType === 'kelas') {
-        // Get selected kelas from select multiple
-        const kelasSelect = form.querySelector('select[name="kelas_ids[]"]');
-        if (kelasSelect) {
-            const selectedKelas = Array.from(kelasSelect.selectedOptions).map(option => option.value);
-            if (selectedKelas.length > 0) {
-                data.kelas_ids = selectedKelas;
-            }
-        }
-    } else if (targetType === 'santri') {
-        // Get selected santri from tags
-        const selectedSantri = [];
-        const selectedSantriTags = document.querySelectorAll('#edit-selected-santri-tags [data-santri-id]');
-        selectedSantriTags.forEach(tag => {
-            const santriId = tag.getAttribute('data-santri-id');
-            if (santriId) {
-                selectedSantri.push(santriId);
-            }
-        });
-        
-        if (selectedSantri.length > 0) {
-            data.santri_ids = selectedSantri;
-        }
-    }
-    
-    // Debug: Log the data being sent
-    console.log('Sending data:', data);
     
     // Clear previous errors
     const errorElements = form.querySelectorAll('.text-red-500');
@@ -1798,24 +1851,20 @@ function submitEditInsidentalForm() {
     });
     
     fetch(`/keuangan/jenis-tagihan/${id}`, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
             'Accept': 'application/json',
-            'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
-        body: JSON.stringify(data)
+        body: formData
     })
-    .then(response => {
-        console.log('Response status:', response.status);
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
-        console.log('Response data:', data);
+        console.log('Server response:', data);
         if (data.success) {
+            alert('Tagihan berhasil diperbarui: ' + data.message);
             closeEditInsidentalModal();
-            alert('Tagihan insidental berhasil diperbarui!');
             location.reload(); // Refresh page to show updated data
         } else {
             // Display validation errors
@@ -1835,7 +1884,7 @@ function submitEditInsidentalForm() {
     })
     .catch(error => {
         console.error('Error updating tagihan:', error);
-        alert('Terjadi kesalahan saat memperbarui tagihan: ' + error.message);
+        alert('Terjadi kesalahan saat memperbarui tagihan');
     });
 }
 
@@ -1943,7 +1992,7 @@ function addEditSelectedSantri(santri) {
     tag.setAttribute('data-santri-id', santri.id);
     tag.innerHTML = `
         <span>${santri.nama}</span>
-        <input type="hidden" name="target_santri[]" value="${santri.id}">
+        <input type="hidden" name="santri_ids[]" value="${santri.id}">
         <button type="button" onclick="removeEditSelectedSantri(${santri.id})" class="text-orange-600 hover:text-orange-800">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -1953,6 +2002,30 @@ function addEditSelectedSantri(santri) {
     
     // Add to container
     tagsContainer.appendChild(tag);
+}
+
+function generateInsidental(id) {
+    if (!confirm('Apakah Anda yakin ingin generate tagihan untuk tagihan ini?')) return;
+    fetch(`/keuangan/jenis-tagihan/${id}/generate-insidental`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Tagihan insidental berhasil digenerate!');
+            location.reload();
+        } else {
+            alert('Gagal generate tagihan: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        alert('Terjadi kesalahan saat generate tagihan: ' + error.message);
+    });
 }
 
 function submitInsidentalForm() {
@@ -1975,7 +2048,7 @@ function submitInsidentalForm() {
         el.textContent = '';
     });
     
-    fetch('/keuangan/jenis-tagihan', {
+    fetch('/keuangan/jenis-tagihan/insidental', {
         method: 'POST',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
@@ -2077,6 +2150,65 @@ function submitRutinForm() {
         if (submitText) submitText.textContent = 'Simpan';
         if (submitBtn) submitBtn.disabled = false;
     });
+}
+
+// Helper functions for edit modal
+function handleEditTargetTypeChange(targetType) {
+    try {
+        console.log('Handling target type change to:', targetType);
+        const targetSelection = document.getElementById('edit-target-selection');
+        const kelasSelection = document.getElementById('edit-kelas-selection');
+        const santriSelection = document.getElementById('edit-santri-selection');
+        
+        console.log('Elements found:', {
+            targetSelection: !!targetSelection,
+            kelasSelection: !!kelasSelection,
+            santriSelection: !!santriSelection
+        });
+        
+        // Hide all sections first
+        if (targetSelection) targetSelection.classList.add('hidden');
+        if (kelasSelection) kelasSelection.classList.add('hidden');
+        if (santriSelection) santriSelection.classList.add('hidden');
+        
+        // Show appropriate section based on selection
+        if (targetType === 'kelas') {
+            console.log('Showing kelas selection');
+            if (targetSelection) targetSelection.classList.remove('hidden');
+            if (kelasSelection) kelasSelection.classList.remove('hidden');
+        } else if (targetType === 'santri') {
+            console.log('Showing santri selection');
+            if (targetSelection) targetSelection.classList.remove('hidden');
+            if (santriSelection) santriSelection.classList.remove('hidden');
+            // Initialize santri search for edit modal
+            if (typeof initializeEditSantriSearch === 'function') {
+                initializeEditSantriSearch();
+            }
+        }
+        
+        console.log('Target type change handling completed');
+    } catch (error) {
+        console.error('Error in handleEditTargetTypeChange:', error);
+    }
+}
+
+function setupEditModalListeners() {
+    try {
+        const editTargetRadios = document.querySelectorAll('input[name="target_type"]');
+        editTargetRadios.forEach(radio => {
+            // Remove existing listeners to prevent duplicates
+            radio.removeEventListener('change', handleEditTargetTypeChangeListener);
+            // Add new listener
+            radio.addEventListener('change', handleEditTargetTypeChangeListener);
+        });
+    } catch (error) {
+        console.error('Error in setupEditModalListeners:', error);
+    }
+}
+
+// Create a named function for the event listener to allow removal
+function handleEditTargetTypeChangeListener() {
+    handleEditTargetTypeChange(this.value);
 }
 
 // ...existing code...
