@@ -249,17 +249,28 @@ class JenisTagihanController extends Controller
     {
         $kelasId = $request->kelas_id;
         
-        $santris = Santri::where('status', 'aktif')
-            ->whereHas('kelas_anggota', function($query) use ($kelasId) {
-                $query->where('kelas_id', $kelasId);
-            })
-            ->orderBy('nama_santri')
-            ->get(['id', 'nama_santri', 'nis']);
+        try {
+            $santris = Santri::where('status', 'Aktif')
+                ->where('kelas_id', $kelasId)
+                ->orderBy('nama_santri')
+                ->get(['id', 'nama_santri', 'nis']);
 
-        return response()->json([
-            'success' => true,
-            'santris' => $santris
-        ]);
+            return response()->json([
+                'success' => true,
+                'santris' => $santris->map(function($santri) {
+                    return [
+                        'id' => $santri->id,
+                        'nama' => $santri->nama_santri,
+                        'nis' => $santri->nis
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error loading santri: ' . $e->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -284,14 +295,23 @@ class JenisTagihanController extends Controller
     {
         try {
             $santri = Santri::with('kelas')
-                           ->where('status', 'aktif')
+                           ->where('status', 'Aktif')
                            ->select('id', 'nama_santri', 'kelas_id')
                            ->orderBy('nama_santri')
                            ->get();
             
             return response()->json([
                 'success' => true,
-                'santri' => $santri
+                'santri' => $santri->map(function($s) {
+                    return [
+                        'id' => $s->id,
+                        'nama' => $s->nama_santri,
+                        'kelas' => $s->kelas ? [
+                            'id' => $s->kelas->id,
+                            'nama' => $s->kelas->nama
+                        ] : null
+                    ];
+                })
             ]);
         } catch (\Exception $e) {
             Log::error('Error in getAllSantri: ' . $e->getMessage());
@@ -336,13 +356,13 @@ class JenisTagihanController extends Controller
                     $santriIds = is_array($jenisTagihan->target_santri) ? $jenisTagihan->target_santri : json_decode($jenisTagihan->target_santri, true);
                     if ($santriIds) {
                         $santriData = \App\Models\Santri::whereIn('id', $santriIds)
-                            ->with('kelasAktif')
-                            ->get(['id', 'nama_lengkap'])
+                            ->with('kelas')
+                            ->get(['id', 'nama_santri', 'kelas_id'])
                             ->map(function($santri) {
                                 return [
                                     'id' => $santri->id,
-                                    'nama_lengkap' => $santri->nama_lengkap,
-                                    'kelas' => $santri->kelasAktif ? $santri->kelasAktif->nama : 'Tidak ada kelas'
+                                    'nama_lengkap' => $santri->nama_santri,
+                                    'kelas' => $santri->kelas ? $santri->kelas->nama : 'Tidak ada kelas'
                                 ];
                             })->toArray();
                     }
@@ -1050,15 +1070,25 @@ class JenisTagihanController extends Controller
         
         try {
             $santri = Santri::with(['kelas'])
-                ->where('nama', 'LIKE', '%' . $query . '%')
+                ->where('nama_santri', 'LIKE', '%' . $query . '%')
                 ->where('status', 'Aktif')
-                ->orderBy('nama')
+                ->orderBy('nama_santri')
                 ->limit(20)
                 ->get();
                 
             return response()->json([
                 'success' => true,
-                'santri' => $santri
+                'santri' => $santri->map(function($s) {
+                    return [
+                        'id' => $s->id,
+                        'nama' => $s->nama_santri,
+                        'nis' => $s->nis,
+                        'kelas' => $s->kelas ? [
+                            'id' => $s->kelas->id,
+                            'nama' => $s->kelas->nama_kelas
+                        ] : null
+                    ];
+                })
             ]);
         } catch (\Exception $e) {
             return response()->json([
