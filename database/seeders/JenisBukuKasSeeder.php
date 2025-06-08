@@ -13,42 +13,69 @@ class JenisBukuKasSeeder extends Seeder
      */
     public function run(): void
     {
-        // Daftar jenis kas yang disesuaikan dengan jenis tagihan yang ada
+        // Clear existing data - skip truncate to avoid foreign key issues
+        // \DB::table('jenis_buku_kas')->truncate();
+        
+        // Daftar jenis kas yang disesuaikan dengan jenis tagihan baru
         $jenisKasList = [
             [
-                'nama' => 'SPP',
-                'kode' => 'SPP',
-                'deskripsi' => 'Kas untuk penerimaan SPP bulanan santri',
+                'nama' => 'BMP',
+                'kode' => 'BMP',
+                'deskripsi' => 'Kas untuk penerimaan Biaya Makan & Pemondokan',
                 'is_active' => true
             ],
             [
-                'nama' => 'Uang Gedung',
-                'kode' => 'UG',
-                'deskripsi' => 'Kas untuk penerimaan uang gedung santri baru',
+                'nama' => 'Biaya SIMPels',
+                'kode' => 'SIM',
+                'deskripsi' => 'Kas untuk penerimaan biaya administrasi SIMPels',
                 'is_active' => true
             ],
             [
-                'nama' => 'Seragam',
-                'kode' => 'SRG',
-                'deskripsi' => 'Kas untuk penerimaan biaya seragam santri',
+                'nama' => 'Biaya Kas Santri',
+                'kode' => 'KAS',
+                'deskripsi' => 'Kas untuk penerimaan iuran kas harian santri',
+                'is_active' => true
+            ],
+            [
+                'nama' => 'Ujian Semester',
+                'kode' => 'UJI',
+                'deskripsi' => 'Kas untuk penerimaan biaya ujian semester',
+                'is_active' => true
+            ],
+            [
+                'nama' => 'PHBI',
+                'kode' => 'PHB',
+                'deskripsi' => 'Kas untuk penerimaan biaya Perayaan Hari Besar Islam',
+                'is_active' => true
+            ],
+            [
+                'nama' => 'Administrasi Pendaftaran',
+                'kode' => 'ADM',
+                'deskripsi' => 'Kas untuk penerimaan biaya administrasi pendaftaran',
+                'is_active' => true
+            ],
+            [
+                'nama' => 'Mantassa & Khutbatul Arsy',
+                'kode' => 'MKA',
+                'deskripsi' => 'Kas untuk penerimaan biaya syiar & dakwah',
+                'is_active' => true
+            ],
+            [
+                'nama' => 'Pembukaan Akun SIMPels',
+                'kode' => 'PAK',
+                'deskripsi' => 'Kas untuk penerimaan biaya pembukaan akun SIMPels',
+                'is_active' => true
+            ],
+            [
+                'nama' => 'IBSP',
+                'kode' => 'IBS',
+                'deskripsi' => 'Kas untuk penerimaan Iuran Bantuan Sosial Pondok',
                 'is_active' => true
             ],
             [
                 'nama' => 'Operasional',
                 'kode' => 'OPS',
                 'deskripsi' => 'Kas untuk kegiatan operasional sehari-hari',
-                'is_active' => true
-            ],
-            [
-                'nama' => 'Pembangunan',
-                'kode' => 'PBG',
-                'deskripsi' => 'Kas untuk kegiatan pembangunan dan pengembangan infrastruktur',
-                'is_active' => true
-            ],
-            [
-                'nama' => 'Insidental',
-                'kode' => 'INS',
-                'deskripsi' => 'Kas untuk kegiatan insidental/tidak rutin',
                 'is_active' => true
             ],
             [
@@ -61,11 +88,7 @@ class JenisBukuKasSeeder extends Seeder
         
         // Tambahkan semua jenis kas ke database
         foreach ($jenisKasList as $jenisKas) {
-            // Gunakan updateOrCreate untuk mencegah duplikasi
-            JenisBukuKas::updateOrCreate(
-                ['nama' => $jenisKas['nama']],
-                $jenisKas
-            );
+            JenisBukuKas::create($jenisKas);
         }
     }
 }

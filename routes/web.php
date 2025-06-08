@@ -14,103 +14,11 @@ use App\Http\Controllers\PembayaranSantriController;
 use App\Http\Controllers\JenisTagihanController;
 use App\Http\Controllers\TahunAjaranController;
 use App\Http\Controllers\BukuKasController;
-use App\Http\Controllers\DevTestController;
-use App\Http\Controllers\TestController;
 use Illuminate\Http\Request;
 
 
 // Redirect root ke data santri
 Route::get('/', fn() => redirect()->route('santris.index'));
-
-// Test API endpoint for Buku Kas (no auth required)
-Route::get('test/buku-kas', function() {
-    try {
-        $bukuKas = \App\Models\BukuKas::all();
-        return response()->json([
-            'success' => true,
-            'data' => $bukuKas,
-            'count' => $bukuKas->count()
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Error fetching buku kas'
-        ], 500);
-    }
-})->name('test.buku-kas.list');
-
-Route::get('test/buku-kas/{id}', function($id) {
-    try {
-        $bukuKas = \App\Models\BukuKas::findOrFail($id);
-        return response()->json([
-            'success' => true,
-            'data' => $bukuKas
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Buku kas tidak ditemukan'
-        ], 404);
-    }
-})->name('test.buku-kas');
-
-// Add test endpoint to update buku kas without auth requirements
-Route::post('test/buku-kas/{id}', function($id, Request $request) {
-    try {
-        $bukuKas = \App\Models\BukuKas::findOrFail($id);
-        
-        // Validate request
-        $validated = $request->validate([
-            'nama_kas' => 'required|string|max:255|unique:buku_kas,nama_kas,' . $bukuKas->id,
-            'kode_kas' => 'required|string|max:50|unique:buku_kas,kode_kas,' . $bukuKas->id,
-            'deskripsi' => 'nullable|string',
-            'jenis_kas_id' => 'required|exists:jenis_buku_kas,id',
-            'saldo_awal' => 'required|numeric|min:0',
-            'is_active' => 'boolean'
-        ]);
-
-        $validated['is_active'] = $request->has('is_active');
-        $bukuKas->update($validated);
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Test update: Buku kas berhasil diperbarui!',
-            'data' => $bukuKas
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Error: ' . $e->getMessage()
-        ], 500);
-    }
-})->name('test.buku-kas.update');
-
-// Add test endpoint to delete buku kas without auth requirements
-Route::delete('test/buku-kas/{id}', function($id) {
-    try {
-        $bukuKas = \App\Models\BukuKas::findOrFail($id);
-        
-        // Check if any jenis tagihan is linked
-        if ($bukuKas->jenisTagihan()->count() > 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tidak dapat menghapus buku kas karena masih terdapat jenis tagihan yang terkait!'
-            ], 400);
-        }
-        
-        $bukuKas->delete();
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Test delete: Buku kas berhasil dihapus!'
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Error: ' . $e->getMessage()
-        ], 500);
-    }
-})->name('test.buku-kas.delete');
 
 Route::middleware(['auth'])->group(function () {
 
@@ -255,14 +163,4 @@ require __DIR__.'/keringanan-tagihan.php';
 // Include route tunggakan santri
 require __DIR__.'/tunggakan.php';
 
-// Development Test UI Route (no auth required for testing)
-Route::get('/dev/test-ui', [\App\Http\Controllers\DevTestController::class, 'index'])->name('dev.test-ui');
-
 require __DIR__.'/auth.php';
-
-// Route untuk halaman test UI
-Route::get('dev-test', [DevTestController::class, 'index'])->name('dev-test.index');
-Route::post('dev-test/submit', [DevTestController::class, 'submit'])->name('dev-test.submit');
-
-// Test routes for debugging
-Route::get('/test-endpoint/{id}', [TestController::class, 'testEndpoint'])->name('test.endpoint');

@@ -20,7 +20,11 @@ class DatabaseSeeder extends Seeder
             JenisTagihanSeederWithoutTruncate::class,
             TarifPerKelasSeederWithoutTruncate::class,
             SantriSeeder::class,
-            // Skip TagihanSantriSeeder and PembayaranSeeder for now due to FK constraints
+            KelasAnggotaSeeder::class,
+            AsramaAnggotaSeeder::class,
+            BukuKasSeeder::class,
+            JenisBukuKasSeeder::class,
+            // TagihanSantriSeederWithoutTruncate::class, // Commented out for manual generation
         ]);
     }
 }

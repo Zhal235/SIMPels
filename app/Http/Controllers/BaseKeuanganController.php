@@ -75,20 +75,24 @@ abstract class BaseKeuanganController extends Controller
     abstract protected function getValidationRules($id = null): array;
 
     /**
-     * Handle successful JSON response
+     * Handle successful response (JSON or redirect based on request expectation)
      */
-    protected function successResponse(string $message, $data = null): JsonResponse
+    protected function successResponse(Request $request, string $message, string $route = null, $data = null)
     {
-        $response = [
-            'success' => true,
-            'message' => $message
-        ];
+        if ($request->expectsJson()) {
+            $response = [
+                'success' => true,
+                'message' => $message
+            ];
 
-        if ($data !== null) {
-            $response['data'] = $data;
+            if ($data !== null) {
+                $response['data'] = $data;
+            }
+
+            return response()->json($response);
         }
 
-        return response()->json($response);
+        return redirect()->route($route ?? 'dashboard')->with('success', $message);
     }
 
     /**
@@ -103,12 +107,35 @@ abstract class BaseKeuanganController extends Controller
     }
 
     /**
-     * Handle successful redirect response
+     * Handle successful JSON response (alias for successResponse)
      */
-    protected function successRedirect(string $message, string $route = null): RedirectResponse
+    protected function successJsonResponse(string $message, $data = null): JsonResponse
     {
-        $route = $route ?? $this->routePrefix . '.index';
-        return redirect()->route($route)->with('success', $message);
+        $response = [
+            'success' => true,
+            'message' => $message
+        ];
+
+        if ($data !== null) {
+            $response['data'] = $data;
+        }
+
+        return response()->json($response);
+    }
+
+    /**
+     * Handle JSON response for dual purposes (JSON or view)
+     */
+    protected function jsonResponse(Request $request, $data, string $viewName = null)
+    {
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'data' => $data
+            ]);
+        }
+
+        return view($viewName, compact('data'));
     }
 
     /**
@@ -154,6 +181,14 @@ abstract class BaseKeuanganController extends Controller
             $formatted[$field] = is_array($messages) ? $messages[0] : $messages;
         }
         return $formatted;
+    }
+
+    /**
+     * Validate input with given rules
+     */
+    protected function validateInput(Request $request, array $rules): array
+    {
+        return $request->validate($rules);
     }
 
     /**

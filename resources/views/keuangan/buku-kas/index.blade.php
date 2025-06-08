@@ -222,6 +222,7 @@
                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500">
                             <span class="ml-2 text-sm text-gray-700">Aktif</span>
                         </label>
+                        <div id="create_is_active_error" class="text-red-500 text-sm mt-1 hidden"></div>
                     </div>
                     
                     <div class="col-span-2">
@@ -269,12 +270,14 @@
                         <label for="edit_nama_kas" class="block text-sm font-medium text-gray-700 mb-2">Nama Kas *</label>
                         <input type="text" id="edit_nama_kas" name="nama_kas" required
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <div id="edit_nama_kas_error" class="text-red-500 text-sm mt-1 hidden"></div>
                     </div>
                     
                     <div>
                         <label for="edit_kode_kas" class="block text-sm font-medium text-gray-700 mb-2">Kode Kas *</label>
                         <input type="text" id="edit_kode_kas" name="kode_kas" required
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <div id="edit_kode_kas_error" class="text-red-500 text-sm mt-1 hidden"></div>
                     </div>
                     
                     <div>
@@ -286,12 +289,14 @@
                                 <option value="{{ $jenisKas->id }}">{{ $jenisKas->nama }} ({{ $jenisKas->kode }})</option>
                             @endforeach
                         </select>
+                        <div id="edit_jenis_kas_error" class="text-red-500 text-sm mt-1 hidden"></div>
                     </div>
                     
                     <div>
                         <label for="edit_saldo_awal" class="block text-sm font-medium text-gray-700 mb-2">Saldo Awal *</label>
                         <input type="number" id="edit_saldo_awal" name="saldo_awal" min="0" step="0.01" required
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <div id="edit_saldo_awal_error" class="text-red-500 text-sm mt-1 hidden"></div>
                     </div>
                     
                     <div>
@@ -300,12 +305,14 @@
                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500">
                             <span class="ml-2 text-sm text-gray-700">Aktif</span>
                         </label>
+                        <div id="edit_is_active_error" class="text-red-500 text-sm mt-1 hidden"></div>
                     </div>
                     
                     <div class="col-span-2">
                         <label for="edit_deskripsi" class="block text-sm font-medium text-gray-700 mb-2">Deskripsi</label>
                         <textarea id="edit_deskripsi" name="deskripsi" rows="3"
                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        <div id="edit_deskripsi_error" class="text-red-500 text-sm mt-1 hidden"></div>
                     </div>
                 </div>
                 
@@ -335,6 +342,9 @@ function openCreateModal() {
     document.getElementById('createModal').classList.remove('hidden');
     document.getElementById('createForm').reset();
     clearErrors('create');
+    
+    // Add real-time validation
+    setupRealTimeValidation('create');
 }
 
 function closeCreateModal() {
@@ -344,70 +354,137 @@ function closeCreateModal() {
 function submitCreate(event) {
     event.preventDefault();
     
-    const submitBtn = document.querySelector('#createForm button[type="submit"]');
-    const originalText = submitBtn.textContent;
+    const form = document.getElementById('createForm');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    
+    // Basic validation
+    const namaKas = document.getElementById('create_nama_kas').value.trim();
+    const kodeKas = document.getElementById('create_kode_kas').value.trim();
+    const jenisKasId = document.getElementById('create_jenis_kas').value;
+    const saldoAwal = document.getElementById('create_saldo_awal').value;
+    
+    if (!namaKas || !kodeKas || !jenisKasId || !saldoAwal) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Form tidak lengkap',
+            text: 'Mohon lengkapi semua field yang wajib diisi'
+        });
+        return;
+    }
+    
+    // Clear previous errors
+    clearErrors('create');
     
     // Set loading state
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="flex items-center"><span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>Menyimpan...</span>';
     
-    // Clear previous errors
-    clearErrors('create');
+    // Prepare form data
+    const formData = new FormData(form);
     
-    const formData = new FormData(document.getElementById('createForm'));
+    // Handle is_active checkbox properly
+    const isActiveCheckbox = document.getElementById('create_is_active');
+    if (isActiveCheckbox) {
+        formData.delete('is_active');
+        formData.append('is_active', isActiveCheckbox.checked ? '1' : '0');
+    }
     
+    // Submit the form
     fetch('{{ route("keuangan.buku-kas.store") }}', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
         },
         body: formData
     })
     .then(response => {
-        if (!response.ok) {
-            return response.json().then(data => {
-                throw { status: response.status, data: data };
-            });
+        // Handle session timeout
+        if (response.status === 419) {
+            throw { status: 419, message: 'CSRF token mismatch' };
         }
-        return response.json();
+        
+        return response.json().then(data => {
+            return { status: response.status, data: data };
+        }).catch(jsonError => {
+            return { status: response.status, data: { message: 'Invalid response format' } };
+        });
     })
-    .then(data => {
-        if (data.success) {
+    .then(({status, data}) => {
+        // Reset button state
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Simpan';
+        
+        // Handle success
+        if (status >= 200 && status < 300 && data.success) {
+            closeCreateModal();
+            
+            // Show success notification
             Swal.fire({
                 icon: 'success',
-                title: 'Berhasil!',
-                text: data.message,
-                timer: 2000,
+                title: 'Berhasil',
+                text: data.message || 'Data buku kas berhasil disimpan',
+                timer: 1500,
                 showConfirmButton: false
             }).then(() => {
                 location.reload();
             });
-            closeCreateModal();
-        } else {
-            throw { data: data };
+            return;
         }
+        
+        // Handle validation errors
+        if (status === 422 && data.errors) {
+            // Show validation errors on form
+            for (const field in data.errors) {
+                const errorMsg = data.errors[field][0];
+                const errorElement = document.getElementById(`create_${field === 'jenis_kas_id' ? 'jenis_kas' : field}_error`);
+                
+                if (errorElement) {
+                    errorElement.textContent = errorMsg;
+                    errorElement.classList.remove('hidden');
+                    
+                    // Highlight field
+                    const inputField = document.getElementById(`create_${field === 'jenis_kas_id' ? 'jenis_kas' : field}`);
+                    if (inputField) {
+                        inputField.classList.add('border-red-500');
+                    }
+                }
+            }
+            
+            // Show error notification
+            Swal.fire({
+                icon: 'error',
+                title: 'Validasi Gagal',
+                text: 'Mohon periksa kembali data yang diinput'
+            });
+            return;
+        }
+        
+        // Handle other errors
+        throw { status, data };
     })
     .catch(error => {
-        console.error('Error:', error);
-        
-        // Reset button
+        // Reset button state
         submitBtn.disabled = false;
-        submitBtn.textContent = originalText;
+        submitBtn.innerHTML = 'Simpan';
         
-        if (error.status === 422 && error.data.errors) {
-            // Validation errors
-            displayErrors(error.data.errors, 'create');
+        // Handle session timeout
+        if (error.status === 419) {
             Swal.fire({
-                icon: 'error',
-                title: 'Validasi Gagal!',
-                text: 'Mohon periksa kembali data yang diinput.'
+                icon: 'warning',
+                title: 'Session Berakhir',
+                text: 'Halaman akan dimuat ulang untuk memperbarui session',
+                confirmButtonText: 'Muat Ulang'
+            }).then(() => {
+                location.reload();
             });
         } else {
+            // Show generic error
             Swal.fire({
                 icon: 'error',
-                title: 'Gagal!',
-                text: error.data?.message || 'Terjadi kesalahan saat menyimpan data.'
+                title: 'Terjadi Kesalahan',
+                text: 'Gagal menyimpan data. Silakan coba lagi.'
             });
         }
     });
@@ -415,178 +492,65 @@ function submitCreate(event) {
 
 // Modal Edit Functions
 function openEditModal(kasId) {
-    console.log('Opening edit modal for ID:', kasId);
-    
+    // Dapatkan referensi ke modal dan form
     const modal = document.getElementById('editModal');
-    const loadingText = 'Memuat data...';
+    const form = document.getElementById('editForm');
     
-    // Show loading state
+    // Tampilkan modal
     modal.classList.remove('hidden');
-    modal.querySelector('.mt-3').innerHTML = `
-        <div class="flex items-center justify-center py-8">
-            <div class="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full mr-3"></div>
-            <span class="text-gray-600">${loadingText}</span>
-        </div>
-    `;
-
-    // Try the main endpoint first, fallback to test API endpoint if auth fails
-    const primaryUrl = `/keuangan/buku-kas/${kasId}`;
-    const fallbackUrl = `/test/buku-kas/${kasId}`;
     
-    console.log('Fetching primary URL:', primaryUrl);
+    // Reset form dan clear errors
+    form.reset();
+    clearErrors('edit');
     
-    // Function to fetch data from a URL
-    function fetchKasData(url, isApiRoute = false) {
-        const headers = {
+    // Tampilkan loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="flex items-center"><span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>Memuat...</span>';
+    
+    // Set ID yang akan diedit pada form
+    document.getElementById('edit_kas_id').value = kasId;    // Lakukan request ke API dengan fetch
+    fetch(`/keuangan/buku-kas/${kasId}?nocache=${Date.now()}`, {
+        method: 'GET',
+        headers: {
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
-        };
-        
-        // Add CSRF token for non-API routes
-        if (!isApiRoute) {
-            const token = document.querySelector('meta[name="csrf-token"]');
-            if (token) {
-                headers['X-CSRF-TOKEN'] = token.getAttribute('content');
-            }
         }
-        
-        return fetch(url, { headers });
-    }
-    
-    // Try primary URL first
-    fetchKasData(primaryUrl, false)
-    .then(response => {
-        console.log('Primary response status:', response.status);
-        
-        if (response.status === 403 || response.status === 401 || response.status === 419) {
-            // Authentication/authorization failed, try fallback endpoint
-            console.log('Auth failed, trying fallback endpoint:', fallbackUrl);
-            return fetchKasData(fallbackUrl, true);
-        }
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response;
     })
     .then(response => {
-        // Handle response from either primary or fallback URL
-        if (response && response.url && response.url.includes('/test/')) {
-            console.log('Using fallback endpoint response');
-        } else {
-            console.log('Using primary endpoint response');
-        }
-        
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error('Gagal memuat data');
         }
         return response.json();
     })
-    .catch(fetchError => {
-        // If primary fails, try fallback
-        console.log('Primary request failed, trying fallback:', fetchError.message);
-        return fetchKasData(fallbackUrl, true)
-            .then(response => {
-                console.log('Fallback response status:', response.status);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            });
-    })
-    .then(data => {
-        console.log('Response data:', data);
-          if (data.success) {
-            const kas = data.data;
-            console.log('Kas data:', kas);
+    .then(response => {
+        if (response.success && response.data) {
+            // Isi form dengan data yang diterima
+            const data = response.data;
+            document.getElementById('edit_nama_kas').value = data.nama_kas;
+            document.getElementById('edit_kode_kas').value = data.kode_kas;
+            document.getElementById('edit_jenis_kas').value = data.jenis_kas_id;
+            document.getElementById('edit_saldo_awal').value = data.saldo_awal;
+            document.getElementById('edit_deskripsi').value = data.deskripsi || '';
+            document.getElementById('edit_is_active').checked = Boolean(data.is_active);
             
-            // Restore modal content
-            modal.querySelector('.mt-3').innerHTML = `
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-medium text-gray-900">Edit Buku Kas</h3>
-                    <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600">
-                        <span class="material-icons-outlined">close</span>
-                    </button>
-                </div>
-                
-                <form id="editForm" onsubmit="submitEdit(event)">
-                    @csrf
-                    @method('PUT')
-                    <input type="hidden" id="edit_kas_id" name="kas_id" value="${kas.id}">
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="col-span-2">
-                            <label for="edit_nama_kas" class="block text-sm font-medium text-gray-700 mb-2">Nama Kas *</label>
-                            <input type="text" id="edit_nama_kas" name="nama_kas" required value="${kas.nama_kas}"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <div id="edit_nama_kas_error" class="text-red-500 text-sm mt-1 hidden"></div>
-                        </div>
-                        
-                        <div>
-                            <label for="edit_kode_kas" class="block text-sm font-medium text-gray-700 mb-2">Kode Kas *</label>
-                            <input type="text" id="edit_kode_kas" name="kode_kas" required value="${kas.kode_kas}"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <div id="edit_kode_kas_error" class="text-red-500 text-sm mt-1 hidden"></div>
-                        </div>
-                        
-                        <div>
-                            <label for="edit_jenis_kas" class="block text-sm font-medium text-gray-700 mb-2">Jenis Kas *</label>
-                            <select id="edit_jenis_kas" name="jenis_kas_id" required
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                <option value="">Pilih Jenis Kas</option>
-                                @foreach($jenisKasList as $jenisKas)
-                                    <option value="{{ $jenisKas->id }}" {{ $kas->jenis_kas_id == $jenisKas->id ? 'selected' : '' }}>{{ $jenisKas->nama }} ({{ $jenisKas->kode }})</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label for="edit_saldo_awal" class="block text-sm font-medium text-gray-700 mb-2">Saldo Awal *</label>
-                            <input type="number" id="edit_saldo_awal" name="saldo_awal" min="0" step="0.01" required value="${kas.saldo_awal}"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <div id="edit_saldo_awal_error" class="text-red-500 text-sm mt-1 hidden"></div>
-                        </div>
-                        
-                        <div>
-                            <label class="flex items-center mt-6">
-                                <input type="checkbox" id="edit_is_active" name="is_active" ${kas.is_active ? 'checked' : ''}
-                                       class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500">
-                                <span class="ml-2 text-sm text-gray-700">Aktif</span>
-                            </label>
-                        </div>
-                        
-                        <div class="col-span-2">
-                            <label for="edit_deskripsi" class="block text-sm font-medium text-gray-700 mb-2">Deskripsi</label>
-                            <textarea id="edit_deskripsi" name="deskripsi" rows="3"
-                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">${kas.deskripsi || ''}</textarea>
-                            <div id="edit_deskripsi_error" class="text-red-500 text-sm mt-1 hidden"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="flex justify-end space-x-3 mt-6">
-                        <button type="button" onclick="closeEditModal()" 
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200">
-                            Batal
-                        </button>
-                        <button type="submit" 
-                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200">
-                            Update
-                        </button>
-                    </div>
-                </form>
-            `;
+            // Aktifkan tombol submit
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Update';
         } else {
-            throw new Error(data.message || 'Gagal memuat data');
+            throw new Error('Data tidak ditemukan');
         }
     })
     .catch(error => {
-        console.error('Error details:', error);
-        closeEditModal();
+        // Tampilkan pesan error
         Swal.fire({
             icon: 'error',
-            title: 'Gagal!',
-            text: 'Gagal memuat data buku kas: ' + error.message
+            title: 'Error',
+            text: 'Gagal memuat data: ' + error.message
         });
+        
+        // Tutup modal
+        closeEditModal();
     });
 }
 
@@ -599,24 +563,38 @@ function submitEdit(event) {
     
     const kasId = document.getElementById('edit_kas_id').value;
     const submitBtn = document.querySelector('#editForm button[type="submit"]');
-    const originalText = submitBtn.textContent;
     
-    // Set loading state
+    // Basic validation
+    const namaKas = document.getElementById('edit_nama_kas').value.trim();
+    const kodeKas = document.getElementById('edit_kode_kas').value.trim();
+    const jenisKasId = document.getElementById('edit_jenis_kas').value;
+    const saldoAwal = document.getElementById('edit_saldo_awal').value;
+    
+    if (!namaKas || !kodeKas || !jenisKasId || !saldoAwal) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Form tidak lengkap',
+            text: 'Mohon lengkapi semua field yang wajib diisi'
+        });
+        return;
+    }
+    
+    // Update button state
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="flex items-center"><span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>Memperbarui...</span>';
+    submitBtn.innerHTML = '<span class="flex items-center"><span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>Menyimpan...</span>';
     
-    // Clear previous errors
-    clearErrors('edit');
-    
+    // Prepare form data
     const formData = new FormData(document.getElementById('editForm'));
-      // Ensure PUT method is included for Laravel
     formData.append('_method', 'PUT');
+    formData.append('is_active', document.getElementById('edit_is_active').checked ? '1' : '0');
     
+    // Submit the form via fetch
     fetch(`/keuangan/buku-kas/${kasId}`, {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
         },
         body: formData
     })
@@ -630,58 +608,105 @@ function submitEdit(event) {
     })
     .then(data => {
         if (data.success) {
+            // Success notification
             Swal.fire({
                 icon: 'success',
-                title: 'Berhasil!',
-                text: data.message,
-                timer: 2000,
+                title: 'Berhasil',
+                text: 'Data buku kas berhasil diperbarui',
+                timer: 1500,
                 showConfirmButton: false
             }).then(() => {
-                location.reload();
+                // Reload page to show updated data
+                window.location.reload();
             });
+            
+            // Close modal
             closeEditModal();
         } else {
-            throw { data: data };
+            throw new Error('Gagal memperbarui data');
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        
-        // Reset button
+        // Reset button state
         submitBtn.disabled = false;
-        submitBtn.textContent = originalText;
+        submitBtn.innerHTML = 'Update';
         
-        if (error.status === 422 && error.data.errors) {
-            // Validation errors
-            displayErrors(error.data.errors, 'edit');
+        // Handle validation errors
+        if (error.status === 422 && error.data && error.data.errors) {
+            // Get all error messages
+            let errorMessages = [];
+            
+            for (const field in error.data.errors) {
+                const errorMsg = error.data.errors[field][0];
+                errorMessages.push(errorMsg);
+                
+                // Display error under the field
+                const errorElement = document.getElementById(`edit_${field === 'jenis_kas_id' ? 'jenis_kas' : field}_error`);
+                if (errorElement) {
+                    errorElement.textContent = errorMsg;
+                    errorElement.classList.remove('hidden');
+                    
+                    // Highlight field
+                    const inputField = document.getElementById(`edit_${field === 'jenis_kas_id' ? 'jenis_kas' : field}`);
+                    if (inputField) {
+                        inputField.classList.add('border-red-500');
+                    }
+                }
+            }
+            
+            // Show validation error message
             Swal.fire({
                 icon: 'error',
-                title: 'Validasi Gagal!',
-                text: 'Mohon periksa kembali data yang diinput.'
+                title: 'Validasi Gagal',
+                text: errorMessages.join(', ')
             });
-        } else {
+        } 
+        // Handle session timeout
+        else if (error.status === 419 || (error.data && error.data.message && error.data.message.includes('CSRF'))) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Session Habis',
+                text: 'Sesi anda telah berakhir. Halaman akan dimuat ulang.',
+                confirmButtonText: 'Muat Ulang'
+            }).then(() => {
+                window.location.reload();
+            });
+        } 
+        // Handle other errors
+        else {
             Swal.fire({
                 icon: 'error',
-                title: 'Gagal!',
-                text: error.data?.message || 'Terjadi kesalahan saat memperbarui data.'
+                title: 'Error',
+                text: error.data?.message || error.message || 'Terjadi kesalahan saat memperbarui data'
             });
         }
     });
 }
 
-// Delete Function
+// Delete Function - Simplified
 function deleteBukuKas(kasId) {
     Swal.fire({
-        title: 'Apakah Anda yakin?',
-        text: "Data buku kas akan dihapus permanen!",
+        title: 'Konfirmasi Hapus',
+        text: "Apakah Anda yakin ingin menghapus data buku kas ini?",
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Ya, Hapus!',
+        confirmButtonText: 'Ya, Hapus',
         cancelButtonText: 'Batal'
     }).then((result) => {
         if (result.isConfirmed) {
+            // Show loading state
+            Swal.fire({
+                title: 'Menghapus...',
+                text: 'Mohon tunggu sebentar',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Send delete request
             fetch(`/keuangan/buku-kas/${kasId}`, {
                 method: 'DELETE',
                 headers: {
@@ -689,54 +714,27 @@ function deleteBukuKas(kasId) {
                     'Accept': 'application/json'
                 }
             })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw { status: response.status, data: data };
-                    });
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     Swal.fire({
                         icon: 'success',
-                        title: 'Berhasil!',
-                        text: data.message,
-                        timer: 2000,
+                        title: 'Berhasil',
+                        text: 'Data buku kas berhasil dihapus',
+                        timer: 1500,
                         showConfirmButton: false
                     }).then(() => {
                         location.reload();
                     });
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal!',
-                        text: data.message
-                    });
+                    throw new Error(data.message || 'Gagal menghapus data');
                 }
-            })            .catch(error => {
-                console.error('Error:', error);
-                
-                // Check if it's an auth error
-                if (error.status === 401 || error.status === 403 || error.status === 419) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Akses Ditolak!',
-                        text: 'Anda perlu masuk kembali untuk melakukan tindakan ini.',
-                        confirmButtonText: 'Login Ulang'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.location.href = '/login';
-                        }
-                    });
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Gagal!',
-                        text: error.data?.message || 'Terjadi kesalahan saat menghapus data.'
-                    });
-                }
+            }).catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Menghapus',
+                    text: 'Terjadi kesalahan saat menghapus data buku kas.'
+                });
             });
         }
     });
@@ -762,15 +760,55 @@ window.onclick = function(event) {
 
 // Helper functions for error handling
 function displayErrors(errors, prefix) {
+    console.log('Displaying errors for prefix:', prefix, errors);
+    
+    // Check if errors object is valid
+    if (!errors || typeof errors !== 'object') {
+        console.error('Invalid errors object:', errors);
+        return;
+    }
+    
+    // Check for boolean conversion errors
+    if (errors.is_active && Array.isArray(errors.is_active)) {
+        console.log('is_active error detected:', errors.is_active);
+        // Handle checkbox specially
+        const isActiveCheckbox = document.getElementById(`${prefix}_is_active`);
+        if (isActiveCheckbox) {
+            const errorElement = document.getElementById(`${prefix}_is_active_error`);
+            if (!errorElement) {
+                // Create error element if it doesn't exist
+                const container = isActiveCheckbox.closest('div');
+                if (container) {
+                    const newErrorElement = document.createElement('div');
+                    newErrorElement.id = `${prefix}_is_active_error`;
+                    newErrorElement.className = 'text-red-500 text-sm mt-1';
+                    newErrorElement.textContent = errors.is_active[0];
+                    container.appendChild(newErrorElement);
+                }
+            }
+        }
+    }
+    
     Object.keys(errors).forEach(field => {
-        const errorElement = document.getElementById(`${prefix}_${field}_error`);
-        const inputElement = document.getElementById(`${prefix}_${field}`);
+        // Handle field name mappings (e.g. jenis_kas_id might be displayed as jenis_kas)
+        let displayField = field;
+        if (field === 'jenis_kas_id') displayField = 'jenis_kas';
+        
+        const errorElement = document.getElementById(`${prefix}_${displayField}_error`);
+        const inputElement = document.getElementById(`${prefix}_${displayField}`);
         
         if (errorElement && inputElement) {
-            errorElement.textContent = errors[field][0];
+            const errorMessage = Array.isArray(errors[field]) ? errors[field][0] : errors[field];
+            errorElement.textContent = errorMessage;
             errorElement.classList.remove('hidden');
             inputElement.classList.add('border-red-500');
             inputElement.classList.remove('border-gray-300');
+            console.log(`Error set for ${field}:`, errorMessage);
+        } else {
+            console.warn(`Error element not found for field ${prefix}_${displayField}_error or input ${prefix}_${displayField}`);
+            // Log all available error elements for debugging
+            const allErrorElements = document.querySelectorAll(`[id^="${prefix}_"][id$="_error"]`);
+            console.log('Available error elements:', Array.from(allErrorElements).map(el => el.id));
         }
     });
 }
@@ -788,6 +826,189 @@ function clearErrors(prefix) {
             inputElement.classList.add('border-gray-300');
         }
     });
+}
+
+// Client-side validation functions
+function validateCreateForm() {
+    clearErrors('create');
+    let isValid = true;
+    const errors = {};
+    
+    // Validate nama_kas
+    const namaKas = document.getElementById('create_nama_kas').value.trim();
+    if (!namaKas) {
+        errors.nama_kas = ['Nama kas wajib diisi.'];
+        isValid = false;
+    } else if (namaKas.length > 255) {
+        errors.nama_kas = ['Nama kas maksimal 255 karakter.'];
+        isValid = false;
+    }
+    
+    // Validate kode_kas
+    const kodeKas = document.getElementById('create_kode_kas').value.trim();
+    if (!kodeKas) {
+        errors.kode_kas = ['Kode kas wajib diisi.'];
+        isValid = false;
+    } else if (kodeKas.length > 50) {
+        errors.kode_kas = ['Kode kas maksimal 50 karakter.'];
+        isValid = false;
+    }
+    
+    // Validate jenis_kas_id
+    const jenisKasId = document.getElementById('create_jenis_kas').value;
+    if (!jenisKasId) {
+        errors.jenis_kas_id = ['Jenis kas wajib dipilih.'];
+        isValid = false;
+    }
+    
+    // Validate saldo_awal
+    const saldoAwal = document.getElementById('create_saldo_awal').value;
+    if (!saldoAwal && saldoAwal !== '0') {
+        errors.saldo_awal = ['Saldo awal wajib diisi.'];
+        isValid = false;
+    } else if (isNaN(saldoAwal) || parseFloat(saldoAwal) < 0) {
+        errors.saldo_awal = ['Saldo awal harus berupa angka dan tidak boleh negatif.'];
+        isValid = false;
+    }
+    
+    console.log('Client validation result:', { isValid, errors });
+    
+    return { isValid, errors };
+}
+
+function validateEditForm() {
+    clearErrors('edit');
+    let isValid = true;
+    const errors = {};
+    
+    // Validate nama_kas
+    const namaKas = document.getElementById('edit_nama_kas').value.trim();
+    if (!namaKas) {
+        errors.nama_kas = ['Nama kas wajib diisi.'];
+        isValid = false;
+    } else if (namaKas.length > 255) {
+        errors.nama_kas = ['Nama kas maksimal 255 karakter.'];
+        isValid = false;
+    }
+    
+    // Validate kode_kas
+    const kodeKas = document.getElementById('edit_kode_kas').value.trim();
+    if (!kodeKas) {
+        errors.kode_kas = ['Kode kas wajib diisi.'];
+        isValid = false;
+    } else if (kodeKas.length > 50) {
+        errors.kode_kas = ['Kode kas maksimal 50 karakter.'];
+        isValid = false;
+    }
+    
+    // Validate jenis_kas_id
+    const jenisKasId = document.getElementById('edit_jenis_kas').value;
+    if (!jenisKasId) {
+        errors.jenis_kas_id = ['Jenis kas wajib dipilih.'];
+        isValid = false;
+    }
+    
+    // Validate saldo_awal
+    const saldoAwal = document.getElementById('edit_saldo_awal').value;
+    if (!saldoAwal && saldoAwal !== '0') {
+        errors.saldo_awal = ['Saldo awal wajib diisi.'];
+        isValid = false;
+    } else if (isNaN(saldoAwal) || parseFloat(saldoAwal) < 0) {
+        errors.saldo_awal = ['Saldo awal harus berupa angka dan tidak boleh negatif.'];
+        isValid = false;
+    }
+    
+    console.log('Edit validation result:', { isValid, errors });
+    
+    return { isValid, errors };
+}
+
+// Setup real-time validation
+function setupRealTimeValidation(prefix) {
+    // Validate nama_kas
+    const namaKasInput = document.getElementById(`${prefix}_nama_kas`);
+    if (namaKasInput) {
+        namaKasInput.addEventListener('blur', function() {
+            validateField(prefix, 'nama_kas', this.value.trim());
+        });
+    }
+    
+    // Validate kode_kas
+    const kodeKasInput = document.getElementById(`${prefix}_kode_kas`);
+    if (kodeKasInput) {
+        kodeKasInput.addEventListener('blur', function() {
+            validateField(prefix, 'kode_kas', this.value.trim());
+        });
+    }
+    
+    // Validate jenis_kas_id
+    const jenisKasInput = document.getElementById(`${prefix}_jenis_kas`);
+    if (jenisKasInput) {
+        jenisKasInput.addEventListener('change', function() {
+            validateField(prefix, 'jenis_kas_id', this.value);
+        });
+    }
+    
+    // Validate saldo_awal
+    const saldoAwalInput = document.getElementById(`${prefix}_saldo_awal`);
+    if (saldoAwalInput) {
+        saldoAwalInput.addEventListener('blur', function() {
+            validateField(prefix, 'saldo_awal', this.value);
+        });
+    }
+}
+
+function validateField(prefix, fieldName, value) {
+    const errorElement = document.getElementById(`${prefix}_${fieldName}_error`);
+    const inputElement = document.getElementById(`${prefix}_${fieldName}`);
+    
+    if (!errorElement || !inputElement) return;
+    
+    let errorMessage = '';
+    
+    switch (fieldName) {
+        case 'nama_kas':
+            if (!value) {
+                errorMessage = 'Nama kas wajib diisi.';
+            } else if (value.length > 255) {
+                errorMessage = 'Nama kas maksimal 255 karakter.';
+            }
+            break;
+            
+        case 'kode_kas':
+            if (!value) {
+                errorMessage = 'Kode kas wajib diisi.';
+            } else if (value.length > 50) {
+                errorMessage = 'Kode kas maksimal 50 karakter.';
+            }
+            break;
+            
+        case 'jenis_kas_id':
+            if (!value) {
+                errorMessage = 'Jenis kas wajib dipilih.';
+            }
+            break;
+            
+        case 'saldo_awal':
+            if (!value && value !== '0') {
+                errorMessage = 'Saldo awal wajib diisi.';
+            } else if (isNaN(value) || parseFloat(value) < 0) {
+                errorMessage = 'Saldo awal harus berupa angka dan tidak boleh negatif.';
+            }
+            break;
+    }
+    
+    if (errorMessage) {
+        errorElement.textContent = errorMessage;
+        errorElement.classList.remove('hidden');
+        inputElement.classList.add('border-red-500');
+        inputElement.classList.remove('border-gray-300');
+    } else {
+        errorElement.classList.add('hidden');
+        errorElement.textContent = '';
+        inputElement.classList.remove('border-red-500');
+        inputElement.classList.add('border-gray-300');
+    }
 }
 
 // Expose functions to global scope

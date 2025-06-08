@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('nama_kategori');
             $table->text('deskripsi')->nullable();
+            $table->foreignId('tahun_ajaran_id')->nullable()->constrained('tahun_ajaran')->onDelete('set null');
+            $table->index('tahun_ajaran_id');
             $table->timestamps();
         });
     }

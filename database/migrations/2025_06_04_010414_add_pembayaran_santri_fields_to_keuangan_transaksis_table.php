@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('keuangan_transaksis', function (Blueprint $table) {
-            $table->unsignedBigInteger('pembayaran_santri_id')->nullable()->after('jenis_pembayaran_id');
+            $table->unsignedBigInteger('pembayaran_santri_id')->nullable()->after('jenis_tagihan_id');
             $table->tinyInteger('bulan')->nullable()->after('tanggal'); // 1-12 untuk bulan
             
             $table->index('pembayaran_santri_id');

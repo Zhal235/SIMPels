@@ -36,6 +36,12 @@ class Santri extends Model
     {
     return $this->belongsTo(\App\Models\Asrama::class, 'asrama_id');
     }
+    
+    public function kelas()
+    {
+        return $this->belongsTo(\App\Models\Kelas::class, 'kelas_id');
+    }
+    
     public function kelas_anggota()
     {
     return $this->hasMany(\App\Models\KelasAnggota::class, 'santri_id');
