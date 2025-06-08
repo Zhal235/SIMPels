@@ -90,11 +90,22 @@ Route::middleware(['auth'])->group(function () {
         Route::get('jenis-tagihan', [JenisTagihanController::class, 'index'])->name('jenis-tagihan.index')->middleware(['role:admin']);
         Route::get('jenis-tagihan/create', [JenisTagihanController::class, 'create'])->name('jenis-tagihan.create')->middleware(['role:admin']);
         Route::post('jenis-tagihan', [JenisTagihanController::class, 'store'])->name('jenis-tagihan.store')->middleware(['role:admin']);
+        
+        Route::post('jenis-tagihan/insidental', [JenisTagihanController::class, 'storeInsidental'])->name('jenis-tagihan.store-insidental')->middleware(['role:admin']);
+        
+        Route::get('jenis-tagihan/get-all-kelas', [JenisTagihanController::class, 'getAllKelas'])->name('jenis-tagihan.get-all-kelas')->middleware(['role:admin']);
+        Route::get('jenis-tagihan/get-all-santri', [JenisTagihanController::class, 'getAllSantri'])->name('jenis-tagihan.get-all-santri')->middleware(['role:admin']);
+        Route::get('jenis-tagihan/search-santri', [JenisTagihanController::class, 'searchSantri'])->name('jenis-tagihan.search-santri')->middleware(['role:admin']);
+        Route::get('jenis-tagihan/get-santri-by-kelas', [JenisTagihanController::class, 'getSantriByKelas'])->name('jenis-tagihan.get-santri-by-kelas')->middleware(['role:admin']);
         Route::get('jenis-tagihan/{id}/edit', [JenisTagihanController::class, 'edit'])->name('jenis-tagihan.edit')->middleware(['role:admin']);
         Route::put('jenis-tagihan/{id}', [JenisTagihanController::class, 'update'])->name('jenis-tagihan.update')->middleware(['role:admin']);
         Route::delete('jenis-tagihan/{id}', [JenisTagihanController::class, 'destroy'])->name('jenis-tagihan.destroy')->middleware(['role:admin']);
         Route::get('jenis-tagihan/{id}/kelas', [JenisTagihanController::class, 'showKelas'])->name('jenis-tagihan.show-kelas')->middleware(['role:admin']);
-        Route::put('jenis-tagihan/{id}/kelas', [JenisTagihanController::class, 'updateKelas'])->name('jenis-tagihan.update-kelas')->middleware(['role:admin']);
+        Route::put('jenis-tagihan/{id}/update-kelas', [JenisTagihanController::class, 'updateKelas'])->name('jenis-tagihan.update-kelas')->middleware(['role:admin']);
+        
+        // Preview dan Generate untuk tagihan insidental
+        Route::get('jenis-tagihan/{id}/preview', [JenisTagihanController::class, 'previewInsidental'])->name('jenis-tagihan.preview')->middleware(['role:admin']);
+        Route::post('jenis-tagihan/{id}/generate-insidental', [JenisTagihanController::class, 'generateInsidental'])->name('jenis-tagihan.generate-insidental')->middleware(['role:admin']);
         
         // Routes for generate and cancel tagihan
         Route::post('jenis-tagihan/{id}/generate', [JenisTagihanController::class, 'generateTagihanSantriByJenisId'])->name('jenis-tagihan.generate')->middleware(['role:admin']);
@@ -123,6 +134,13 @@ Route::middleware(['auth'])->group(function () {
             ]);
         })->name('debug.buku-kas');
         
+        // Tagihan Santri
+        Route::middleware(['role:admin|bendahara'])->group(function() {
+            Route::get('tagihan-santri', [App\Http\Controllers\TagihanSantriController::class, 'index'])->name('tagihan-santri.index');
+            Route::get('tagihan-santri/{santriId}', [App\Http\Controllers\TagihanSantriController::class, 'show'])->name('tagihan-santri.show');
+            Route::get('tagihan-santri-export', [App\Http\Controllers\TagihanSantriController::class, 'export'])->name('tagihan-santri.export');
+        });
+        
         // Pembayaran Santri
         Route::middleware(['role:admin|bendahara'])->group(function() {
             Route::get('pembayaran-santri', [PembayaranSantriController::class, 'index'])->name('pembayaran-santri.index');
@@ -130,13 +148,6 @@ Route::middleware(['auth'])->group(function () {
             Route::get('pembayaran-santri/tunggakan/{santriId}', [PembayaranSantriController::class, 'getTunggakanData'])->name('pembayaran-santri.tunggakan');
             Route::post('pembayaran-santri/process', [PembayaranSantriController::class, 'processPayment'])
                 ->name('pembayaran-santri.process');
-        });
-        
-        // Tagihan Santri
-        Route::middleware(['role:admin|bendahara'])->group(function() {
-            Route::get('tagihan-santri', [App\Http\Controllers\TagihanSantriController::class, 'index'])->name('tagihan-santri.index');
-            Route::get('tagihan-santri/{santriId}', [App\Http\Controllers\TagihanSantriController::class, 'show'])->name('tagihan-santri.show');
-            Route::get('tagihan-santri-export', [App\Http\Controllers\TagihanSantriController::class, 'export'])->name('tagihan-santri.export');
         });
     });
 

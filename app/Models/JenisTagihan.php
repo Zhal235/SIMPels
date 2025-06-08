@@ -22,14 +22,124 @@ class JenisTagihan extends Model
         'kategori_tagihan',
         'buku_kas_id',
         'tanggal_jatuh_tempo',
-        'bulan_jatuh_tempo'
+        'bulan_jatuh_tempo',
+        'target_type',
+        'target_kelas',
+        'target_santri',
+        'tipe_pembayaran',
+        'mode_santri',
+        'kelas_ids',
+        'santri_ids'
     ];
 
     protected $casts = [
         'bulan_pembayaran' => 'array',
+        'target_kelas' => 'array',
+        'target_santri' => 'array',
+        'kelas_ids' => 'array',
+        'santri_ids' => 'array',
         'is_bulanan' => 'boolean',
         'nominal_tagihan' => 'decimal:2'
     ];
+
+    /**
+     * Get bulan_pembayaran attribute with safe JSON decoding
+     */
+    public function getBulanPembayaranAttribute($value)
+    {
+        if (empty($value)) {
+            return [];
+        }
+        
+        // Handle double-encoded JSON
+        $decoded = json_decode($value, true);
+        
+        // If first decode fails or returns string, try again
+        if (is_string($decoded)) {
+            $decoded = json_decode($decoded, true);
+        }
+        
+        // Return array or empty array
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * Set bulan_pembayaran attribute with proper JSON encoding
+     */
+    public function setBulanPembayaranAttribute($value)
+    {
+        if (is_array($value)) {
+            $this->attributes['bulan_pembayaran'] = json_encode($value);
+        } else {
+            $this->attributes['bulan_pembayaran'] = $value;
+        }
+    }
+
+    /**
+     * Get kelas_ids attribute with safe JSON decoding
+     */
+    public function getKelasIdsAttribute($value)
+    {
+        if (empty($value)) {
+            return [];
+        }
+        
+        // Handle double-encoded JSON
+        $decoded = json_decode($value, true);
+        
+        // If first decode fails or returns string, try again
+        if (is_string($decoded)) {
+            $decoded = json_decode($decoded, true);
+        }
+        
+        // Convert to integers and return array
+        return is_array($decoded) ? array_map('intval', $decoded) : [];
+    }
+
+    /**
+     * Set kelas_ids attribute with proper JSON encoding
+     */
+    public function setKelasIdsAttribute($value)
+    {
+        if (is_array($value)) {
+            $this->attributes['kelas_ids'] = json_encode($value);
+        } else {
+            $this->attributes['kelas_ids'] = $value;
+        }
+    }
+
+    /**
+     * Get santri_ids attribute with safe JSON decoding
+     */
+    public function getSantriIdsAttribute($value)
+    {
+        if (empty($value)) {
+            return [];
+        }
+        
+        // Handle double-encoded JSON
+        $decoded = json_decode($value, true);
+        
+        // If first decode fails or returns string, try again
+        if (is_string($decoded)) {
+            $decoded = json_decode($decoded, true);
+        }
+        
+        // Convert to integers and return array
+        return is_array($decoded) ? array_map('intval', $decoded) : [];
+    }
+
+    /**
+     * Set santri_ids attribute with proper JSON encoding
+     */
+    public function setSantriIdsAttribute($value)
+    {
+        if (is_array($value)) {
+            $this->attributes['santri_ids'] = json_encode($value);
+        } else {
+            $this->attributes['santri_ids'] = $value;
+        }
+    }
 
     /**
      * Relasi dengan TahunAjaran
@@ -107,10 +217,56 @@ class JenisTagihan extends Model
             '10' => 'Oktober', '11' => 'November', '12' => 'Desember'
         ];
 
-        $selectedMonths = $this->bulan_pembayaran_list;
+        // Get the actual bulan_pembayaran data
+        $selectedMonths = $this->bulan_pembayaran ?? [];
+        
+        // If it's empty, return empty array
+        if (empty($selectedMonths)) {
+            return [];
+        }
+        
+        // Map month codes to names
         return collect($selectedMonths)->map(function($month) use ($months) {
             return $months[$month] ?? $month;
         })->toArray();
+    }
+
+    /**
+     * Get formatted month names as string for display
+     */
+    public function getBulanNamesStringAttribute()
+    {
+        $names = $this->bulan_names;
+        if (empty($names)) {
+            return '-';
+        }
+        
+        // If more than 3 months, show first 2 and "+ X lainnya"
+        if (count($names) > 3) {
+            $firstTwo = array_slice($names, 0, 2);
+            $remaining = count($names) - 2;
+            return implode(', ', $firstTwo) . " + {$remaining} lainnya";
+        }
+        
+        return implode(', ', $names);
+    }
+
+
+
+    /**
+     * Relasi ke model Santri melalui tabel tagihan_santris
+     */
+    public function santris()
+    {
+        return $this->belongsToMany(Santri::class, 'tagihan_santris', 'jenis_tagihan_id', 'santri_id');
+    }
+
+    /**
+     * Relasi ke model Kelas melalui tabel pivot jenis_tagihan_kelas
+     */
+    public function kelas()
+    {
+        return $this->belongsToMany(Kelas::class, 'jenis_tagihan_kelas', 'jenis_tagihan_id', 'kelas_id');
     }
 
     /**

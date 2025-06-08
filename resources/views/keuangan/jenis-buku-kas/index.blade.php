@@ -140,7 +140,7 @@
 </div>
 
 <!-- Modal Tambah Jenis Kas -->
-<div class="fixed inset-0 z-50 overflow-y-auto hidden" id="createModal" aria-hidden="true">
+<div class="fixed inset-0 z-50 overflow-y-auto hidden" id="createModal" aria-hidden="true" role="dialog" aria-labelledby="createModalTitle" aria-modal="true">
     <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" id="createModalOverlay"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
@@ -150,8 +150,8 @@
                 @csrf
                 
                 <div class="bg-gray-50 border-b px-6 py-3 flex items-center justify-between">
-                    <h3 class="text-lg font-medium text-gray-900">Tambah Jenis Buku Kas</h3>
-                    <button type="button" class="text-gray-400 hover:text-gray-600" id="closeCreateModal">
+                    <h3 id="createModalTitle" class="text-lg font-medium text-gray-900">Tambah Jenis Buku Kas</h3>
+                    <button type="button" class="text-gray-400 hover:text-gray-600" id="closeCreateModal" aria-label="Tutup modal">
                         <span class="material-icons-outlined text-2xl">close</span>
                     </button>
                 </div>
@@ -199,7 +199,7 @@
 </div>
 
 <!-- Modal Edit Jenis Kas -->
-<div class="fixed inset-0 z-50 overflow-y-auto hidden" id="editModal" aria-hidden="true">
+<div class="fixed inset-0 z-50 overflow-y-auto hidden" id="editModal" aria-hidden="true" role="dialog" aria-labelledby="editModalTitle" aria-modal="true">
     <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" id="editModalOverlay"></div>
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
@@ -210,8 +210,8 @@
                 @method('PUT')
                 
                 <div class="bg-gray-50 border-b px-6 py-3 flex items-center justify-between">
-                    <h3 class="text-lg font-medium text-gray-900">Edit Jenis Buku Kas</h3>
-                    <button type="button" class="text-gray-400 hover:text-gray-600" id="closeEditModal">
+                    <h3 id="editModalTitle" class="text-lg font-medium text-gray-900">Edit Jenis Buku Kas</h3>
+                    <button type="button" class="text-gray-400 hover:text-gray-600" id="closeEditModal" aria-label="Tutup modal">
                         <span class="material-icons-outlined text-2xl">close</span>
                     </button>
                 </div>
@@ -269,18 +269,39 @@
 @section('scripts')
 <script>
     function openCreateModal() {
-        document.getElementById('createModal').classList.remove('hidden');
+        console.log('Opening create modal');
+        const modal = document.getElementById('createModal');
+        modal.classList.remove('hidden');
+        modal.removeAttribute('aria-hidden');
         document.body.classList.add('overflow-hidden');
+        
+        // Reset form dan error messages
+        document.getElementById('createJenisKasForm').reset();
+        clearErrorMessages('create');
+        
+        // Focus pada input pertama
+        setTimeout(() => {
+            document.getElementById('create_nama').focus();
+        }, 100);
     }
     
     function closeCreateModal() {
-        document.getElementById('createModal').classList.add('hidden');
+        console.log('Closing create modal');
+        const modal = document.getElementById('createModal');
+        modal.classList.add('hidden');
+        modal.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('overflow-hidden');
+        
+        // Reset form dan error messages
         document.getElementById('createJenisKasForm').reset();
+        clearErrorMessages('create');
     }
     
     function openEditModal(id, nama, kode, deskripsi, isActive, usedCount) {
-        document.getElementById('editModal').classList.remove('hidden');
+        console.log('Opening edit modal for ID:', id);
+        const modal = document.getElementById('editModal');
+        modal.classList.remove('hidden');
+        modal.removeAttribute('aria-hidden');
         document.body.classList.add('overflow-hidden');
         
         // Set action URL
@@ -292,6 +313,9 @@
         document.getElementById('edit_deskripsi').value = deskripsi || '';
         document.getElementById('edit_is_active').checked = isActive === '1';
         
+        // Clear error messages
+        clearErrorMessages('edit');
+        
         // Show warning if used
         const usedCountWarning = document.getElementById('used_count_warning');
         const usedCountValue = document.getElementById('used_count_value');
@@ -302,14 +326,54 @@
         } else {
             usedCountWarning.classList.add('hidden');
         }
+        
+        // Focus pada input pertama
+        setTimeout(() => {
+            document.getElementById('edit_nama').focus();
+        }, 100);
     }
     
     function closeEditModal() {
-        document.getElementById('editModal').classList.add('hidden');
+        console.log('Closing edit modal');
+        const modal = document.getElementById('editModal');
+        modal.classList.add('hidden');
+        modal.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('overflow-hidden');
+        
+        // Clear error messages
+        clearErrorMessages('edit');
+    }
+    
+    function clearErrorMessages(type) {
+        const errorElements = document.querySelectorAll(`#${type}_nama_error, #${type}_kode_error, #${type}_deskripsi_error`);
+        errorElements.forEach(element => {
+            element.classList.add('hidden');
+            element.textContent = '';
+        });
+        
+        // Reset input styles
+        const inputElements = document.querySelectorAll(`#${type}_nama, #${type}_kode, #${type}_deskripsi`);
+        inputElements.forEach(input => {
+            input.classList.remove('border-red-500');
+            input.classList.add('border-gray-300');
+        });
+    }
+    
+    function showFieldError(fieldName, message, type = 'create') {
+        const errorElement = document.getElementById(`${type}_${fieldName}_error`);
+        const inputElement = document.getElementById(`${type}_${fieldName}`);
+        
+        if (errorElement && inputElement) {
+            errorElement.textContent = message;
+            errorElement.classList.remove('hidden');
+            inputElement.classList.add('border-red-500');
+            inputElement.classList.remove('border-gray-300');
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, initializing modal handlers');
+        
         // Setup modal actions
         document.getElementById('closeCreateModal').addEventListener('click', closeCreateModal);
         document.getElementById('cancelCreateBtn').addEventListener('click', closeCreateModal);
@@ -318,6 +382,21 @@
         document.getElementById('closeEditModal').addEventListener('click', closeEditModal);
         document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
         document.getElementById('editModalOverlay').addEventListener('click', closeEditModal);
+        
+        // Event listener for escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const createModal = document.getElementById('createModal');
+                const editModal = document.getElementById('editModal');
+                
+                if (!createModal.classList.contains('hidden')) {
+                    closeCreateModal();
+                }
+                if (!editModal.classList.contains('hidden')) {
+                    closeEditModal();
+                }
+            }
+        });
         
         // Event listener untuk tombol edit
         document.querySelectorAll('.edit-jenis-kas').forEach(button => {
@@ -333,61 +412,139 @@
             });
         });
         
-        // Form validation
+        // Form submission handlers
         const createForm = document.getElementById('createJenisKasForm');
         const editForm = document.getElementById('editJenisKasForm');
         
         if (createForm) {
             createForm.addEventListener('submit', function(e) {
+                console.log('Create form submitted');
+                
+                // Clear previous errors
+                clearErrorMessages('create');
+                
                 let valid = true;
                 
-                if (!document.getElementById('create_nama').value.trim()) {
-                    document.getElementById('create_nama_error').textContent = 'Nama jenis kas harus diisi';
-                    document.getElementById('create_nama_error').classList.remove('hidden');
+                // Validate required fields
+                const nama = document.getElementById('create_nama').value.trim();
+                const kode = document.getElementById('create_kode').value.trim();
+                
+                if (!nama) {
+                    showFieldError('nama', 'Nama jenis kas harus diisi', 'create');
                     valid = false;
-                } else {
-                    document.getElementById('create_nama_error').classList.add('hidden');
                 }
                 
-                if (!document.getElementById('create_kode').value.trim()) {
-                    document.getElementById('create_kode_error').textContent = 'Kode jenis kas harus diisi';
-                    document.getElementById('create_kode_error').classList.remove('hidden');
+                if (!kode) {
+                    showFieldError('kode', 'Kode jenis kas harus diisi', 'create');
                     valid = false;
-                } else {
-                    document.getElementById('create_kode_error').classList.add('hidden');
                 }
                 
                 if (!valid) {
                     e.preventDefault();
+                    return false;
                 }
+                
+                // Handle checkbox - ensure it's sent as proper value
+                const isActiveCheckbox = document.getElementById('create_is_active');
+                
+                // Remove existing hidden input if any
+                const existingHiddenInput = this.querySelector('input[name="is_active"][type="hidden"]');
+                if (existingHiddenInput) {
+                    existingHiddenInput.remove();
+                }
+                
+                // Add hidden input to ensure value is sent
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'is_active';
+                hiddenInput.value = isActiveCheckbox.checked ? '1' : '0';
+                this.appendChild(hiddenInput);
+                
+                console.log('Form data being submitted:', {
+                    nama: nama,
+                    kode: kode,
+                    deskripsi: document.getElementById('create_deskripsi').value,
+                    is_active: hiddenInput.value
+                });
             });
         }
         
         if (editForm) {
             editForm.addEventListener('submit', function(e) {
+                console.log('Edit form submitted');
+                
+                // Clear previous errors
+                clearErrorMessages('edit');
+                
                 let valid = true;
                 
-                if (!document.getElementById('edit_nama').value.trim()) {
-                    document.getElementById('edit_nama_error').textContent = 'Nama jenis kas harus diisi';
-                    document.getElementById('edit_nama_error').classList.remove('hidden');
+                // Validate required fields
+                const nama = document.getElementById('edit_nama').value.trim();
+                const kode = document.getElementById('edit_kode').value.trim();
+                
+                if (!nama) {
+                    showFieldError('nama', 'Nama jenis kas harus diisi', 'edit');
                     valid = false;
-                } else {
-                    document.getElementById('edit_nama_error').classList.add('hidden');
                 }
                 
-                if (!document.getElementById('edit_kode').value.trim()) {
-                    document.getElementById('edit_kode_error').textContent = 'Kode jenis kas harus diisi';
-                    document.getElementById('edit_kode_error').classList.remove('hidden');
+                if (!kode) {
+                    showFieldError('kode', 'Kode jenis kas harus diisi', 'edit');
                     valid = false;
-                } else {
-                    document.getElementById('edit_kode_error').classList.add('hidden');
                 }
                 
                 if (!valid) {
                     e.preventDefault();
+                    return false;
                 }
+                
+                // Handle checkbox - ensure it's sent as proper value
+                const isActiveCheckbox = document.getElementById('edit_is_active');
+                
+                // Remove existing hidden input if any
+                const existingHiddenInput = this.querySelector('input[name="is_active"][type="hidden"]');
+                if (existingHiddenInput) {
+                    existingHiddenInput.remove();
+                }
+                
+                // Add hidden input to ensure value is sent
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'is_active';
+                hiddenInput.value = isActiveCheckbox.checked ? '1' : '0';
+                this.appendChild(hiddenInput);
+                
+                console.log('Edit form validation passed');
             });
         }
+        
+        // Handle server-side validation errors
+        @if($errors->any())
+            console.log('Server validation errors detected');
+            @if(old('_method') === null)
+                // This is a create operation, show create modal with errors
+                console.log('Showing create modal with errors');
+                setTimeout(() => {
+                    openCreateModal();
+                    
+                    // Pre-fill form with old values
+                    document.getElementById('create_nama').value = '{{ old('nama') }}';
+                    document.getElementById('create_kode').value = '{{ old('kode') }}';
+                    document.getElementById('create_deskripsi').value = '{{ old('deskripsi') }}';
+                    document.getElementById('create_is_active').checked = {{ old('is_active', '1') === '1' ? 'true' : 'false' }};
+                    
+                    // Show validation errors
+                    @foreach($errors->all() as $field => $messages)
+                        @if(is_array($messages))
+                            @foreach($messages as $message)
+                                showFieldError('{{ $field }}', '{{ $message }}', 'create');
+                            @endforeach
+                        @else
+                            showFieldError('{{ $field }}', '{{ $messages }}', 'create');
+                        @endif
+                    @endforeach
+                }, 100);
+            @endif
+        @endif
     });
 </script>
 @endsection

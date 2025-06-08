@@ -14,6 +14,7 @@ class Transaksi extends Model
     protected $fillable = [
         'santri_id',
         'tagihan_santri_id',
+        'jenis_tagihan_id',
         'tipe_pembayaran',
         'nominal',
         'tanggal',
@@ -35,8 +36,14 @@ class Transaksi extends Model
         return $this->belongsTo(TagihanSantri::class, 'tagihan_santri_id');
     }
 
-    // Akses JenisTagihan melalui TagihanSantri
+    // Relasi langsung ke JenisTagihan
     public function jenisTagihan()
+    {
+        return $this->belongsTo(JenisTagihan::class, 'jenis_tagihan_id');
+    }
+
+    // Akses JenisTagihan melalui TagihanSantri (backup method)
+    public function jenisTagihanViaTagihan()
     {
         return $this->hasOneThrough(
             JenisTagihan::class,

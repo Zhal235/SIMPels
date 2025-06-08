@@ -851,7 +851,19 @@ togglePaymentSelection(paymentId) {
     // Ensure selectedPayments contains unique, numeric IDs
     this.selectedPayments = [...new Set(this.selectedPayments.map(id => Number(id)))];
     console.log('[togglePaymentSelection] selectedPayments after toggle:', JSON.parse(JSON.stringify(this.selectedPayments)));
-},        init() {
+    
+    // Trigger reactive update for total calculation
+    this.$nextTick(() => {
+        console.log('[togglePaymentSelection] Total after toggle:', this.totalSelectedAmount);
+    });
+},
+
+        updateSelectAll() {
+            // Function to update selectAll state - placeholder for consistency
+            console.log('[updateSelectAll] Called');
+        },
+        
+        init() {
     console.log('[Alpine init] Component initializing and setting up watchers.');
     
     // Check if we have a pre-selected santri from the backend
@@ -892,6 +904,12 @@ togglePaymentSelection(paymentId) {
         console.log('[Watcher selectedPayments] selectablePaymentIds (all numbers):', JSON.parse(JSON.stringify(selectablePaymentIds)));
         console.log('[Watcher selectedPayments] Calculated newSelectAllState:', newSelectAllState, '; Current this.selectAll:', this.selectAll);
     });
+    
+    // Watch for changes in selectedPayments to trigger total update
+    this.$watch('selectedPayments', () => {
+        console.log('[Watcher selectedPayments] Total updated:', this.totalSelectedAmount);
+    });
+    
     console.log('[Alpine init] Initial selectAll (likely false as payments might not be loaded):', this.selectAll);
 },
         payments: [],
@@ -983,19 +1001,39 @@ togglePaymentSelection(paymentId) {
             // Hitung total dari semua pembayaran yang dipilih
             let total = 0;
             
+            // Tentukan sumber data berdasarkan tab aktif
+            let dataSource = [];
+            if (this.activeTab === 'tunggakan') {
+                dataSource = this.tunggakanPayments;
+            } else if (this.activeTab === 'insidentil') {
+                dataSource = this.insidentilPayments;
+            } else if (this.activeTab === 'sudah_dibayar') {
+                dataSource = this.paidPayments;
+            } else {
+                dataSource = this.payments; // default untuk tab rutin
+            }
+            
+            console.log('[totalSelectedAmount] Active tab:', this.activeTab);
+            console.log('[totalSelectedAmount] Data source length:', dataSource.length);
+            console.log('[totalSelectedAmount] Selected payments:', this.selectedPayments);
+            
             // Iterasi melalui setiap ID pembayaran yang dipilih
             for (const paymentId of this.selectedPayments) {
                 // Cari pembayaran dengan ID yang sesuai
-                // Konversi paymentId ke number jika perlu
-                const id = typeof paymentId === 'string' ? parseInt(paymentId) : paymentId;
-                const payment = this.payments.find(p => p.id === id);
+                const id = Number(paymentId);
+                const payment = dataSource.find(p => Number(p.id) === id);
+                
+                console.log('[totalSelectedAmount] Looking for payment ID:', id, 'Found:', !!payment);
                 
                 // Jika pembayaran ditemukan, tambahkan sisa ke total
-                if (payment && payment.sisa) {
-                    total += payment.sisa;
+                if (payment) {
+                    const sisaTagihan = payment.sisa_tagihan || payment.sisa || 0;
+                    total += Number(sisaTagihan);
+                    console.log('[totalSelectedAmount] Added:', sisaTagihan, 'Running total:', total);
                 }
             }
             
+            console.log('[totalSelectedAmount] Final total:', total);
             return total;
         },
 
@@ -1082,13 +1120,13 @@ togglePaymentSelection(paymentId) {
                 
                 if (data && data.length > 0) {
                     this.tunggakanPayments = data.map((item) => {
-                        return {
-                            id: item.id,
+                        const payment = {
+                            id: Number(item.id), // Ensure ID is always a number
                             bulan: item.bulan,
                             jenis_tagihan: item.jenis_tagihan,
-                            jenis_tagihan_id: item.jenis_tagihan_id,
+                            jenis_tagihan_id: Number(item.jenis_tagihan_id),
                             tahun_ajaran: item.tahun_ajaran,
-                            tahun_ajaran_id: item.tahun_ajaran_id,
+                            tahun_ajaran_id: Number(item.tahun_ajaran_id),
                             kategori_tagihan: item.kategori_tagihan || 'Rutin',
                             is_bulanan: item.is_bulanan || false,
                             nominal_tagihan: this.formatNumberSafe(item.nominal_tagihan),
@@ -1101,8 +1139,11 @@ togglePaymentSelection(paymentId) {
                             keterangan: item.keterangan,
                             transaksis: item.transaksis || []
                         };
+                        console.log('[Tunggakan] Mapped payment ID:', payment.id, 'Type:', typeof payment.id);
+                        return payment;
                     });
                     console.log('Mapped tunggakan payments:', this.tunggakanPayments.length);
+                    console.log('[Tunggakan] Sample payment IDs:', this.tunggakanPayments.slice(0, 3).map(p => p.id));
                 } else {
                     this.tunggakanPayments = [];
                     console.log('No tunggakan data found');
@@ -1143,31 +1184,43 @@ togglePaymentSelection(paymentId) {
 
         // Toggle month selection for tunggakan
         toggleMonthSelectionTunggakan(month, tahunId) {
+            console.log('[toggleMonthSelectionTunggakan] Called for month:', month, 'tahunId:', tahunId);
+            
             const monthPayments = this.tunggakanPayments.filter(p => 
-                p.bulan === month && p.tahun_ajaran_id === tahunId
+                p.bulan === month && Number(p.tahun_ajaran_id) === Number(tahunId)
             );
+            
+            console.log('[toggleMonthSelectionTunggakan] Found payments:', monthPayments.length);
+            console.log('[toggleMonthSelectionTunggakan] Payment IDs:', monthPayments.map(p => p.id));
             
             const allSelected = monthPayments.every(payment => 
                 this.selectedPayments.includes(Number(payment.id))
             );
             
+            console.log('[toggleMonthSelectionTunggakan] All selected:', allSelected);
+            
             if (allSelected) {
                 // Unselect all payments for this month
                 monthPayments.forEach(payment => {
-                    const index = this.selectedPayments.indexOf(Number(payment.id));
+                    const paymentId = Number(payment.id);
+                    const index = this.selectedPayments.indexOf(paymentId);
                     if (index > -1) {
                         this.selectedPayments.splice(index, 1);
                     }
                 });
+                console.log('[toggleMonthSelectionTunggakan] Unselected all');
             } else {
                 // Select all payments for this month
                 monthPayments.forEach(payment => {
-                    if (!this.selectedPayments.includes(Number(payment.id))) {
-                        this.selectedPayments.push(Number(payment.id));
+                    const paymentId = Number(payment.id);
+                    if (!this.selectedPayments.includes(paymentId)) {
+                        this.selectedPayments.push(paymentId);
                     }
                 });
+                console.log('[toggleMonthSelectionTunggakan] Selected all');
             }
             
+            console.log('[toggleMonthSelectionTunggakan] Final selectedPayments:', this.selectedPayments);
             this.updateSelectAll();
         },
 

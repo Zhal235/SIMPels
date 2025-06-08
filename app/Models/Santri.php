@@ -107,4 +107,12 @@ public function rfidTag()
         return $this->hasMany(KeringananTagihan::class, 'santri_tertanggung_id');
     }
 
+    /**
+     * Relasi dengan kelas aktif berdasarkan tabel pivot kelas_anggota
+     */
+    public function kelasAktif()
+    {
+        return $this->hasOne(KelasAnggota::class, 'santri_id')->where('is_active', true);
+    }
+
 }
