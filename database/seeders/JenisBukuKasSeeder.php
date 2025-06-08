@@ -86,9 +86,15 @@ class JenisBukuKasSeeder extends Seeder
             ]
         ];
         
-        // Tambahkan semua jenis kas ke database
+        // Tambahkan semua jenis kas ke database tanpa duplikasi
         foreach ($jenisKasList as $jenisKas) {
-            JenisBukuKas::create($jenisKas);
+            JenisBukuKas::updateOrCreate(
+                [
+                    'nama' => $jenisKas['nama'],
+                    'kode' => $jenisKas['kode']
+                ],
+                $jenisKas
+            );
         }
     }
 }

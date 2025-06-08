@@ -561,125 +561,125 @@ function closeEditModal() {
 function submitEdit(event) {
     event.preventDefault();
     
+    const form = document.getElementById('editForm');
     const kasId = document.getElementById('edit_kas_id').value;
-    const submitBtn = document.querySelector('#editForm button[type="submit"]');
+    const submitBtn = form.querySelector('button[type="submit"]');
     
-    // Basic validation
-    const namaKas = document.getElementById('edit_nama_kas').value.trim();
-    const kodeKas = document.getElementById('edit_kode_kas').value.trim();
-    const jenisKasId = document.getElementById('edit_jenis_kas').value;
-    const saldoAwal = document.getElementById('edit_saldo_awal').value;
+    // Reset error displays
+    document.querySelectorAll('#editForm [id$="_error"]').forEach(el => {
+        el.classList.add('hidden');
+        el.textContent = '';
+    });
     
-    if (!namaKas || !kodeKas || !jenisKasId || !saldoAwal) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Form tidak lengkap',
-            text: 'Mohon lengkapi semua field yang wajib diisi'
-        });
-        return;
-    }
+    // Collect form data
+    const formData = new FormData();
+    formData.append('_method', 'PUT'); // Important for Laravel to recognize this as PUT request
+    
+    // Add form fields
+    formData.append('nama_kas', document.getElementById('edit_nama_kas').value.trim());
+    formData.append('kode_kas', document.getElementById('edit_kode_kas').value.trim());
+    formData.append('jenis_kas_id', document.getElementById('edit_jenis_kas').value);
+    formData.append('saldo_awal', document.getElementById('edit_saldo_awal').value);
+    formData.append('deskripsi', document.getElementById('edit_deskripsi').value.trim());
+    formData.append('is_active', document.getElementById('edit_is_active').checked ? '1' : '0');
+    
+    // Log data being sent
+    const formDataObj = {};
+    formData.forEach((value, key) => formDataObj[key] = value);
+    console.log('Sending data:', formDataObj);
     
     // Update button state
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="flex items-center"><span class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>Menyimpan...</span>';
     
-    // Prepare form data
-    const formData = new FormData(document.getElementById('editForm'));
-    formData.append('_method', 'PUT');
-    formData.append('is_active', document.getElementById('edit_is_active').checked ? '1' : '0');
-    
-    // Submit the form via fetch
+    // Submit the form
     fetch(`/keuangan/buku-kas/${kasId}`, {
         method: 'POST',
         headers: {
-            'X-CSRF-TOKEN': csrfToken,
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
         },
         body: formData
     })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(data => {
-                throw { status: response.status, data: data };
-            });
+    .then(response => response.json().then(data => ({
+        ok: response.ok,
+        status: response.status,
+        data: data
+    })))
+    .then(result => {
+        console.log('Server response:', result);
+        
+        if (!result.ok) {
+            throw result;
         }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            // Success notification
+        
+        if (result.data.success) {
+            // Show success message
             Swal.fire({
                 icon: 'success',
                 title: 'Berhasil',
-                text: 'Data buku kas berhasil diperbarui',
+                text: result.data.message || 'Data berhasil diperbarui',
                 timer: 1500,
                 showConfirmButton: false
             }).then(() => {
-                // Reload page to show updated data
                 window.location.reload();
             });
-            
-            // Close modal
-            closeEditModal();
         } else {
-            throw new Error('Gagal memperbarui data');
+            throw result;
         }
     })
     .catch(error => {
+        console.error('Full error object:', error);
+        
         // Reset button state
         submitBtn.disabled = false;
         submitBtn.innerHTML = 'Update';
         
-        // Handle validation errors
-        if (error.status === 422 && error.data && error.data.errors) {
-            // Get all error messages
-            let errorMessages = [];
+        let errorMessage = 'Terjadi kesalahan sistem';
+        let errorDetails = [];
+        
+        if (error.status === 422 && error.data) {
+            console.log('Validation errors:', error.data);
             
-            for (const field in error.data.errors) {
-                const errorMsg = error.data.errors[field][0];
-                errorMessages.push(errorMsg);
+            if (error.data.errors) {
+                // Clear previous errors
+                document.querySelectorAll('#editForm [id$="_error"]').forEach(el => {
+                    el.classList.add('hidden');
+                    el.textContent = '';
+                });
                 
-                // Display error under the field
-                const errorElement = document.getElementById(`edit_${field === 'jenis_kas_id' ? 'jenis_kas' : field}_error`);
-                if (errorElement) {
-                    errorElement.textContent = errorMsg;
-                    errorElement.classList.remove('hidden');
+                // Show field-specific errors
+                Object.keys(error.data.errors).forEach(field => {
+                    const messages = error.data.errors[field];
+                    const message = Array.isArray(messages) ? messages[0] : messages;
                     
-                    // Highlight field
-                    const inputField = document.getElementById(`edit_${field === 'jenis_kas_id' ? 'jenis_kas' : field}`);
-                    if (inputField) {
-                        inputField.classList.add('border-red-500');
+                    errorDetails.push(message);
+                    
+                    // Show error under the field
+                    const errorElement = document.getElementById(`edit_${field}_error`);
+                    if (errorElement) {
+                        errorElement.textContent = message;
+                        errorElement.classList.remove('hidden');
                     }
-                }
+                });
+                
+                errorMessage = 'Validasi gagal:\n' + errorDetails.join('\n');
+            } else if (error.data.message) {
+                errorMessage = error.data.message;
             }
-            
-            // Show validation error message
-            Swal.fire({
-                icon: 'error',
-                title: 'Validasi Gagal',
-                text: errorMessages.join(', ')
-            });
-        } 
-        // Handle session timeout
-        else if (error.status === 419 || (error.data && error.data.message && error.data.message.includes('CSRF'))) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Session Habis',
-                text: 'Sesi anda telah berakhir. Halaman akan dimuat ulang.',
-                confirmButtonText: 'Muat Ulang'
-            }).then(() => {
-                window.location.reload();
-            });
-        } 
-        // Handle other errors
-        else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.data?.message || error.message || 'Terjadi kesalahan saat memperbarui data'
-            });
+        } else if (error.data && error.data.message) {
+            errorMessage = error.data.message;
         }
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: errorMessage,
+            customClass: {
+                container: 'max-h-[80vh] overflow-y-auto'
+            }
+        });
     });
 }
 

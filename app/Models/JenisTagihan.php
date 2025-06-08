@@ -22,11 +22,16 @@ class JenisTagihan extends Model
         'kategori_tagihan',
         'buku_kas_id',
         'tanggal_jatuh_tempo',
-        'bulan_jatuh_tempo'
+        'bulan_jatuh_tempo',
+        'target_type',
+        'target_kelas',
+        'target_santri'
     ];
 
     protected $casts = [
         'bulan_pembayaran' => 'array',
+        'target_kelas' => 'array',
+        'target_santri' => 'array',
         'is_bulanan' => 'boolean',
         'nominal_tagihan' => 'decimal:2'
     ];

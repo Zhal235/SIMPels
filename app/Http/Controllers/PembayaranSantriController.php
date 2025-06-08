@@ -108,10 +108,16 @@ class PembayaranSantriController extends Controller
 
             $today = now()->format('Y-m-d');
 
-            // Ambil SEMUA tagihan santri untuk tahun ajaran aktif (tidak filter jatuh tempo)
-            // Filter jatuh tempo hanya untuk tab tunggakan, bukan untuk tab tagihan rutin
+            // Ambil tagihan rutin yang belum jatuh tempo untuk tahun ajaran aktif
+            // Filter: tahun ajaran aktif DAN (belum jatuh tempo ATAU jatuh tempo di masa depan)
             $tagihanSantri = TagihanSantri::where('santri_id', $santriId)
                 ->where('tahun_ajaran_id', $activeTahunAjaran->id)
+                ->where(function($query) use ($today) {
+                    // Tagihan yang belum jatuh tempo (tanggal jatuh tempo di masa depan atau hari ini)
+                    $query->where('tanggal_jatuh_tempo', '>=', $today)
+                          // Atau tagihan yang tidak memiliki tanggal jatuh tempo (untuk jaga-jaga)
+                          ->orWhereNull('tanggal_jatuh_tempo');
+                })
                 ->with(['jenisTagihan', 'tahunAjaran', 'transaksis'])
                 ->orderBy('jenis_tagihan_id')
                 ->get();

@@ -121,31 +121,30 @@ class BukuKasController extends BaseKeuanganController
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, $id)
+    public function show($id)
     {
         try {
-            // Cast to integer to avoid type issues
-            $bukuKas = BukuKas::find((int) $id);
+            $bukuKas = BukuKas::with('jenisBukuKas')->findOrFail($id);
             
-            if (!$bukuKas) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Data buku kas tidak ditemukan'
-                ], 404);
-            }
+            // Log untuk debugging
+            \Log::info('BukuKas show request:', [
+                'id' => $id,
+                'data' => $bukuKas->toArray()
+            ]);
             
-            // Simple response with guaranteed types
             $data = [
                 'id' => $bukuKas->id,
-                'nama_kas' => $bukuKas->nama_kas ?? '',
-                'kode_kas' => $bukuKas->kode_kas ?? '',
+                'nama_kas' => $bukuKas->nama_kas,
+                'kode_kas' => $bukuKas->kode_kas,
+                'deskripsi' => $bukuKas->deskripsi,
                 'jenis_kas_id' => $bukuKas->jenis_kas_id,
-                'saldo_awal' => (float) $bukuKas->saldo_awal,
-                'saldo_saat_ini' => (float) $bukuKas->saldo_saat_ini,
-                'is_active' => (bool) $bukuKas->is_active,
-                'deskripsi' => $bukuKas->deskripsi ?? ''
+                'saldo_awal' => $bukuKas->saldo_awal,
+                'saldo_saat_ini' => $bukuKas->saldo_saat_ini,
+                'is_active' => $bukuKas->is_active,
+                'jenis_kas_nama' => $bukuKas->jenisBukuKas ? $bukuKas->jenisBukuKas->nama : null,
+                'jenis_kas_kode' => $bukuKas->jenisBukuKas ? $bukuKas->jenisBukuKas->kode : null,
             ];
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $data
@@ -171,58 +170,100 @@ class BukuKasController extends BaseKeuanganController
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, BukuKas $bukuKas)
+    public function update(Request $request, $buku_ka)
     {
         try {
-            $validated = $this->validateInput($request, $this->getValidationRules($bukuKas->id));
+            // Find the BukuKas model
+            $bukuKas = BukuKas::findOrFail($buku_ka);
+            
+            // Log semua data yang masuk
+            \Log::info('BukuKas Update Request:', [
+                'id' => $bukuKas->id,
+                'method' => $request->method(),
+                'all_data' => $request->all(),
+                'headers' => $request->headers->all()
+            ]);
 
-            // Validate business rules
-            $businessErrors = $this->keuanganService->validateBukuKasRules($validated, $bukuKas);
-            if (!empty($businessErrors)) {
-                if ($request->expectsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Validasi bisnis gagal',
-                        'errors' => ['business' => $businessErrors]
-                    ], 422);
-                }
-                return redirect()->back()
-                    ->withErrors(['business' => implode(', ', $businessErrors)])
-                    ->withInput();
+            // Validasi step by step untuk debugging
+            $rules = [
+                'nama_kas' => 'required|string|max:255',
+                'kode_kas' => 'required|string|max:50', 
+                'jenis_kas_id' => 'required|exists:jenis_buku_kas,id',
+                'saldo_awal' => 'required|numeric|min:0',
+                'deskripsi' => 'nullable|string',
+                'is_active' => 'nullable'
+            ];
+
+            // Tambahkan unique rules hanya jika data berubah
+            if ($request->nama_kas !== $bukuKas->nama_kas) {
+                $rules['nama_kas'] .= '|unique:buku_kas,nama_kas,' . $bukuKas->id;
+            }
+            
+            if ($request->kode_kas !== $bukuKas->kode_kas) {
+                $rules['kode_kas'] .= '|unique:buku_kas,kode_kas,' . $bukuKas->id;
             }
 
-            // Handle is_active field properly
-            $validated['is_active'] = $request->input('is_active') == '1' || $request->input('is_active') === true;
+            $validator = \Validator::make($request->all(), $rules, [
+                'nama_kas.required' => 'Nama kas wajib diisi.',
+                'nama_kas.unique' => 'Nama kas sudah digunakan.',
+                'kode_kas.required' => 'Kode kas wajib diisi.',
+                'kode_kas.unique' => 'Kode kas sudah digunakan.',
+                'jenis_kas_id.required' => 'Jenis kas wajib dipilih.',
+                'jenis_kas_id.exists' => 'Jenis kas tidak valid.',
+                'saldo_awal.required' => 'Saldo awal wajib diisi.',
+                'saldo_awal.numeric' => 'Saldo awal harus berupa angka.',
+                'saldo_awal.min' => 'Saldo awal tidak boleh kurang dari 0.'
+            ]);
 
-            $bukuKas->update($validated);
-
-            return $this->successResponse(
-                $request, 
-                'Buku kas berhasil diperbarui!',
-                'keuangan.buku-kas.index'
-            );
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            if ($request->expectsJson()) {
+            if ($validator->fails()) {
+                \Log::error('Validation failed:', [
+                    'errors' => $validator->errors()->toArray(),
+                    'input' => $request->all()
+                ]);
+                
                 return response()->json([
                     'success' => false,
                     'message' => 'Validasi gagal',
-                    'errors' => $e->validator->errors()->toArray()
+                    'errors' => $validator->errors()->toArray()
                 ], 422);
             }
-            throw $e;
-        } catch (\Exception $e) {
-            \Log::error('Error in BukuKasController@update: ' . $e->getMessage());
+
+            $validated = $validator->validated();
             
-            if ($request->expectsJson()) {
+            // Handle is_active
+            $validated['is_active'] = $request->input('is_active') === '1' || $request->input('is_active') === true;
+
+            \Log::info('Validated data:', $validated);
+
+            // Update model
+            $bukuKas->fill($validated);
+            
+            if ($bukuKas->save()) {
+                \Log::info('BukuKas saved successfully:', [
+                    'id' => $bukuKas->id,
+                    'updated_data' => $bukuKas->fresh()->toArray()
+                ]);
+
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Terjadi kesalahan sistem'
-                ], 500);
+                    'success' => true,
+                    'message' => 'Buku kas berhasil diperbarui!',
+                    'data' => $bukuKas->fresh()
+                ]);
             }
+
+            throw new \Exception('Gagal menyimpan data');
+
+        } catch (\Exception $e) {
+            \Log::error('Error in BukuKasController@update:', [
+                'id' => isset($bukuKas) ? $bukuKas->id : 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             
-            return redirect()->back()
-                ->withErrors(['system' => 'Terjadi kesalahan sistem'])
-                ->withInput();
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -272,24 +313,14 @@ class BukuKasController extends BaseKeuanganController
      */
     protected function getValidationRules($id = null): array
     {
-        $rules = [
-            'nama_kas' => 'required|string|max:255',
-            'kode_kas' => 'required|string|max:50',
+        return [
+            'nama_kas' => ['required', 'string', 'max:255', \Illuminate\Validation\Rule::unique('buku_kas')->ignore($id)],
+            'kode_kas' => ['required', 'string', 'max:50', \Illuminate\Validation\Rule::unique('buku_kas')->ignore($id)],
             'deskripsi' => 'nullable|string',
             'jenis_kas_id' => 'required|exists:jenis_buku_kas,id',
             'saldo_awal' => 'required|numeric|min:0',
-            'is_active' => 'nullable|in:0,1,true,false'
+            'is_active' => 'nullable|boolean'
         ];
-
-        if ($id) {
-            $rules['nama_kas'] .= ',unique:buku_kas,nama_kas,' . $id;
-            $rules['kode_kas'] .= ',unique:buku_kas,kode_kas,' . $id;
-        } else {
-            $rules['nama_kas'] .= '|unique:buku_kas,nama_kas';
-            $rules['kode_kas'] .= '|unique:buku_kas,kode_kas';
-        }
-
-        return $rules;
     }
 
     /**
@@ -325,6 +356,19 @@ class BukuKasController extends BaseKeuanganController
      */
     protected function validateInput(Request $request, array $rules): array
     {
-        return $request->validate($rules, $this->getValidationMessages());
+        try {
+            return $request->validate($rules, $this->getValidationMessages());
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            if ($request->expectsJson()) {
+                $errors = $e->validator->errors()->toArray();
+                throw new \Illuminate\Validation\ValidationException($e->validator, 
+                    response()->json([
+                        'success' => false,
+                        'message' => 'Validasi gagal',
+                        'errors' => $errors
+                    ], 422));
+            }
+            throw $e;
+        }
     }
 }

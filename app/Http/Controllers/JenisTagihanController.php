@@ -8,6 +8,7 @@ use App\Models\Santri;
 use App\Models\TagihanSantri;
 use App\Models\JenisTagihanKelas;
 use App\Models\BukuKas;
+use App\Models\Kelas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
@@ -23,7 +24,17 @@ class JenisTagihanController extends Controller
         $activeTahunAjaran = TahunAjaran::getActive();
         $bukuKasList = BukuKas::where('is_active', true)->orderBy('nama_kas')->get();
         $tahunAjarans = TahunAjaran::orderBy('nama_tahun_ajaran', 'desc')->get();
-        return view('keuangan.jenis_tagihan.index', compact('jenisTagihans', 'activeTahunAjaran', 'bukuKasList', 'tahunAjarans'));
+        $kelasList = Kelas::orderBy('tingkat')->orderBy('nama')->get();
+        $academicYearMonths = $this->getAcademicYearMonths();
+        
+        return view('keuangan.jenis_tagihan.index', compact(
+            'jenisTagihans', 
+            'activeTahunAjaran', 
+            'bukuKasList', 
+            'tahunAjarans',
+            'kelasList',
+            'academicYearMonths'
+        ));
     }
 
     /**
@@ -50,9 +61,13 @@ class JenisTagihanController extends Controller
             'nominal' => 'required|numeric|min:0',
             'is_nominal_per_kelas' => 'required|in:0,1',
             'buku_kas_id' => 'required|exists:buku_kas,id',
-            'tanggal_jatuh_tempo' => 'required|integer|min:1|max:31',
-            'bulan_jatuh_tempo' => 'required|integer|min:0|max:12',
         ];
+
+        // For routine bills, we don't need date input as it's fixed to 10th
+        if ($request->kategori_tagihan !== 'Rutin') {
+            $rules['tanggal_jatuh_tempo'] = 'required|integer|min:1|max:31';
+            $rules['bulan_jatuh_tempo'] = 'required|integer|min:0|max:12';
+        }
 
         $validator = \Validator::make($request->all(), $rules);
 
@@ -67,7 +82,8 @@ class JenisTagihanController extends Controller
         }
 
         try {
-            $jenisTagihan = JenisTagihan::create([
+            // For routine bills, always set due date to 10th
+            $dataToCreate = [
                 'nama' => $request->nama,
                 'deskripsi' => $request->deskripsi,
                 'kategori_tagihan' => $request->kategori_tagihan,
@@ -75,9 +91,11 @@ class JenisTagihanController extends Controller
                 'nominal' => $request->nominal,
                 'is_nominal_per_kelas' => $request->is_nominal_per_kelas,
                 'buku_kas_id' => $request->buku_kas_id,
-                'tanggal_jatuh_tempo' => $request->tanggal_jatuh_tempo,
-                'bulan_jatuh_tempo' => $request->bulan_jatuh_tempo,
-            ]);
+                'tanggal_jatuh_tempo' => $request->kategori_tagihan === 'Rutin' ? 10 : $request->tanggal_jatuh_tempo,
+                'bulan_jatuh_tempo' => $request->kategori_tagihan === 'Rutin' ? 0 : $request->bulan_jatuh_tempo,
+            ];
+
+            $jenisTagihan = JenisTagihan::create($dataToCreate);
 
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
@@ -104,6 +122,187 @@ class JenisTagihanController extends Controller
     }
 
     /**
+     * Store a newly created insidental jenis tagihan with target options
+     */
+    public function storeInsidental(Request $request)
+    {
+        // Validation for insidental tagihan
+        $rules = [
+            'nama' => 'required|string|max:255',
+            'deskripsi' => 'nullable|string',
+            'nominal' => 'required|numeric|min:0',
+            'buku_kas_id' => 'required|exists:buku_kas,id',
+            'tanggal_jatuh_tempo' => 'required|integer|min:1|max:31',
+            'bulan_jatuh_tempo' => 'required|integer|min:0|max:12',
+            'bulan_pembayaran' => 'required|array|min:1',
+            'bulan_pembayaran.*' => 'string|in:01,02,03,04,05,06,07,08,09,10,11,12',
+            'target_type' => 'required|in:all,kelas,santri',
+            'target_kelas' => 'nullable|array',
+            'target_kelas.*' => 'exists:kelas,id',
+            'target_santri' => 'nullable|array',
+            'target_santri.*' => 'exists:santris,id',
+        ];
+
+        // Conditional validation based on target type
+        if ($request->target_type === 'kelas') {
+            $rules['target_kelas'] = 'required|array|min:1';
+        } elseif ($request->target_type === 'santri') {
+            $rules['target_santri'] = 'required|array|min:1';
+        }
+
+        $validator = \Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            $activeTahunAjaran = TahunAjaran::where('is_active', true)->first();
+            
+            if (!$activeTahunAjaran) {
+                throw new \Exception('Tidak ada tahun ajaran aktif');
+            }
+
+            // Create jenis tagihan insidental (without is_nominal_per_kelas)
+            $jenisTagihan = JenisTagihan::create([
+                'nama' => $request->nama,
+                'deskripsi' => $request->deskripsi,
+                'kategori_tagihan' => 'Insidental',
+                'is_bulanan' => 0, // Insidental is typically one-time
+                'nominal' => $request->nominal,
+                'is_nominal_per_kelas' => 0, // Set to 0 for insidental
+                'buku_kas_id' => $request->buku_kas_id,
+                'tanggal_jatuh_tempo' => $request->tanggal_jatuh_tempo,
+                'bulan_jatuh_tempo' => $request->bulan_jatuh_tempo,
+                'bulan_pembayaran' => $request->bulan_pembayaran,
+                'tahun_ajaran_id' => $activeTahunAjaran->id,
+                'target_type' => $request->target_type,
+                'target_kelas' => $request->target_kelas,
+                'target_santri' => $request->target_santri,
+            ]);
+
+            // Don't generate tagihan automatically, just save the jenis tagihan
+            // Generate will be done manually using the generate button
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Tagihan insidental berhasil dibuat. Gunakan tombol Generate untuk membuat tagihan.',
+                    'data' => $jenisTagihan
+                ]);
+            }
+
+            return redirect()->route('keuangan.jenis-tagihan.index')
+                ->with('success', 'Tagihan insidental berhasil dibuat. Gunakan tombol Generate untuk membuat tagihan.');
+        } catch (\Exception $e) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    /**
+     * Calculate due date for insidental tagihan based on specific month
+     */
+    private function calculateDueDateForInsidentalBulan($bulan, $jenisTagihan, $tahunAjaran)
+    {
+        $bulanInt = (int) $bulan;
+        $tahun = (int) $tahunAjaran->tahun_mulai;
+        
+        // Adjust year if month is in the second half of academic year
+        if ($bulanInt <= 6) {
+            $tahun = (int) $tahunAjaran->tahun_selesai;
+        }
+        
+        $tanggal = $jenisTagihan->tanggal_jatuh_tempo ?? 10;
+        $tambahBulan = $jenisTagihan->bulan_jatuh_tempo ?? 0;
+        
+        try {
+            $dueDate = \Carbon\Carbon::createFromDate($tahun, $bulanInt, $tanggal);
+            if ($tambahBulan > 0) {
+                $dueDate->addMonths($tambahBulan);
+            }
+            return $dueDate;
+        } catch (\Exception $e) {
+            // Fallback: 30 days from now
+            return \Carbon\Carbon::now()->addDays(30);
+        }
+    }
+
+    /**
+     * Get santri list by kelas for AJAX
+     */
+    public function getSantriByKelas(Request $request)
+    {
+        $kelasId = $request->kelas_id;
+        
+        $santris = Santri::where('status', 'aktif')
+            ->whereHas('kelas_anggota', function($query) use ($kelasId) {
+                $query->where('kelas_id', $kelasId);
+            })
+            ->orderBy('nama_santri')
+            ->get(['id', 'nama_santri', 'nis']);
+
+        return response()->json([
+            'success' => true,
+            'santris' => $santris
+        ]);
+    }
+
+    /**
+     * Get all kelas for dropdown
+     */
+    public function getAllKelas()
+    {
+        $kelas = \App\Models\Kelas::orderBy('tingkat')
+            ->orderBy('nama')
+            ->get(['id', 'nama', 'tingkat']);
+
+        return response()->json([
+            'success' => true,
+            'kelas' => $kelas
+        ]);
+    }
+
+    /**
+     * Get all santri for AJAX calls
+     */
+    public function getAllSantri()
+    {
+        try {
+            $santri = Santri::with('kelas')
+                           ->where('status', 'aktif')
+                           ->select('id', 'nama_santri', 'kelas_id')
+                           ->orderBy('nama_santri')
+                           ->get();
+            
+            return response()->json([
+                'success' => true,
+                'santri' => $santri
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in getAllSantri: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat data santri'
+            ], 500);
+        }
+    }
+
+    /**
      * Display the specified resource.
      */
     public function show(JenisTagihan $jenisTagihan)
@@ -117,10 +316,37 @@ class JenisTagihanController extends Controller
     public function edit($id)
     {
         try {
-            $jenisTagihan = JenisTagihan::with('bukuKas')->findOrFail($id);
+            $jenisTagihan = JenisTagihan::with(['bukuKas'])->findOrFail($id);
             
             if (request()->expectsJson() || request()->ajax() || request()->header('X-Requested-With') === 'XMLHttpRequest') {
                 $bukuKasList = BukuKas::where('is_active', true)->orderBy('nama_kas')->get(['id', 'nama_kas', 'kode_kas', 'jenis_kas_id']);
+                
+                // Get kelas data if target_type is kelas
+                $kelasData = [];
+                if ($jenisTagihan->target_type === 'kelas' && $jenisTagihan->target_kelas) {
+                    $kelasIds = is_array($jenisTagihan->target_kelas) ? $jenisTagihan->target_kelas : json_decode($jenisTagihan->target_kelas, true);
+                    if ($kelasIds) {
+                        $kelasData = \App\Models\Kelas::whereIn('id', $kelasIds)->get(['id', 'nama'])->toArray();
+                    }
+                }
+                
+                // Get santri data if target_type is santri
+                $santriData = [];
+                if ($jenisTagihan->target_type === 'santri' && $jenisTagihan->target_santri) {
+                    $santriIds = is_array($jenisTagihan->target_santri) ? $jenisTagihan->target_santri : json_decode($jenisTagihan->target_santri, true);
+                    if ($santriIds) {
+                        $santriData = \App\Models\Santri::whereIn('id', $santriIds)
+                            ->with('kelasAktif')
+                            ->get(['id', 'nama_lengkap'])
+                            ->map(function($santri) {
+                                return [
+                                    'id' => $santri->id,
+                                    'nama_lengkap' => $santri->nama_lengkap,
+                                    'kelas' => $santri->kelasAktif ? $santri->kelasAktif->nama : 'Tidak ada kelas'
+                                ];
+                            })->toArray();
+                    }
+                }
                 
                 // Ensure all required fields are present with proper values
                 $jenisTagihanData = [
@@ -135,6 +361,12 @@ class JenisTagihanController extends Controller
                     'tahun_ajaran_id' => $jenisTagihan->tahun_ajaran_id,
                     'tanggal_jatuh_tempo' => $jenisTagihan->tanggal_jatuh_tempo,
                     'bulan_jatuh_tempo' => $jenisTagihan->bulan_jatuh_tempo,
+                    'bulan_pembayaran' => is_array($jenisTagihan->bulan_pembayaran) ? $jenisTagihan->bulan_pembayaran : json_decode($jenisTagihan->bulan_pembayaran ?? '[]', true),
+                    'target_type' => $jenisTagihan->target_type ?? 'all',
+                    'kelas_ids' => is_array($jenisTagihan->target_kelas) ? $jenisTagihan->target_kelas : json_decode($jenisTagihan->target_kelas ?? '[]', true),
+                    'santri_ids' => is_array($jenisTagihan->target_santri) ? $jenisTagihan->target_santri : json_decode($jenisTagihan->target_santri ?? '[]', true),
+                    'kelas_data' => $kelasData,
+                    'santri_data' => $santriData,
                     'created_at' => $jenisTagihan->created_at,
                     'updated_at' => $jenisTagihan->updated_at,
                 ];
@@ -182,9 +414,24 @@ class JenisTagihanController extends Controller
             'nominal' => 'required|numeric|min:0',
             'is_nominal_per_kelas' => 'required|in:0,1',
             'buku_kas_id' => 'required|exists:buku_kas,id',
-            'tanggal_jatuh_tempo' => 'required|integer|min:1|max:31',
-            'bulan_jatuh_tempo' => 'required|integer|min:0|max:12',
+            'tanggal_jatuh_tempo' => 'nullable|integer|min:1|max:31',
+            'bulan_jatuh_tempo' => 'nullable|integer|min:0|max:12',
         ];
+
+        // Add validation for insidental specific fields
+        if ($request->kategori_tagihan === 'Insidental') {
+            $rules['bulan_pembayaran'] = 'required|array|min:1';
+            $rules['bulan_pembayaran.*'] = 'string';
+            $rules['target_type'] = 'required|in:all,kelas,santri';
+            
+            if ($request->target_type === 'kelas') {
+                $rules['kelas_ids'] = 'required|array|min:1';
+                $rules['kelas_ids.*'] = 'exists:kelas,id';
+            } elseif ($request->target_type === 'santri') {
+                $rules['santri_ids'] = 'required|array|min:1';
+                $rules['santri_ids.*'] = 'exists:santris,id';
+            }
+        }
 
         $validator = Validator::make($request->all(), $rules);
 
@@ -199,7 +446,7 @@ class JenisTagihanController extends Controller
         }
 
         try {
-            $jenisTagihan->update([
+            $updateData = [
                 'nama' => $request->nama,
                 'deskripsi' => $request->deskripsi,
                 'kategori_tagihan' => $request->kategori_tagihan,
@@ -207,9 +454,41 @@ class JenisTagihanController extends Controller
                 'nominal' => $request->nominal,
                 'is_nominal_per_kelas' => $request->is_nominal_per_kelas,
                 'buku_kas_id' => $request->buku_kas_id,
-                'tanggal_jatuh_tempo' => $request->tanggal_jatuh_tempo,
-                'bulan_jatuh_tempo' => $request->bulan_jatuh_tempo,
-            ]);
+            ];
+            
+            // Untuk tagihan rutin, selalu set tanggal jatuh tempo ke 10
+            if ($request->kategori_tagihan === 'Rutin') {
+                $updateData['tanggal_jatuh_tempo'] = 10;
+                $updateData['bulan_jatuh_tempo'] = 0;
+                $updateData['bulan_pembayaran'] = null;
+                $updateData['target_type'] = null;
+            } else {
+                // Untuk tagihan insidental, gunakan input user
+                $updateData['tanggal_jatuh_tempo'] = $request->tanggal_jatuh_tempo ?? 10;
+                $updateData['bulan_jatuh_tempo'] = $request->bulan_jatuh_tempo ?? 0;
+                $updateData['bulan_pembayaran'] = json_encode($request->bulan_pembayaran);
+                $updateData['target_type'] = $request->target_type;
+            }
+            
+            $jenisTagihan->update($updateData);
+
+            // Handle target relationships for insidental
+            if ($request->kategori_tagihan === 'Insidental') {
+                // Clear existing relationships
+                $jenisTagihan->kelas()->detach();
+                $jenisTagihan->santris()->detach();
+                
+                // Set new relationships based on target type
+                if ($request->target_type === 'kelas' && $request->has('kelas_ids')) {
+                    $jenisTagihan->kelas()->attach($request->kelas_ids);
+                } elseif ($request->target_type === 'santri' && $request->has('santri_ids')) {
+                    $jenisTagihan->santris()->attach($request->santri_ids);
+                }
+            } else {
+                // Clear relationships for routine bills
+                $jenisTagihan->kelas()->detach();
+                $jenisTagihan->santris()->detach();
+            }
 
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
@@ -222,6 +501,12 @@ class JenisTagihanController extends Controller
             return redirect()->route('keuangan.jenis-tagihan.index')
                 ->with('success', 'Jenis Tagihan berhasil diperbarui');
         } catch (\Exception $e) {
+            \Log::error('Error updating jenis tagihan: ' . $e->getMessage(), [
+                'id' => $id,
+                'request_data' => $request->all(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
@@ -238,9 +523,10 @@ class JenisTagihanController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(JenisTagihan $jenisTagihan)
+    public function destroy($id)
     {
         try {
+            $jenisTagihan = JenisTagihan::findOrFail($id);
             $jenisTagihan->delete();
             return redirect()->route('keuangan.jenis-tagihan.index')
                 ->with('success', 'Data berhasil dihapus');
@@ -412,8 +698,8 @@ class JenisTagihanController extends Controller
             $tahun = (int) $parts[0];
             $bulanInt = (int) $parts[1];
             
-            // Set jatuh tempo pada tanggal 15 setiap bulan
-            return \Carbon\Carbon::createFromDate($tahun, $bulanInt, 15);
+            // Set jatuh tempo pada tanggal 10 setiap bulan
+            return \Carbon\Carbon::createFromDate($tahun, $bulanInt, 10);
         }
         
         // Fallback: 30 hari dari sekarang
@@ -557,4 +843,230 @@ class JenisTagihanController extends Controller
                 ->with('error', 'Gagal membatalkan tagihan: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Preview insidental tagihan before generation
+     */
+    public function previewInsidental($id)
+    {
+        try {
+            $jenisTagihan = JenisTagihan::with(['bukuKas', 'tahunAjaran'])
+                                      ->where('kategori_tagihan', 'Insidental')
+                                      ->findOrFail($id);
+            
+            // Get target santri based on jenis tagihan settings
+            $santriList = $this->getTargetSantri($jenisTagihan);
+            
+            // Calculate totals
+            $totalSantri = count($santriList);
+            $bulanCount = is_array($jenisTagihan->bulan_pembayaran) ? count($jenisTagihan->bulan_pembayaran) : 1;
+            $totalNominal = $totalSantri * $bulanCount * $jenisTagihan->nominal;
+            
+            // Prepare month names
+            $bulanNames = [];
+            if (is_array($jenisTagihan->bulan_pembayaran)) {
+                $months = [
+                    '01' => 'Januari', '02' => 'Februari', '03' => 'Maret',
+                    '04' => 'April', '05' => 'Mei', '06' => 'Juni',
+                    '07' => 'Juli', '08' => 'Agustus', '09' => 'September',
+                    '10' => 'Oktober', '11' => 'November', '12' => 'Desember'
+                ];
+                
+                foreach ($jenisTagihan->bulan_pembayaran as $bulan) {
+                    $bulanNames[] = $months[$bulan] ?? $bulan;
+                }
+            }
+            
+            return response()->json([
+                'success' => true,
+                'jenis_tagihan' => $jenisTagihan,
+                'santri_list' => $santriList,
+                'total_santri' => $totalSantri,
+                'total_nominal' => $totalNominal,
+                'bulan_names' => $bulanNames
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat preview: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generate tagihan for insidental billing
+     */
+    public function generateInsidental($id)
+    {
+        try {
+            $jenisTagihan = JenisTagihan::with(['bukuKas', 'tahunAjaran'])
+                                      ->where('kategori_tagihan', 'Insidental')
+                                      ->findOrFail($id);
+            
+            $activeTahunAjaran = TahunAjaran::where('is_active', true)->first();
+            
+            if (!$activeTahunAjaran) {
+                throw new \Exception('Tidak ada tahun ajaran aktif');
+            }
+            
+            // Get target santri
+            $santriList = $this->getTargetSantri($jenisTagihan);
+            
+            $createdCount = 0;
+            $bulanList = is_array($jenisTagihan->bulan_pembayaran) ? $jenisTagihan->bulan_pembayaran : ['01'];
+            
+            foreach ($santriList as $santri) {
+                foreach ($bulanList as $bulan) {
+                    // Check if tagihan already exists
+                    $existingTagihan = TagihanSantri::where('santri_id', $santri['id'])
+                                                   ->where('jenis_tagihan_id', $jenisTagihan->id)
+                                                   ->where('bulan_tagihan', $bulan)
+                                                   ->where('tahun_ajaran_id', $activeTahunAjaran->id)
+                                                   ->first();
+                    
+                    if (!$existingTagihan) {
+                        // Calculate due date
+                        $currentYear = now()->year;
+                        $dueDate = \Carbon\Carbon::createFromDate($currentYear, intval($bulan), $jenisTagihan->tanggal_jatuh_tempo ?? 10);
+                        
+                        // Add month offset if specified
+                        if ($jenisTagihan->bulan_jatuh_tempo > 0) {
+                            $dueDate->addMonths($jenisTagihan->bulan_jatuh_tempo);
+                        }
+                        
+                        TagihanSantri::create([
+                            'santri_id' => $santri['id'],
+                            'jenis_tagihan_id' => $jenisTagihan->id,
+                            'bulan_tagihan' => $bulan,
+                            'tahun_ajaran_id' => $activeTahunAjaran->id,
+                            'nominal' => $jenisTagihan->nominal,
+                            'tanggal_jatuh_tempo' => $dueDate,
+                            'status_pembayaran' => 'Belum Lunas',
+                            'sisa_tagihan' => $jenisTagihan->nominal,
+                        ]);
+                        
+                        $createdCount++;
+                    }
+                }
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Tagihan berhasil digenerate',
+                'created_count' => $createdCount
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal generate tagihan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get target santri based on jenis tagihan settings
+     */
+    private function getTargetSantri($jenisTagihan)
+    {
+        $santriQuery = Santri::with(['kelasAktif.kelas'])->where('status', 'Aktif');
+        
+        if ($jenisTagihan->target_type === 'kelas' && is_array($jenisTagihan->target_kelas)) {
+            // Filter by specific kelas
+            $santriQuery->whereHas('kelasAktif', function($query) use ($jenisTagihan) {
+                $query->whereIn('kelas_id', $jenisTagihan->target_kelas);
+            });
+        } elseif ($jenisTagihan->target_type === 'santri' && is_array($jenisTagihan->target_santri)) {
+            // Filter by specific santri
+            $santriQuery->whereIn('id', $jenisTagihan->target_santri);
+        }
+        // For 'all' target_type, no additional filtering needed
+        
+        $santriList = $santriQuery->get()->map(function($santri) {
+            return [
+                'id' => $santri->id,
+                'nama_lengkap' => $santri->nama_lengkap,
+                'nis' => $santri->nis,
+                'kelas' => $santri->kelasAktif ? $santri->kelasAktif->kelas->nama_kelas : null
+            ];
+        })->toArray();
+        
+        return $santriList;
+    }
+
+    /**
+     * Get months in active academic year
+     */
+    private function getAcademicYearMonths()
+    {
+        $activeTahunAjaran = TahunAjaran::getActive();
+        
+        if (!$activeTahunAjaran) {
+            // Fallback to all months if no active academic year
+            return [
+                '01' => 'Januari', '02' => 'Februari', '03' => 'Maret',
+                '04' => 'April', '05' => 'Mei', '06' => 'Juni',
+                '07' => 'Juli', '08' => 'Agustus', '09' => 'September',
+                '10' => 'Oktober', '11' => 'November', '12' => 'Desember'
+            ];
+        }
+
+        $startDate = Carbon::parse($activeTahunAjaran->tanggal_mulai);
+        $endDate = Carbon::parse($activeTahunAjaran->tanggal_selesai);
+        
+        $months = [];
+        $monthNames = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret',
+            4 => 'April', 5 => 'Mei', 6 => 'Juni',
+            7 => 'Juli', 8 => 'Agustus', 9 => 'September',
+            10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+
+        $current = $startDate->copy();
+        while ($current <= $endDate) {
+            $monthKey = $current->format('m');
+            $monthName = $monthNames[$current->month];
+            $months[$monthKey] = $monthName;
+            $current->addMonth();
+        }
+
+        return $months;
+    }
+
+    /**
+     * Search santri for target selection
+     */
+    public function searchSantri(Request $request)
+    {
+        $query = $request->get('q', '');
+        
+        if (strlen($query) < 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Query minimal 2 karakter'
+            ]);
+        }
+        
+        try {
+            $santri = Santri::with(['kelas'])
+                ->where('nama', 'LIKE', '%' . $query . '%')
+                ->where('status', 'Aktif')
+                ->orderBy('nama')
+                ->limit(20)
+                ->get();
+                
+            return response()->json([
+                'success' => true,
+                'santri' => $santri
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error searching santri: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    // ...existing code...
 }

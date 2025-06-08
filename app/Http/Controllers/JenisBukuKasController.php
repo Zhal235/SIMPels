@@ -47,22 +47,55 @@ class JenisBukuKasController extends BaseKeuanganController
      */
     public function store(Request $request)
     {
-        $validated = $this->validateInput($request, $this->getValidationRules());
+        try {
+            \Log::info('JenisBukuKas store method called', [
+                'request_data' => $request->all(),
+                'has_is_active' => $request->has('is_active'),
+                'is_active_value' => $request->input('is_active')
+            ]);
 
-        // Validate business rules
-        $businessErrors = $this->keuanganService->validateJenisKasRules($validated);
-        if (!empty($businessErrors)) {
+            $validated = $this->validateInput($request, $this->getValidationRules());
+
+            // Validate business rules
+            $businessErrors = $this->keuanganService->validateJenisKasRules($validated);
+            if (!empty($businessErrors)) {
+                \Log::warning('JenisBukuKas validation failed', ['errors' => $businessErrors]);
+                return redirect()->back()
+                    ->withErrors($businessErrors)
+                    ->withInput();
+            }
+
+            // Handle checkbox value properly - convert to boolean
+            $validated['is_active'] = $request->input('is_active', '0') === '1';
+            
+            \Log::info('Creating JenisBukuKas with data', $validated);
+
+            $jenisKas = JenisBukuKas::create($validated);
+            
+            \Log::info('JenisBukuKas created successfully', ['id' => $jenisKas->id]);
+
+            return redirect()->route('keuangan.jenis-buku-kas.index')
+                ->with('success', 'Jenis kas berhasil ditambahkan');
+                
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::warning('JenisBukuKas store validation failed', [
+                'errors' => $e->errors()
+            ]);
+            
             return redirect()->back()
-                ->withErrors($businessErrors)
+                ->withErrors($e->errors())
+                ->withInput();
+                
+        } catch (\Exception $e) {
+            \Log::error('Error creating JenisBukuKas', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.'])
                 ->withInput();
         }
-
-        $validated['is_active'] = $request->has('is_active');
-
-        JenisBukuKas::create($validated);
-
-        return redirect()->route('jenis-buku-kas.index')
-            ->with('success', 'Jenis kas berhasil ditambahkan');
     }
 
     /**
@@ -81,24 +114,59 @@ class JenisBukuKasController extends BaseKeuanganController
      */
     public function update(Request $request, $id)
     {
-        $jenisKas = JenisBukuKas::findOrFail($id);
+        try {
+            $jenisKas = JenisBukuKas::findOrFail($id);
 
-        $validated = $this->validateInput($request, $this->getValidationRules($id));
+            \Log::info('JenisBukuKas update method called', [
+                'id' => $id,
+                'request_data' => $request->all(),
+                'has_is_active' => $request->has('is_active')
+            ]);
 
-        // Validate business rules
-        $businessErrors = $this->keuanganService->validateJenisKasRules($validated, $jenisKas);
-        if (!empty($businessErrors)) {
+            $validated = $this->validateInput($request, $this->getValidationRules($id));
+
+            // Validate business rules
+            $businessErrors = $this->keuanganService->validateJenisKasRules($validated, $jenisKas);
+            if (!empty($businessErrors)) {
+                \Log::warning('JenisBukuKas update validation failed', ['errors' => $businessErrors]);
+                return redirect()->back()
+                    ->withErrors($businessErrors)
+                    ->withInput();
+            }
+
+            // Handle checkbox value properly - convert to boolean
+            $validated['is_active'] = $request->input('is_active', '0') === '1';
+            
+            \Log::info('Updating JenisBukuKas with data', $validated);
+
+            $jenisKas->update($validated);
+            
+            \Log::info('JenisBukuKas updated successfully');
+
+            return redirect()->route('keuangan.jenis-buku-kas.index')
+                ->with('success', 'Jenis kas berhasil diperbarui');
+                
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::warning('JenisBukuKas update validation failed', [
+                'id' => $id,
+                'errors' => $e->errors()
+            ]);
+            
             return redirect()->back()
-                ->withErrors($businessErrors)
+                ->withErrors($e->errors())
+                ->withInput();
+                
+        } catch (\Exception $e) {
+            \Log::error('Error updating JenisBukuKas', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->withErrors(['error' => 'Terjadi kesalahan saat memperbarui data. Silakan coba lagi.'])
                 ->withInput();
         }
-
-        $validated['is_active'] = $request->has('is_active');
-
-        $jenisKas->update($validated);
-
-        return redirect()->route('jenis-buku-kas.index')
-            ->with('success', 'Jenis kas berhasil diperbarui');
     }
 
     /**
@@ -106,19 +174,30 @@ class JenisBukuKasController extends BaseKeuanganController
      */
     public function destroy($id)
     {
-        $jenisKas = JenisBukuKas::findOrFail($id);
-        
-        $deleteCheck = $this->keuanganService->canDeleteJenisKas($jenisKas);
-        
-        if (!$deleteCheck['can_delete']) {
-            return redirect()->route('jenis-buku-kas.index')
-                ->with('error', implode(', ', $deleteCheck['messages']));
+        try {
+            $jenisKas = JenisBukuKas::findOrFail($id);
+            
+            $deleteCheck = $this->keuanganService->canDeleteJenisKas($jenisKas);
+            
+            if (!$deleteCheck['can_delete']) {
+                return redirect()->route('keuangan.jenis-buku-kas.index')
+                    ->with('error', implode(', ', $deleteCheck['messages']));
+            }
+
+            $jenisKas->delete();
+
+            return redirect()->route('keuangan.jenis-buku-kas.index')
+                ->with('success', 'Jenis kas berhasil dihapus');
+                
+        } catch (\Exception $e) {
+            \Log::error('Error deleting JenisBukuKas', [
+                'id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return redirect()->route('keuangan.jenis-buku-kas.index')
+                ->with('error', 'Terjadi kesalahan saat menghapus data.');
         }
-
-        $jenisKas->delete();
-
-        return redirect()->route('jenis-buku-kas.index')
-            ->with('success', 'Jenis kas berhasil dihapus');
     }
 
     /**

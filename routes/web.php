@@ -90,11 +90,21 @@ Route::middleware(['auth'])->group(function () {
         Route::get('jenis-tagihan', [JenisTagihanController::class, 'index'])->name('jenis-tagihan.index')->middleware(['role:admin']);
         Route::get('jenis-tagihan/create', [JenisTagihanController::class, 'create'])->name('jenis-tagihan.create')->middleware(['role:admin']);
         Route::post('jenis-tagihan', [JenisTagihanController::class, 'store'])->name('jenis-tagihan.store')->middleware(['role:admin']);
+        
+        Route::post('jenis-tagihan/insidental', [JenisTagihanController::class, 'storeInsidental'])->name('jenis-tagihan.store-insidental')->middleware(['role:admin']);
+        
+        Route::get('jenis-tagihan/get-all-kelas', [JenisTagihanController::class, 'getAllKelas'])->name('jenis-tagihan.get-all-kelas')->middleware(['role:admin']);
+        Route::get('jenis-tagihan/get-all-santri', [JenisTagihanController::class, 'getAllSantri'])->name('jenis-tagihan.get-all-santri')->middleware(['role:admin']);
+        Route::get('jenis-tagihan/search-santri', [JenisTagihanController::class, 'searchSantri'])->name('jenis-tagihan.search-santri')->middleware(['role:admin']);
+        Route::get('jenis-tagihan/get-santri-by-kelas', [JenisTagihanController::class, 'getSantriByKelas'])->name('jenis-tagihan.get-santri-by-kelas')->middleware(['role:admin']);
         Route::get('jenis-tagihan/{id}/edit', [JenisTagihanController::class, 'edit'])->name('jenis-tagihan.edit')->middleware(['role:admin']);
         Route::put('jenis-tagihan/{id}', [JenisTagihanController::class, 'update'])->name('jenis-tagihan.update')->middleware(['role:admin']);
         Route::delete('jenis-tagihan/{id}', [JenisTagihanController::class, 'destroy'])->name('jenis-tagihan.destroy')->middleware(['role:admin']);
         Route::get('jenis-tagihan/{id}/kelas', [JenisTagihanController::class, 'showKelas'])->name('jenis-tagihan.show-kelas')->middleware(['role:admin']);
-        Route::put('jenis-tagihan/{id}/kelas', [JenisTagihanController::class, 'updateKelas'])->name('jenis-tagihan.update-kelas')->middleware(['role:admin']);
+        
+        // Preview dan Generate untuk tagihan insidental
+        Route::get('jenis-tagihan/{id}/preview', [JenisTagihanController::class, 'previewInsidental'])->name('jenis-tagihan.preview')->middleware(['role:admin']);
+        Route::post('jenis-tagihan/{id}/generate-insidental', [JenisTagihanController::class, 'generateInsidental'])->name('jenis-tagihan.generate-insidental')->middleware(['role:admin']);
         
         // Routes for generate and cancel tagihan
         Route::post('jenis-tagihan/{id}/generate', [JenisTagihanController::class, 'generateTagihanSantriByJenisId'])->name('jenis-tagihan.generate')->middleware(['role:admin']);

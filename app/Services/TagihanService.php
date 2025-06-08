@@ -546,8 +546,8 @@ class TagihanService
             $tahun = (int) $parts[0];
             $bulanInt = (int) $parts[1];
             
-            // Set jatuh tempo pada tanggal 15 setiap bulan
-            return Carbon::createFromDate($tahun, $bulanInt, 15);
+            // Set jatuh tempo pada tanggal 10 setiap bulan
+            return Carbon::createFromDate($tahun, $bulanInt, 10);
         }
         
         // Fallback: 30 hari dari sekarang
