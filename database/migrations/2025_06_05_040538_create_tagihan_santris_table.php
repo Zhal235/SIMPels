@@ -19,14 +19,17 @@ return new class extends Migration
             $table->string('bulan')->comment('Format YYYY-MM untuk tagihan bulanan');
             $table->decimal('nominal_tagihan', 15, 2);
             $table->decimal('nominal_dibayar', 15, 2)->default(0);
+            $table->decimal('nominal_keringanan', 10, 2)->default(0);
             $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
             $table->text('keterangan')->nullable();
+            $table->date('tanggal_jatuh_tempo')->nullable();
             $table->timestamps();
 
             // Indexes
             $table->index(['santri_id', 'jenis_tagihan_id', 'tahun_ajaran_id', 'bulan'], 'idx_tagihan_santri_main');
             $table->index('status');
             $table->index(['santri_id', 'bulan']);
+            $table->index('tanggal_jatuh_tempo');
 
             // Foreign keys
             $table->foreign('santri_id')->references('id')->on('santris')->onDelete('cascade');

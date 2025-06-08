@@ -9,21 +9,18 @@ use App\Models\User;
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
-{
-    $this->call([
-        AdminUserSeeder::class,
-        PekerjaanSeeder::class,
-        TahunAjaranSeeder::class,
-        SantriDummySeeder::class,
-        KategoriKeuanganSeeder::class,
-        AsramaSeeder::class,
-        KelasSeeder::class,
-        KelasAnggotaSeeder::class,
-        AsramaAnggotaSeeder::class,
-        JenisBukuKasSeeder::class,
-        JenisTagihanSeeder::class,
-        BukuKasSeeder::class,
-        TransaksiKasSeeder::class,
-    ]);
+    {
+        $this->call([
+            AdminUserSeeder::class,
+            PekerjaanSeeder::class,
+            TahunAjaranSeeder::class,
+            AsramaSeederWithoutTruncate::class,
+            KelasSeederWithoutTruncate::class,
+            KategoriTagihanSeederWithoutTruncate::class,
+            JenisTagihanSeederWithoutTruncate::class,
+            TarifPerKelasSeederWithoutTruncate::class,
+            SantriSeeder::class,
+            // Skip TagihanSantriSeeder and PembayaranSeeder for now due to FK constraints
+        ]);
     }
 }

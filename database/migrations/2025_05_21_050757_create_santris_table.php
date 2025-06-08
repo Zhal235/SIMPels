@@ -10,15 +10,18 @@ class CreateSantrisTable extends Migration
     {
         Schema::create('santris', function (Blueprint $table) {
             $table->id();
+            $table->string('nis');
 
             // Data Pribadi
             $table->string('nisn')->nullable();
-            $table->string('nik_siswa')->nullable();
-            $table->string('nama_siswa');
+            $table->string('nik_santri')->nullable();
+            $table->string('nama_santri');
             $table->string('tempat_lahir');
             $table->date('tanggal_lahir')->nullable();
             $table->enum('jenis_kelamin', ['L', 'P']);
             $table->string('kelas')->nullable();
+            $table->unsignedBigInteger('kelas_id')->nullable();
+            $table->unsignedBigInteger('asrama_id')->nullable();
             $table->string('asal_sekolah')->nullable();
             $table->string('hobi')->nullable();
             $table->string('cita_cita')->nullable();
@@ -65,6 +68,7 @@ class CreateSantrisTable extends Migration
 
             //foto
             $table->string('foto')->nullable();
+            $table->string('status')->default('aktif');
 
             $table->timestamps();
         });
