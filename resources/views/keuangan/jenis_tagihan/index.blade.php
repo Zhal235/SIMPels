@@ -135,6 +135,28 @@
                                 </td>
                                 <td class="px-4 py-3 text-center">
                                     <div class="flex justify-center items-center gap-2">
+                                        <form action="{{ route('keuangan.jenis-tagihan.generate', $tagihan->id) }}" method="POST" class="inline-block">
+                                            @csrf
+                                            <button type="submit" 
+                                                    class="p-2 rounded-full text-green-600 hover:bg-green-100 transition duration-150 ease-in-out"
+                                                    title="Generate Tagihan"
+                                                    onclick="return confirm('Apakah Anda yakin ingin generate tagihan untuk {{ addslashes($tagihan->nama) }}? Ini akan membuat tagihan untuk semua santri yang belum memiliki tagihan ini.')">
+                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"></path>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                        <form action="{{ route('keuangan.jenis-tagihan.cancel', $tagihan->id) }}" method="POST" class="inline-block">
+                                            @csrf
+                                            <button type="submit" 
+                                                    class="p-2 rounded-full text-orange-600 hover:bg-orange-100 transition duration-150 ease-in-out"
+                                                    title="Batal Generate"
+                                                    onclick="return confirm('Apakah Anda yakin ingin membatalkan tagihan untuk {{ addslashes($tagihan->nama) }}? Ini akan menghapus semua tagihan yang belum dibayar.')">
+                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                                </svg>
+                                            </button>
+                                        </form>
                                         <a href="#" onclick="openEditModal({{ $tagihan->id }})" 
                                            class="p-2 rounded-full text-purple-600 hover:bg-purple-100 transition duration-150 ease-in-out"
                                            title="Edit">

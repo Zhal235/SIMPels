@@ -79,19 +79,16 @@ class JenisTagihanController extends Controller
                 'bulan_jatuh_tempo' => $request->bulan_jatuh_tempo,
             ]);
 
-            // Generate tagihan santri untuk jenis tagihan baru
-            $this->generateTagihanSantri();
-
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Data berhasil ditambahkan dan tagihan santri telah dibuat otomatis',
+                    'message' => 'Data berhasil ditambahkan',
                     'data' => $jenisTagihan
                 ]);
             }
 
             return redirect()->route('keuangan.jenis-tagihan.index')
-                ->with('success', 'Data berhasil ditambahkan dan tagihan santri telah dibuat otomatis');
+                ->with('success', 'Data berhasil ditambahkan');
         } catch (\Exception $e) {
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
@@ -214,19 +211,16 @@ class JenisTagihanController extends Controller
                 'bulan_jatuh_tempo' => $request->bulan_jatuh_tempo,
             ]);
 
-            // Generate tagihan santri jika ada perubahan yang mempengaruhi
-            $this->generateTagihanSantri();
-
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Jenis Tagihan berhasil diperbarui dan tagihan santri telah disinkronkan',
+                    'message' => 'Jenis Tagihan berhasil diperbarui',
                     'data' => $jenisTagihan
                 ]);
             }
 
             return redirect()->route('keuangan.jenis-tagihan.index')
-                ->with('success', 'Jenis Tagihan berhasil diperbarui dan tagihan santri telah disinkronkan');
+                ->with('success', 'Jenis Tagihan berhasil diperbarui');
         } catch (\Exception $e) {
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
@@ -434,5 +428,133 @@ class JenisTagihanController extends Controller
         // Untuk tagihan insidentil, set jatuh tempo 3 bulan dari tanggal pembuatan
         // Atau bisa disesuaikan berdasarkan kebijakan sekolah
         return \Carbon\Carbon::now()->addMonths(3);
+    }
+
+    /**
+     * Generate tagihan santri for a specific jenis tagihan
+     */
+    public function generateTagihanSantriByJenisId($id)
+    {
+        try {
+            $jenisTagihan = JenisTagihan::findOrFail($id);
+            $activeTahunAjaran = TahunAjaran::where('is_active', true)->first();
+            
+            if (!$activeTahunAjaran) {
+                return redirect()->route('keuangan.jenis-tagihan.index')
+                    ->with('error', 'Tidak ada tahun ajaran aktif untuk generate tagihan');
+            }
+
+            // Ambil semua santri aktif
+            $santris = Santri::where('status', 'aktif')->with('kelasRelasi')->get();
+            $tagihanCount = 0;
+            
+            foreach ($santris as $santri) {
+                // Ambil kelas santri
+                $kelasNames = $santri->kelasRelasi->pluck('nama')->toArray();
+                
+                // Tentukan nominal berdasarkan kelas jika ada
+                $nominal = $jenisTagihan->nominal;
+                
+                if ($jenisTagihan->is_nominal_per_kelas && !empty($kelasNames)) {
+                    foreach ($kelasNames as $kelasName) {
+                        $kelas = \App\Models\Kelas::where('nama', $kelasName)->first();
+                        if ($kelas) {
+                            $jenisTagihanKelas = JenisTagihanKelas::where('jenis_tagihan_id', $jenisTagihan->id)
+                                ->where('kelas_id', $kelas->id)
+                                ->first();
+                            
+                            if ($jenisTagihanKelas) {
+                                $nominal = $jenisTagihanKelas->nominal;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if ($jenisTagihan->kategori_tagihan === 'Rutin' && $jenisTagihan->is_bulanan) {
+                    // Generate tagihan rutin bulanan
+                    $bulanList = $this->generateBulanList($activeTahunAjaran);
+                    
+                    foreach ($bulanList as $bulan) {
+                        $exists = TagihanSantri::where('santri_id', $santri->id)
+                            ->where('jenis_tagihan_id', $jenisTagihan->id)
+                            ->where('tahun_ajaran_id', $activeTahunAjaran->id)
+                            ->where('bulan', $bulan)
+                            ->exists();
+
+                        if (!$exists) {
+                            TagihanSantri::create([
+                                'santri_id' => $santri->id,
+                                'jenis_tagihan_id' => $jenisTagihan->id,
+                                'tahun_ajaran_id' => $activeTahunAjaran->id,
+                                'bulan' => $bulan,
+                                'nominal_tagihan' => $nominal,
+                                'nominal_dibayar' => 0,
+                                'tanggal_jatuh_tempo' => $this->calculateDueDateForBulanan($bulan),
+                                'status' => 'aktif'
+                            ]);
+                            $tagihanCount++;
+                        }
+                    }
+                } else {
+                    // Generate tagihan insidentil atau rutin tahunan
+                    $exists = TagihanSantri::where('santri_id', $santri->id)
+                        ->where('jenis_tagihan_id', $jenisTagihan->id)
+                        ->where('tahun_ajaran_id', $activeTahunAjaran->id)
+                        ->exists();
+
+                    if (!$exists) {
+                        TagihanSantri::create([
+                            'santri_id' => $santri->id,
+                            'jenis_tagihan_id' => $jenisTagihan->id,
+                            'tahun_ajaran_id' => $activeTahunAjaran->id,
+                            'bulan' => $activeTahunAjaran->tahun_mulai . '-07', // Format bulan yang konsisten (Juli tahun mulai)
+                            'nominal_tagihan' => $nominal,
+                            'nominal_dibayar' => 0,
+                            'tanggal_jatuh_tempo' => $this->calculateDueDateForInsidentil($jenisTagihan, $activeTahunAjaran),
+                            'status' => 'aktif'
+                        ]);
+                        $tagihanCount++;
+                    }
+                }
+            }
+
+            return redirect()->route('keuangan.jenis-tagihan.index')
+                ->with('success', 'Berhasil generate ' . $tagihanCount . ' tagihan untuk jenis tagihan ' . $jenisTagihan->nama);
+        } catch (\Exception $e) {
+            return redirect()->route('keuangan.jenis-tagihan.index')
+                ->with('error', 'Gagal generate tagihan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Cancel generated tagihan santri for a specific jenis tagihan
+     */
+    public function cancelTagihanSantriByJenisId($id)
+    {
+        try {
+            $jenisTagihan = JenisTagihan::findOrFail($id);
+            $activeTahunAjaran = TahunAjaran::where('is_active', true)->first();
+            
+            if (!$activeTahunAjaran) {
+                return redirect()->route('keuangan.jenis-tagihan.index')
+                    ->with('error', 'Tidak ada tahun ajaran aktif untuk membatalkan tagihan');
+            }
+
+            // Hanya hapus tagihan yang belum dibayar atau dibayar sebagian
+            $count = TagihanSantri::where('jenis_tagihan_id', $jenisTagihan->id)
+                ->where('tahun_ajaran_id', $activeTahunAjaran->id)
+                ->where(function($query) {
+                    $query->where('nominal_dibayar', 0)
+                          ->orWhereColumn('nominal_dibayar', '<', 'nominal_tagihan');
+                })
+                ->delete();
+
+            return redirect()->route('keuangan.jenis-tagihan.index')
+                ->with('success', 'Berhasil membatalkan ' . $count . ' tagihan untuk jenis tagihan ' . $jenisTagihan->nama);
+        } catch (\Exception $e) {
+            return redirect()->route('keuangan.jenis-tagihan.index')
+                ->with('error', 'Gagal membatalkan tagihan: ' . $e->getMessage());
+        }
     }
 }

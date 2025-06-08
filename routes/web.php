@@ -14,6 +14,8 @@ use App\Http\Controllers\PembayaranSantriController;
 use App\Http\Controllers\JenisTagihanController;
 use App\Http\Controllers\TahunAjaranController;
 use App\Http\Controllers\BukuKasController;
+use App\Http\Controllers\DevTestController;
+use App\Http\Controllers\TestController;
 use Illuminate\Http\Request;
 
 
@@ -186,6 +188,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('jenis-tagihan/{id}/kelas', [JenisTagihanController::class, 'showKelas'])->name('jenis-tagihan.show-kelas')->middleware(['role:admin']);
         Route::put('jenis-tagihan/{id}/kelas', [JenisTagihanController::class, 'updateKelas'])->name('jenis-tagihan.update-kelas')->middleware(['role:admin']);
         
+        // Routes for generate and cancel tagihan
+        Route::post('jenis-tagihan/{id}/generate', [JenisTagihanController::class, 'generateTagihanSantriByJenisId'])->name('jenis-tagihan.generate')->middleware(['role:admin']);
+        Route::post('jenis-tagihan/{id}/cancel', [JenisTagihanController::class, 'cancelTagihanSantriByJenisId'])->name('jenis-tagihan.cancel')->middleware(['role:admin']);
+        
         // Buku Kas
         Route::resource('buku-kas', BukuKasController::class)->middleware(['role:admin']);
         Route::get('buku-kas-list', [BukuKasController::class, 'getBukuKasList'])->name('buku-kas.list');
@@ -249,4 +255,14 @@ require __DIR__.'/keringanan-tagihan.php';
 // Include route tunggakan santri
 require __DIR__.'/tunggakan.php';
 
+// Development Test UI Route (no auth required for testing)
+Route::get('/dev/test-ui', [\App\Http\Controllers\DevTestController::class, 'index'])->name('dev.test-ui');
+
 require __DIR__.'/auth.php';
+
+// Route untuk halaman test UI
+Route::get('dev-test', [DevTestController::class, 'index'])->name('dev-test.index');
+Route::post('dev-test/submit', [DevTestController::class, 'submit'])->name('dev-test.submit');
+
+// Test routes for debugging
+Route::get('/test-endpoint/{id}', [TestController::class, 'testEndpoint'])->name('test.endpoint');
