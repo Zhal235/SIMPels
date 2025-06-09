@@ -23,6 +23,11 @@ class Santri extends Model
         'total_nilai_un', 'tanggal_kelulusan', 'foto', 'asrama_id', 'kelas_id',// ← WAJIB
     ];
 
+    protected $casts = [
+        'tanggal_lahir' => 'date',
+        'tanggal_kelulusan' => 'date',
+    ];
+
     public function pekerjaanAyah()
     {
         return $this->belongsTo(Pekerjaan::class, 'pekerjaan_ayah');
@@ -113,6 +118,14 @@ public function rfidTag()
     public function kelasAktif()
     {
         return $this->hasOne(KelasAnggota::class, 'santri_id')->where('is_active', true);
+    }
+
+    /**
+     * Relasi dengan Dompet
+     */
+    public function dompet()
+    {
+        return $this->hasOne(Dompet::class, 'pemilik_id')->where('jenis_pemilik', 'santri');
     }
 
 }

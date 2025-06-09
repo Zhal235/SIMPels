@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             AsramaAnggotaSeeder::class,
             BukuKasSeeder::class,
             JenisBukuKasSeeder::class,
+            DompetSeeder::class,
             // TagihanSantriSeederWithoutTruncate::class, // Commented out for manual generation
         ]);
     }

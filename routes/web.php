@@ -151,6 +151,40 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 
+    // Modul Keuangan - Dompet Digital
+    Route::prefix('keuangan/dompet')->name('keuangan.dompet.')->middleware(['auth'])->group(function () {
+        // Dompet Santri
+        Route::prefix('santri')->name('santri.')->group(function () {
+            Route::get('/', [App\Http\Controllers\DompetSantriController::class, 'index'])->name('index');
+            Route::get('create', [App\Http\Controllers\DompetSantriController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\DompetSantriController::class, 'store'])->name('store');
+            Route::get('{id}', [App\Http\Controllers\DompetSantriController::class, 'show'])->name('show');
+            Route::get('{id}/edit', [App\Http\Controllers\DompetSantriController::class, 'edit'])->name('edit');
+            Route::put('{id}', [App\Http\Controllers\DompetSantriController::class, 'update'])->name('update');
+            Route::delete('{id}', [App\Http\Controllers\DompetSantriController::class, 'destroy'])->name('destroy');
+            Route::get('{id}/top-up', [App\Http\Controllers\DompetSantriController::class, 'topUpForm'])->name('top-up.form');
+            Route::post('{id}/top-up', [App\Http\Controllers\DompetSantriController::class, 'topUp'])->name('top-up');
+            
+            // API routes for AJAX calls
+            Route::post('topup', [App\Http\Controllers\DompetSantriController::class, 'topup'])->name('topup');
+            Route::post('withdraw', [App\Http\Controllers\DompetSantriController::class, 'withdraw'])->name('withdraw');
+            Route::post('aktivasi', [App\Http\Controllers\DompetSantriController::class, 'aktivasi'])->name('aktivasi');
+        });
+
+        // Dompet Asatidz
+        Route::prefix('asatidz')->name('asatidz.')->group(function () {
+            Route::get('/', [App\Http\Controllers\DompetAsatidzController::class, 'index'])->name('index');
+            Route::get('create', [App\Http\Controllers\DompetAsatidzController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\DompetAsatidzController::class, 'store'])->name('store');
+            Route::get('{id}', [App\Http\Controllers\DompetAsatidzController::class, 'show'])->name('show');
+            Route::get('{id}/edit', [App\Http\Controllers\DompetAsatidzController::class, 'edit'])->name('edit');
+            Route::put('{id}', [App\Http\Controllers\DompetAsatidzController::class, 'update'])->name('update');
+            Route::delete('{id}', [App\Http\Controllers\DompetAsatidzController::class, 'destroy'])->name('destroy');
+            Route::get('{id}/top-up', [App\Http\Controllers\DompetAsatidzController::class, 'topUpForm'])->name('top-up.form');
+            Route::post('{id}/top-up', [App\Http\Controllers\DompetAsatidzController::class, 'topUp'])->name('top-up');
+        });
+    });
+
     // Modul Akademik
     Route::prefix('akademik')->name('akademik.')->middleware(['auth'])->group(function () {
         // Tahun Ajaran

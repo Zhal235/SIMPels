@@ -79,6 +79,14 @@ class TransaksiKas extends Model
     }
     
     /**
+     * Relasi ke TransaksiDompet
+     */
+    public function transaksiDompet()
+    {
+        return $this->hasMany(TransaksiDompet::class);
+    }
+    
+    /**
      * Menentukan jenis transaksi dengan warna
      */
     public function getJenisTransaksiColorAttribute(): string
