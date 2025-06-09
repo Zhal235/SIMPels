@@ -21,6 +21,7 @@ class TransaksiKas extends Model
         'jumlah',
         'keterangan',
         'metode_pembayaran',
+        'nama_pemohon',
         'no_referensi',
         'tanggal_transaksi',
         'bukti_transaksi',

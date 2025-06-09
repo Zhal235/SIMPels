@@ -15,7 +15,8 @@ class KategoriKeuangan extends Model
         'nama_kategori', // Akan menjadi nama jenis pembayaran, contoh: SPP, Uang Pangkal
         'deskripsi', // Bisa digunakan untuk kategori: Pembayaran Rutin / Insidental
         'nominal_tagihan', // Nominal yang harus dibayar
-        'tahun_ajaran_id'
+        'tahun_ajaran_id',
+        'jenis_transaksi', // pemasukan, pengeluaran, transfer
     ];
 
     public function transaksi()

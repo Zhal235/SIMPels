@@ -145,6 +145,20 @@
                         <div class="font-medium text-slate-900">{{ $transaksi->created_at->format('d F Y H:i') }}</div>
                     </div>
                     
+                    <!-- Nama Santri/Pemohon -->
+                    <div>
+                        <div class="text-sm text-slate-500 mb-1">Nama/Pemohon</div>
+                        <div class="font-medium text-slate-900">
+                            @if($transaksi->tagihanSantri && $transaksi->tagihanSantri->santri)
+                                {{ $transaksi->tagihanSantri->santri->nama_santri }}
+                            @elseif($transaksi->nama_pemohon)
+                                {{ $transaksi->nama_pemohon }}
+                            @else
+                                -
+                            @endif
+                        </div>
+                    </div>
+                
                     <!-- Created By -->
                     <div>
                         <div class="text-sm text-slate-500 mb-1">Dibuat Oleh</div>

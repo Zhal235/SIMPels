@@ -17,7 +17,7 @@ class TransaksiKasController extends Controller
      */
     public function index(Request $request)
     {
-        $query = TransaksiKas::with(['bukuKas', 'bukuKasTujuan', 'creator', 'approver']);
+        $query = TransaksiKas::with(['bukuKas', 'bukuKasTujuan', 'creator', 'approver', 'tagihanSantri.santri']);
         
         // Filter berdasarkan jenis transaksi
         if ($request->filled('jenis')) {
@@ -84,6 +84,11 @@ class TransaksiKasController extends Controller
             'transaksi_pending' => TransaksiKas::where('status', 'pending')->count()
         ];
         
+        // Memastikan bukuKasList tidak kosong
+        if ($bukuKasList->isEmpty()) {
+            $bukuKasList = collect([]); // Set empty collection jika kosong
+        }
+
         return view('keuangan.transaksi-kas.index', compact('transaksi', 'bukuKasList', 'stats'));
     }
 
@@ -103,6 +108,9 @@ class TransaksiKasController extends Controller
      */
     public function store(Request $request)
     {
+        // Debug nilai yang diterima
+        \Log::info('Request data:', $request->all());
+        
         // Validasi dasar
         $rules = [
             'buku_kas_id' => 'required|exists:buku_kas,id',
@@ -149,6 +157,7 @@ class TransaksiKasController extends Controller
                 'jumlah' => $validated['jumlah'],
                 'tanggal_transaksi' => $validated['tanggal_transaksi'],
                 'metode_pembayaran' => $validated['metode_pembayaran'],
+                'nama_pemohon' => $request->nama_pemohon,
                 'no_referensi' => $request->no_referensi,
                 'keterangan' => $validated['keterangan'],
                 'bukti_transaksi' => $buktiPath,
@@ -158,7 +167,7 @@ class TransaksiKasController extends Controller
             ]);
             
             // Update saldo buku kas
-            $bukuKas = BukuKas::find($validated['buku_kas_id']);
+            $bukuKas = BukuKas::findOrFail($validated['buku_kas_id']);
             
             if ($request->jenis_transaksi === 'pemasukan') {
                 $bukuKas->updateSaldo($validated['jumlah'], 'masuk');
@@ -169,7 +178,7 @@ class TransaksiKasController extends Controller
                 $bukuKas->updateSaldo($validated['jumlah'], 'keluar');
                 
                 // Tambah saldo ke kas tujuan
-                $bukuKasTujuan = BukuKas::find($validated['buku_kas_tujuan_id']);
+                $bukuKasTujuan = BukuKas::findOrFail($validated['buku_kas_tujuan_id']);
                 $bukuKasTujuan->updateSaldo($validated['jumlah'], 'masuk');
             }
             
@@ -207,7 +216,7 @@ class TransaksiKasController extends Controller
      */
     public function show(string $id)
     {
-        $transaksi = TransaksiKas::with(['bukuKas', 'bukuKasTujuan', 'creator', 'approver'])
+        $transaksi = TransaksiKas::with(['bukuKas', 'bukuKasTujuan', 'creator', 'approver', 'tagihanSantri.santri'])
                                ->findOrFail($id);
                                
         if (request()->expectsJson()) {
@@ -218,6 +227,26 @@ class TransaksiKasController extends Controller
         }
                                
         return view('keuangan.transaksi-kas.show', compact('transaksi'));
+    }
+
+    /**
+     * API endpoint to get transaksi data for editing
+     */
+    public function apiShow($id)
+    {
+        try {
+            $transaksi = TransaksiKas::with(['bukuKas', 'bukuKasTujuan'])->findOrFail($id);
+            
+            return response()->json([
+                'success' => true,
+                'data' => $transaksi
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transaksi tidak ditemukan'
+            ], 404);
+        }
     }
 
     /**
@@ -300,6 +329,23 @@ class TransaksiKasController extends Controller
             $transaksi->keterangan = $validated['keterangan'];
             $transaksi->metode_pembayaran = $validated['metode_pembayaran'];
             $transaksi->no_referensi = $request->no_referensi;
+            $transaksi->nama_pemohon = $request->nama_pemohon;
+            
+            // Handle amount from modal form if provided
+            if ($request->filled('jumlah_raw')) {
+                $transaksi->jumlah = $request->jumlah_raw;
+            }
+            
+            // Update tanggal transaksi if provided and still pending
+            if ($transaksi->status === 'pending' && $request->filled('tanggal_transaksi')) {
+                $transaksi->tanggal_transaksi = $request->tanggal_transaksi;
+            }
+            
+            // Update buku kas if provided and still pending
+            if ($transaksi->status === 'pending' && $request->filled('buku_kas_id')) {
+                $transaksi->buku_kas_id = $request->buku_kas_id;
+            }
+            
             $transaksi->save();
             
             DB::commit();
@@ -417,7 +463,7 @@ class TransaksiKasController extends Controller
             $transaksi->save();
             
             // Update saldo buku kas
-            $bukuKas = BukuKas::find($transaksi->buku_kas_id);
+            $bukuKas = BukuKas::findOrFail($transaksi->buku_kas_id);
             
             if ($transaksi->jenis_transaksi === 'pemasukan') {
                 $bukuKas->updateSaldo($transaksi->jumlah, 'masuk');
@@ -428,7 +474,7 @@ class TransaksiKasController extends Controller
                 $bukuKas->updateSaldo($transaksi->jumlah, 'keluar');
                 
                 // Tambah saldo ke kas tujuan
-                $bukuKasTujuan = BukuKas::find($transaksi->buku_kas_tujuan_id);
+                $bukuKasTujuan = BukuKas::findOrFail($transaksi->buku_kas_tujuan_id);
                 $bukuKasTujuan->updateSaldo($transaksi->jumlah, 'masuk');
             }
             

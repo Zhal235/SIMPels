@@ -143,6 +143,8 @@
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Jenis</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Kategori</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Buku Kas</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Nama/Pemohon</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Admin</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Jumlah</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
                         <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Aksi</th>
@@ -183,6 +185,22 @@
                             {{ $item->bukuKasTujuan->nama_kas }}
                             @endif
                         </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                            @if($item->tagihanSantri && $item->tagihanSantri->santri)
+                                {{ $item->tagihanSantri->santri->nama_santri }}
+                            @elseif($item->nama_pemohon)
+                                {{ $item->nama_pemohon }}
+                            @else
+                                -
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                            @if($item->creator)
+                                {{ $item->creator->name }}
+                            @else
+                                -
+                            @endif
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium
                             {{ $item->jenis_transaksi === 'pemasukan' ? 'text-green-600' : '' }}
                             {{ $item->jenis_transaksi === 'pengeluaran' ? 'text-red-600' : '' }}
@@ -206,30 +224,38 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex justify-end gap-2">
-                                <a href="{{ route('keuangan.transaksi-kas.show', $item->id) }}" class="text-blue-600 hover:text-blue-900 p-1">
+                                <a href="{{ route('keuangan.transaksi-kas.show', $item->id) }}" class="text-blue-600 hover:text-blue-900 p-1" title="Lihat Detail">
                                     <span class="material-icons-outlined text-lg">visibility</span>
                                 </a>
                                 
-                                @if($item->status === 'pending')
-                                <a href="{{ route('keuangan.transaksi-kas.edit', $item->id) }}" class="text-amber-600 hover:text-amber-900 p-1">
+                                <!-- Tombol Edit -->
+                                <button type="button" 
+                                    onclick="editTransaksi('{{ $item->id }}')"
+                                    class="text-amber-600 hover:text-amber-900 p-1" 
+                                    title="Edit Transaksi">
                                     <span class="material-icons-outlined text-lg">edit</span>
-                                </a>
-                                
+                                </button>
+
+                                <!-- Tombol Approve, Reject, dan Delete hanya untuk status pending -->
+                                @if($item->status === 'pending')
                                 <button type="button" 
                                     onclick="confirmApprove('{{ route('keuangan.transaksi-kas.approve', $item->id) }}')"
-                                    class="text-green-600 hover:text-green-900 p-1">
+                                    class="text-green-600 hover:text-green-900 p-1"
+                                    title="Setujui">
                                     <span class="material-icons-outlined text-lg">check_circle</span>
                                 </button>
                                 
                                 <button type="button" 
                                     onclick="confirmReject('{{ route('keuangan.transaksi-kas.reject', $item->id) }}')"
-                                    class="text-red-600 hover:text-red-900 p-1">
+                                    class="text-red-600 hover:text-red-900 p-1"
+                                    title="Tolak">
                                     <span class="material-icons-outlined text-lg">cancel</span>
                                 </button>
                                 
                                 <button type="button" 
                                     onclick="confirmDelete('{{ route('keuangan.transaksi-kas.destroy', $item->id) }}')"
-                                    class="text-red-600 hover:text-red-900 p-1">
+                                    class="text-red-600 hover:text-red-900 p-1"
+                                    title="Hapus">
                                     <span class="material-icons-outlined text-lg">delete</span>
                                 </button>
                                 @endif
@@ -261,6 +287,100 @@
         <div class="px-6 py-4 border-t border-slate-200">
             {{ $transaksi->withQueryString()->links() }}
         </div>
+    </div>
+</div>
+
+<!-- Edit Transaksi Modal -->
+<div id="editTransaksiModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-gray-900">Edit Transaksi Kas</h3>
+            <button type="button" onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600">
+                <span class="material-icons-outlined">close</span>
+            </button>
+        </div>
+        
+        <form id="editTransaksiForm" method="POST">
+            @csrf
+            @method('PUT')
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Buku Kas -->
+                <div>
+                    <label for="edit_buku_kas_id" class="block text-sm font-medium text-gray-700 mb-1">Buku Kas <span class="text-red-500">*</span></label>
+                    <select id="edit_buku_kas_id" name="buku_kas_id" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                        <option value="">Pilih Buku Kas</option>
+                        @forelse($bukuKasList as $buku)
+                        <option value="{{ $buku->id }}">{{ $buku->nama_kas }}</option>
+                        @empty
+                        <option value="" disabled>Tidak ada buku kas tersedia</option>
+                        @endforelse
+                    </select>
+                </div>
+                
+                <!-- Kategori -->
+                <div>
+                    <label for="edit_kategori" class="block text-sm font-medium text-gray-700 mb-1">Kategori <span class="text-red-500">*</span></label>
+                    <input type="text" id="edit_kategori" name="kategori" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                </div>
+                
+                <!-- Jumlah -->
+                <div>
+                    <label for="edit_jumlah" class="block text-sm font-medium text-gray-700 mb-1">Jumlah (Rp) <span class="text-red-500">*</span></label>
+                    <input type="text" id="edit_jumlah" name="jumlah" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                </div>
+                
+                <!-- Tanggal Transaksi -->
+                <div>
+                    <label for="edit_tanggal_transaksi" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Transaksi <span class="text-red-500">*</span></label>
+                    <input type="date" id="edit_tanggal_transaksi" name="tanggal_transaksi" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                </div>
+                
+                <!-- Metode Pembayaran -->
+                <div>
+                    <label for="edit_metode_pembayaran" class="block text-sm font-medium text-gray-700 mb-1">Metode Pembayaran <span class="text-red-500">*</span></label>
+                    <select id="edit_metode_pembayaran" name="metode_pembayaran" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                        <option value="">Pilih Metode</option>
+                        <option value="Tunai">Tunai</option>
+                        <option value="Transfer">Transfer</option>
+                        <option value="Kartu Debit">Kartu Debit</option>
+                        <option value="Kartu Kredit">Kartu Kredit</option>
+                        <option value="E-Wallet">E-Wallet</option>
+                    </select>
+                </div>
+                
+                <!-- No. Referensi -->
+                <div>
+                    <label for="edit_no_referensi" class="block text-sm font-medium text-gray-700 mb-1">No. Referensi (Opsional)</label>
+                    <input type="text" id="edit_no_referensi" name="no_referensi" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Nomor cek, transfer, dll">
+                </div>
+                
+                <!-- Nama Pemohon -->
+                <div>
+                    <label for="edit_nama_pemohon" class="block text-sm font-medium text-gray-700 mb-1">Nama Pemohon (Opsional)</label>
+                    <input type="text" id="edit_nama_pemohon" name="nama_pemohon" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Nama orang yang mengajukan">
+                </div>
+            </div>
+            
+            <!-- Keterangan -->
+            <div class="mt-4">
+                <label for="edit_keterangan" class="block text-sm font-medium text-gray-700 mb-1">Keterangan (Opsional)</label>
+                <textarea id="edit_keterangan" name="keterangan" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Rincian atau catatan tambahan..."></textarea>
+            </div>
+            
+            <!-- Hidden field for raw amount value -->
+            <input type="hidden" id="edit_jumlah_raw" name="jumlah_raw">
+            
+            <!-- Buttons -->
+            <div class="mt-6 flex justify-end space-x-3">
+                <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md transition">
+                    Batal
+                </button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition">
+                    Update Transaksi
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 @endsection
@@ -350,5 +470,157 @@
             }
         });
     }
+    
+    function editTransaksi(id) {
+        // Show modal
+        document.getElementById('editTransaksiModal').classList.remove('hidden');
+        
+        // Show loading state
+        Swal.fire({
+            title: 'Memuat data...',
+            didOpen: () => {
+                Swal.showLoading();
+            },
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            allowEnterKey: false,
+            showConfirmButton: false
+        });
+        
+        // Fetch transaksi data
+        fetch(`/api/keuangan/transaksi-kas/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                Swal.close();
+                
+                if (data.success && data.data) {
+                    const transaksi = data.data;
+                    
+                    if (!transaksi.id) {
+                        Swal.fire('Error', 'Data transaksi tidak valid', 'error');
+                        closeEditModal();
+                        return;
+                    }
+                    
+                    try {
+                        // Set form action
+                        document.getElementById('editTransaksiForm').action = `/keuangan/transaksi-kas/${id}`;
+                        
+                        // Fill form fields
+                        document.getElementById('edit_buku_kas_id').value = transaksi.buku_kas_id || '';
+                        document.getElementById('edit_kategori').value = transaksi.kategori || '';
+                        document.getElementById('edit_jumlah').value = transaksi.jumlah ? formatRupiah(transaksi.jumlah) : '';
+                        document.getElementById('edit_tanggal_transaksi').value = transaksi.tanggal_transaksi ? transaksi.tanggal_transaksi.split('T')[0] : '';
+                        document.getElementById('edit_metode_pembayaran').value = transaksi.metode_pembayaran || '';
+                        document.getElementById('edit_no_referensi').value = transaksi.no_referensi || '';
+                        document.getElementById('edit_nama_pemohon').value = transaksi.nama_pemohon || '';
+                        document.getElementById('edit_keterangan').value = transaksi.keterangan || '';
+                    } catch (err) {
+                        console.error('Error setting form values:', err);
+                        Swal.fire('Error', 'Gagal mengisi form dengan data transaksi', 'error');
+                        closeEditModal();
+                    }
+                } else {
+                    Swal.fire('Error', 'Gagal memuat data transaksi', 'error');
+                    closeEditModal();
+                }
+            })
+            .catch(error => {
+                Swal.close();
+                console.error('Error:', error);
+                Swal.fire('Error', 'Terjadi kesalahan saat memuat data', 'error');
+                closeEditModal();
+            });
+    }
+    
+    function closeEditModal() {
+        // Hide modal
+        document.getElementById('editTransaksiModal').classList.add('hidden');
+        
+        // Reset form
+        document.getElementById('editTransaksiForm').reset();
+    }
+    
+    function formatRupiah(angka) {
+        return new Intl.NumberFormat('id-ID').format(angka);
+    }
+    
+    // Initialize event listeners after DOM is fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Format currency input in edit modal
+        const editJumlahInput = document.getElementById('edit_jumlah');
+        if (editJumlahInput) {
+            editJumlahInput.addEventListener('input', function() {
+                let value = this.value.replace(/[^\d]/g, '');
+                this.value = formatRupiah(value);
+            });
+        }
+        
+        // Handle form submission
+        const editForm = document.getElementById('editTransaksiForm');
+        if (editForm) {
+            editForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Process amount value - remove formatting
+                const jumlahInput = document.getElementById('edit_jumlah');
+                const jumlahRawInput = document.getElementById('edit_jumlah_raw');
+                const rawValue = jumlahInput.value.replace(/[^\d]/g, '');
+                
+                jumlahRawInput.value = rawValue;
+                
+                // Show loading
+                Swal.fire({
+                    title: 'Menyimpan perubahan...',
+                    didOpen: () => {
+                        Swal.showLoading();
+                    },
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    allowEnterKey: false,
+                    showConfirmButton: false
+                });
+                
+                // Submit form with AJAX to prevent page reload
+                fetch(this.action, {
+                    method: 'POST',
+                    body: new FormData(this),
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    Swal.close();
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: 'Data transaksi berhasil diperbarui',
+                            showConfirmButton: true
+                        }).then(() => {
+                            // Reload page to show updated data
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: data.message || 'Terjadi kesalahan saat menyimpan data'
+                        });
+                    }
+                })
+                .catch(error => {
+                    Swal.close();
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Terjadi kesalahan saat memproses permintaan'
+                    });
+                });
+            });
+        }
+    });
 </script>
 @endpush

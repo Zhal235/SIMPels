@@ -75,3 +75,17 @@ Route::get('buku-kas/{id}', function($id) {
         ], 404);
     }
 })->name('api.buku-kas.show');
+
+// API untuk Manajemen Kategori Keuangan
+Route::prefix('keuangan/categories')->group(function () {
+    Route::get('/', [App\Http\Controllers\API\KategoriKeuanganController::class, 'index']);
+    Route::post('/', [App\Http\Controllers\API\KategoriKeuanganController::class, 'store']);
+    Route::get('/{id}', [App\Http\Controllers\API\KategoriKeuanganController::class, 'show']);
+    Route::put('/{id}', [App\Http\Controllers\API\KategoriKeuanganController::class, 'update']);
+    Route::delete('/{id}', [App\Http\Controllers\API\KategoriKeuanganController::class, 'destroy']);
+});
+
+// API untuk Transaksi Kas
+Route::prefix('keuangan/transaksi-kas')->group(function () {
+    Route::get('/{id}', [App\Http\Controllers\TransaksiKasController::class, 'apiShow']);
+});
