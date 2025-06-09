@@ -98,11 +98,11 @@
                                     <img :src="santri.foto || '{{ asset('img/default-avatar.png') }}'" 
                                          :alt="santri.nama"
                                          class="w-10 h-10 rounded-full object-cover border border-gray-200"
-                                         onerror="this.src='{{ asset('img/default-avatar.png') }}'">
-                                    <div class="flex-1 min-w-0">
+                                         onerror="this.src='{{ asset('img/default-avatar.png') }}'">                                    <div class="flex-1 min-w-0">
                                         <div class="font-medium text-gray-900 text-sm truncate" x-text="santri.nama"></div>
                                         <div class="text-xs text-gray-500" x-text="'NIS: ' + santri.nis"></div>
                                         <div class="text-xs text-gray-400" x-text="santri.kelas"></div>
+                                        <div class="text-xs text-gray-400" x-text="santri.asrama"></div>
                                     </div>
                                 </div>
                             </div>

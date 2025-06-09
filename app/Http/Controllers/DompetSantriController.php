@@ -18,11 +18,18 @@ class DompetSantriController extends Controller
      */
     public function index(Request $request)
     {
-        // Get all santri with their dompet
-        $santriList = Santri::with('dompet', 'kelas', 'asrama')
+        // Get all santri with their dompet using proper relations
+        $santriList = Santri::with(['dompet', 'asrama_anggota.asrama', 'kelasRelasi'])
             ->orderBy('nama_santri')
             ->get()
             ->map(function ($santri) {
+                // Ambil kelas menggunakan kelasRelasi
+                $kelas = $santri->kelasRelasi->pluck('nama')->join(', ') ?: 'Belum ada kelas';
+                
+                // Ambil asrama dari asrama_anggota (yang terbaru/aktif)
+                $asramaAnggota = $santri->asrama_anggota->last(); // Ambil yang terakhir
+                $asrama = $asramaAnggota && $asramaAnggota->asrama ? $asramaAnggota->asrama->nama : 'Belum ada asrama';
+                
                 return [
                     'id' => $santri->id,
                     'nama' => $santri->nama_santri,
@@ -31,8 +38,8 @@ class DompetSantriController extends Controller
                     'tempat_lahir' => $santri->tempat_lahir,
                     'tanggal_lahir' => $santri->tanggal_lahir ? $santri->tanggal_lahir->format('d/m/Y') : null,
                     'jenis_kelamin' => $santri->jenis_kelamin,
-                    'kelas' => $santri->kelas->nama_kelas ?? '-',
-                    'asrama' => $santri->asrama->nama_asrama ?? '-',
+                    'kelas' => $kelas,
+                    'asrama' => $asrama,
                     'nama_ortu' => ($santri->nama_ayah ?? '') . ' / ' . ($santri->nama_ibu ?? ''),
                     'nama_ayah' => $santri->nama_ayah,
                     'nama_ibu' => $santri->nama_ibu,

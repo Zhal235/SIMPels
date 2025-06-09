@@ -30,23 +30,23 @@ class PembayaranSantriController extends Controller
                        ->where('status', 'aktif');
             });
         })
-            ->with(['asrama', 'asrama_anggota_terakhir.asrama', 'kelasRelasi'])
+            ->with(['asrama_anggota.asrama', 'kelasRelasi'])
             ->orderBy('nama_santri')
             ->get()
             ->map(function ($santri) {
-                // Ambil kelas menggunakan kelasRelasi (sama seperti di RFID tags)
+                // Ambil kelas menggunakan kelasRelasi
                 $kelas = $santri->kelasRelasi->pluck('nama')->join(', ') ?: 'Belum ada kelas';
                 
-                // Ambil asrama terakhir
-                $asramaAnggota = $santri->asrama_anggota_terakhir;
-                $asrama = $asramaAnggota ? $asramaAnggota->asrama->nama_asrama : 'Belum ada asrama';
+                // Ambil asrama dari asrama_anggota (yang terbaru/aktif)
+                $asramaAnggota = $santri->asrama_anggota->last(); // Ambil yang terakhir
+                $asrama = $asramaAnggota && $asramaAnggota->asrama ? $asramaAnggota->asrama->nama : 'Belum ada asrama';
                 
                 return [
                     'id' => $santri->id,
                     'nama' => $santri->nama_santri,
                     'nis' => $santri->nis,
                     'tempat_lahir' => $santri->tempat_lahir,
-                    'tanggal_lahir' => $santri->tanggal_lahir,
+                    'tanggal_lahir' => $santri->tanggal_lahir ? $santri->tanggal_lahir->format('d/m/Y') : null,
                     'kelas' => $kelas,
                     'asrama' => $asrama,
                     'nama_ortu' => $santri->nama_ayah,
