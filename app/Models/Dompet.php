@@ -51,6 +51,12 @@ class Dompet extends Model
         return $this->hasMany(TransaksiDompet::class);
     }
 
+    // Relasi ke dompet limit
+    public function dompetLimit()
+    {
+        return $this->hasOne(DompetLimit::class);
+    }
+
     // Method untuk update saldo
     public function updateSaldo($jumlah, $jenis)
     {

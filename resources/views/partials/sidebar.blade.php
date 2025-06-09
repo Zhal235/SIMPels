@@ -57,6 +57,37 @@
             </div>
         </div>
 
+        <!-- Dompet Digital Menu -->
+        <div x-data="{ open: {{ request()->is('keuangan/dompet*') ? 'true' : 'false' }} }" class="space-y-1" x-cloak>
+            <button @click="open = !open"
+                    class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold uppercase tracking-wider hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-all duration-200 ease-in-out group">
+                <div class="flex items-center space-x-3">
+                    <span class="material-icons-outlined text-xl opacity-80 group-hover:opacity-100 text-blue-400">account_balance_wallet</span>
+                    <span class="menu-label">Dompet Digital</span>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform transition-transform duration-200 text-slate-500 group-hover:text-white"
+                    :class="{ 'rotate-90': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+           </button>
+            <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-2" class="ml-4 pl-3 border-l border-slate-700 space-y-1">
+                <a href="{{ route('keuangan.dompet.santri.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/dompet/santri*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/dompet/santri*') ? 'text-white' : 'text-blue-400' }}">person</span>
+                    <span class="menu-label">Dompet Santri</span>
+                </a>
+                
+                <a href="{{ route('keuangan.dompet.asatidz.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/dompet/asatidz*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/dompet/asatidz*') ? 'text-white' : 'text-blue-400' }}">manage_accounts</span>
+                    <span class="menu-label">Dompet Asatidz</span>
+                </a>
+                
+                <a href="{{ route('keuangan.dompet.set-limit.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/dompet/set-limit*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/dompet/set-limit*') ? 'text-white' : 'text-blue-400' }}">tune</span>
+                    <span class="menu-label">Set Limit</span>
+                </a>
+            </div>
+        </div>
+
         <!-- Keuangan Menu -->
         <div x-data="{ open: {{ request()->is('keuangan*') ? 'true' : 'false' }} }" class="space-y-1" x-cloak>
             <button @click="open = !open"
@@ -71,36 +102,31 @@
                 </svg>
            </button>
             <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-2" class="ml-4 pl-3 border-l border-slate-700 space-y-1">
-                <a href="{{ route('keuangan.pembayaran-santri.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/pembayaran-santri*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/pembayaran-santri*') ? 'text-white' : 'text-blue-400' }}">payments</span>
-                    <span class="menu-label">Pembayaran Santri</span>
-                </a>
-                <a href="{{ route('keuangan.jenis-tagihan.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/jenis-tagihan*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/jenis-tagihan*') ? 'text-white' : 'text-blue-400' }}">category</span>
-                    <span class="menu-label">Jenis Tagihan</span>
-                </a>
-                <a href="{{ route('keuangan.buku-kas.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/buku-kas*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/buku-kas*') ? 'text-white' : 'text-blue-400' }}">account_balance</span>
-                    <span class="menu-label">Buku Kas</span>
-                </a>
-                <a href="{{ route('keuangan.jenis-buku-kas.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/jenis-buku-kas*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/jenis-buku-kas*') ? 'text-white' : 'text-blue-400' }}">folder_special</span>
-                    <span class="menu-label">Jenis Buku Kas</span>
-                </a>
+                <!-- 1. Transaksi Kas -->
                 <a href="{{ route('keuangan.transaksi-kas.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/transaksi-kas*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/transaksi-kas*') ? 'text-white' : 'text-blue-400' }}">receipt</span>
                     <span class="menu-label">Transaksi Kas</span>
                 </a>
+                
+                <!-- 2. Pembayaran Santri -->
+                <a href="{{ route('keuangan.pembayaran-santri.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/pembayaran-santri*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/pembayaran-santri*') ? 'text-white' : 'text-blue-400' }}">payments</span>
+                    <span class="menu-label">Pembayaran Santri</span>
+                </a>
+                
+                <!-- 3. Buku Kas -->
+                <a href="{{ route('keuangan.buku-kas.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/buku-kas*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/buku-kas*') ? 'text-white' : 'text-blue-400' }}">account_balance</span>
+                    <span class="menu-label">Buku Kas</span>
+                </a>
+                
+                <!-- 4. Tagihan Santri -->
                 <a href="{{ route('keuangan.tagihan-santri.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/tagihan-santri*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/tagihan-santri*') ? 'text-white' : 'text-blue-400' }}">receipt_long</span>
                     <span class="menu-label">Tagihan Santri</span>
                 </a>
-                <a href="{{ route('keuangan.keringanan-tagihan.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/keringanan-tagihan*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/keringanan-tagihan*') ? 'text-white' : 'text-blue-400' }}">price_check</span>
-                    <span class="menu-label">Keringanan Tagihan</span>
-                </a>
                 
-                <!-- Tunggakan Menu -->
+                <!-- 5. Tunggakan Menu -->
                 <div x-data="{ openTunggakan: {{ request()->is('keuangan/tunggakan*') ? 'true' : 'false' }} }" class="pl-0">
                     <button @click="openTunggakan = !openTunggakan" class="flex items-center space-x-3 w-full px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/tunggakan*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                         <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/tunggakan*') ? 'text-white' : 'text-blue-400' }}">warning</span>
@@ -128,28 +154,34 @@
                     </div>
                 </div>
                 
-                <!-- Dompet Menu -->
-                <div x-data="{ openDompet: {{ request()->is('keuangan/dompet*') ? 'true' : 'false' }} }" class="pl-0">
-                    <button @click="openDompet = !openDompet" class="flex items-center space-x-3 w-full px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/dompet*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                        <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/dompet*') ? 'text-white' : 'text-blue-400' }}">account_balance_wallet</span>
-                        <span class="menu-label flex-1 text-left">Dompet Digital</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform transition-transform duration-200" :class="{ 'rotate-90': openDompet }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <!-- 6. Pengaturan Menu -->
+                <div x-data="{ openPengaturan: {{ request()->is('keuangan/jenis-tagihan*') || request()->is('keuangan/jenis-buku-kas*') || request()->is('keuangan/keringanan-tagihan*') ? 'true' : 'false' }} }" class="pl-0">
+                    <button @click="openPengaturan = !openPengaturan" class="flex items-center space-x-3 w-full px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/jenis-tagihan*') || request()->is('keuangan/jenis-buku-kas*') || request()->is('keuangan/keringanan-tagihan*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                        <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/jenis-tagihan*') || request()->is('keuangan/jenis-buku-kas*') || request()->is('keuangan/keringanan-tagihan*') ? 'text-white' : 'text-blue-400' }}">settings</span>
+                        <span class="menu-label flex-1 text-left">Pengaturan</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform transition-transform duration-200" :class="{ 'rotate-90': openPengaturan }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
                     
-                    <div x-show="openDompet" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" class="pl-10 space-y-1 mt-1">
-                        <a href="{{ route('keuangan.dompet.santri.index') }}" class="flex items-center space-x-2 px-3 py-1.5 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/dompet/santri*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                            <span class="material-icons-outlined text-sm opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/dompet/santri*') ? 'text-white' : 'text-blue-400' }}">person</span>
-                            <span class="menu-label">Dompet Santri</span>
+                    <div x-show="openPengaturan" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" class="pl-10 space-y-1 mt-1">
+                        <a href="{{ route('keuangan.jenis-tagihan.index') }}" class="flex items-center space-x-2 px-3 py-1.5 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/jenis-tagihan*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <span class="material-icons-outlined text-sm opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/jenis-tagihan*') ? 'text-white' : 'text-blue-400' }}">category</span>
+                            <span class="menu-label">Jenis Tagihan</span>
                         </a>
                         
-                        <a href="{{ route('keuangan.dompet.asatidz.index') }}" class="flex items-center space-x-2 px-3 py-1.5 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/dompet/asatidz*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
-                            <span class="material-icons-outlined text-sm opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/dompet/asatidz*') ? 'text-white' : 'text-blue-400' }}">manage_accounts</span>
-                            <span class="menu-label">Dompet Asatidz</span>
+                        <a href="{{ route('keuangan.jenis-buku-kas.index') }}" class="flex items-center space-x-2 px-3 py-1.5 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/jenis-buku-kas*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <span class="material-icons-outlined text-sm opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/jenis-buku-kas*') ? 'text-white' : 'text-blue-400' }}">folder_special</span>
+                            <span class="menu-label">Jenis Buku Kas</span>
+                        </a>
+                        
+                        <a href="{{ route('keuangan.keringanan-tagihan.index') }}" class="flex items-center space-x-2 px-3 py-1.5 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/keringanan-tagihan*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                            <span class="material-icons-outlined text-sm opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/keringanan-tagihan*') ? 'text-white' : 'text-blue-400' }}">price_check</span>
+                            <span class="menu-label">Keringanan Tagihan</span>
                         </a>
                     </div>
                 </div>
+
             </div>
         </div>
 

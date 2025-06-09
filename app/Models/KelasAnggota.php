@@ -15,6 +15,11 @@ class KelasAnggota extends Model
     protected $fillable = [
         'santri_id',
         'kelas_id',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     // Relasi ke Santri

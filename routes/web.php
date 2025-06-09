@@ -179,7 +179,17 @@ Route::middleware(['auth'])->group(function () {
             Route::get('{id}/top-up', [App\Http\Controllers\DompetAsatidzController::class, 'topUpForm'])->name('top-up.form');
             Route::post('{id}/top-up', [App\Http\Controllers\DompetAsatidzController::class, 'topUp'])->name('top-up');
         });
+
+        // Set Limit
+        Route::prefix('set-limit')->name('set-limit.')->group(function () {
+            Route::get('/', [App\Http\Controllers\DompetLimitController::class, 'index'])->name('index');
+            Route::put('{dompet}/update-limit', [App\Http\Controllers\DompetLimitController::class, 'updateLimit'])->name('update-limit');
+            Route::post('{dompetLimit}/toggle-status', [App\Http\Controllers\DompetLimitController::class, 'toggleStatus'])->name('toggle-status');
+            Route::post('bulk-update', [App\Http\Controllers\DompetLimitController::class, 'bulkUpdate'])->name('bulk-update');
+        });
     });
+
+
 
     // Modul Akademik
     Route::prefix('akademik')->name('akademik.')->middleware(['auth'])->group(function () {
