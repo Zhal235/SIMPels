@@ -363,6 +363,9 @@
                             alert('Persentase potongan tidak boleh lebih dari 100%');
                             return false;
                         }
+                    } else if (jenisKeringanan === 'pembebasan' || jenisKeringanan === 'bayar_satu_gratis_satu') {
+                        // Set nilai default 0 untuk jenis keringanan pembebasan biaya atau 2 santri bayar 1
+                        nilaiPotonganField.value = '0';
                     }
                     
                     // Validasi santri tertanggung untuk jenis bayar_satu_gratis_satu

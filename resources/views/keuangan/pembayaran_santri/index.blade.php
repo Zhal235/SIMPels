@@ -266,6 +266,10 @@
                                                                                     <span class="text-gray-600">Tagihan:</span>
                                                                                     <span class="font-medium" x-text="formatRupiah(payment.tagihan)"></span>
                                                                                 </div>
+                                                                                <div class="flex justify-between" x-show="payment.keringanan > 0">
+                                                                                    <span class="text-gray-600">Keringanan:</span>
+                                                                                    <span class="text-blue-600" x-text="formatRupiah(payment.keringanan)"></span>
+                                                                                </div>
                                                                                 <div class="flex justify-between" x-show="payment.dibayar > 0">
                                                                                     <span class="text-gray-600">Dibayar:</span>
                                                                                     <span class="text-green-600" x-text="formatRupiah(payment.dibayar)"></span>
@@ -1068,6 +1072,7 @@ togglePaymentSelection(paymentId) {
                             kategori_tagihan: item.kategori_tagihan || 'Rutin',
                             is_bulanan: item.is_bulanan || false,
                             tagihan: this.formatNumberSafe(item.nominal_tagihan),
+                            keringanan: this.formatNumberSafe(item.nominal_keringanan || 0),
                             dibayar: this.formatNumberSafe(item.nominal_dibayar),
                             sisa: this.formatNumberSafe(item.sisa_tagihan),
                             status: item.status_pembayaran,

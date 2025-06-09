@@ -106,7 +106,7 @@ class KeringananTagihanController extends Controller
         $validator = Validator::make($request->all(), [
             'santri_id' => 'required|exists:santris,id',
             'jenis_keringanan' => 'required|in:potongan_persen,potongan_nominal,pembebasan,bayar_satu_gratis_satu',
-            'nilai_potongan' => 'required_unless:jenis_keringanan,pembebasan,bayar_satu_gratis_satu|numeric|min:0',
+            'nilai_potongan' => 'required_if:jenis_keringanan,potongan_persen,potongan_nominal|numeric|nullable',
             'jenis_tagihan_id' => 'nullable|exists:jenis_tagihans,id',
             'keterangan' => 'nullable|string|max:255',
             'santri_tertanggung_id' => 'required_if:jenis_keringanan,bayar_satu_gratis_satu|nullable|exists:santris,id',

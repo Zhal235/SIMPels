@@ -116,9 +116,7 @@ class PembayaranSantriController extends Controller
                 ->orderBy('jenis_tagihan_id')
                 ->get();
                 
-            \Log::info('Found tagihan count: ' . $tagihanSantri->count());
-            
-            $payments = $tagihanSantri->map(function ($tagihan) {
+            \Log::info('Found tagihan count: ' . $tagihanSantri->count());                $payments = $tagihanSantri->map(function ($tagihan) {
                     return [
                         'id' => $tagihan->id,
                         'jenis_tagihan' => $tagihan->jenisTagihan->nama,
@@ -126,10 +124,12 @@ class PembayaranSantriController extends Controller
                         'bulan' => $tagihan->bulan,
                         'nominal_tagihan' => $tagihan->nominal_tagihan,
                         'nominal_dibayar' => $tagihan->nominal_dibayar,
+                        'nominal_keringanan' => $tagihan->nominal_keringanan,
                         'sisa_tagihan' => $tagihan->sisa_tagihan,
                         // Frontend compatibility fields
                         'tagihan' => (float) $tagihan->nominal_tagihan,
                         'dibayar' => (float) $tagihan->nominal_dibayar,
+                        'keringanan' => (float) $tagihan->nominal_keringanan,
                         'sisa' => (float) $tagihan->sisa_tagihan,
                         'status_pembayaran' => $tagihan->status_pembayaran,
                         'status' => $tagihan->status_pembayaran, // Add status field for frontend compatibility

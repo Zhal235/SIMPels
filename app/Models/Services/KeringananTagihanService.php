@@ -22,13 +22,23 @@ class KeringananTagihanService
         DB::beginTransaction();
         
         try {
+            // Siapkan data untuk keringanan
+            $nilai_potongan = 0;
+            
+            // Set nilai_potongan berdasarkan jenis keringanan
+            if (in_array($data['jenis_keringanan'], ['potongan_persen', 'potongan_nominal'])) {
+                $nilai_potongan = $data['nilai_potongan'] ?? 0;
+            } elseif (in_array($data['jenis_keringanan'], ['pembebasan', 'bayar_satu_gratis_satu'])) {
+                $nilai_potongan = 0; // Nilai 0 untuk pembebasan biaya dan 2 santri bayar 1
+            }
+            
             // Buat data keringanan
             $keringanan = KeringananTagihan::create([
                 'santri_id' => $data['santri_id'],
                 'jenis_tagihan_id' => $data['jenis_tagihan_id'] ?? null,
                 'tahun_ajaran_id' => $data['tahun_ajaran_id'],
                 'jenis_keringanan' => $data['jenis_keringanan'],
-                'nilai_potongan' => $data['nilai_potongan'] ?? 0,
+                'nilai_potongan' => $nilai_potongan,
                 'keterangan' => $data['keterangan'] ?? null,
                 'status' => 'aktif',
                 'santri_tertanggung_id' => $data['santri_tertanggung_id'] ?? null,
