@@ -36,13 +36,13 @@ class Dompet extends Model
     // Relasi ke santri (polymorphic)
     public function santri()
     {
-        return $this->belongsTo(Santri::class, 'pemilik_id')->where('jenis_pemilik', 'santri');
+        return $this->belongsTo(Santri::class, 'pemilik_id');
     }
 
     // Relasi ke user/asatidz (polymorphic)
     public function asatidz()
     {
-        return $this->belongsTo(User::class, 'pemilik_id')->where('jenis_pemilik', 'asatidz');
+        return $this->belongsTo(User::class, 'pemilik_id');
     }
 
     // Relasi ke transaksi dompet

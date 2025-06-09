@@ -156,14 +156,10 @@ Route::middleware(['auth'])->group(function () {
         // Dompet Santri
         Route::prefix('santri')->name('santri.')->group(function () {
             Route::get('/', [App\Http\Controllers\DompetSantriController::class, 'index'])->name('index');
-            Route::get('create', [App\Http\Controllers\DompetSantriController::class, 'create'])->name('create');
-            Route::post('/', [App\Http\Controllers\DompetSantriController::class, 'store'])->name('store');
             Route::get('{id}', [App\Http\Controllers\DompetSantriController::class, 'show'])->name('show');
             Route::get('{id}/edit', [App\Http\Controllers\DompetSantriController::class, 'edit'])->name('edit');
             Route::put('{id}', [App\Http\Controllers\DompetSantriController::class, 'update'])->name('update');
             Route::delete('{id}', [App\Http\Controllers\DompetSantriController::class, 'destroy'])->name('destroy');
-            Route::get('{id}/top-up', [App\Http\Controllers\DompetSantriController::class, 'topUpForm'])->name('top-up.form');
-            Route::post('{id}/top-up', [App\Http\Controllers\DompetSantriController::class, 'topUp'])->name('top-up');
             
             // API routes for AJAX calls
             Route::post('topup', [App\Http\Controllers\DompetSantriController::class, 'topup'])->name('topup');

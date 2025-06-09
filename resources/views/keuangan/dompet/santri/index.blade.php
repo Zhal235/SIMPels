@@ -1,6 +1,30 @@
 @extends('layouts.admin')
 
 @section('content')
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<style>
+    [x-cloak] { display: none !important; }
+    
+    /* Animasi modal */
+    .modal-transition-enter {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    .modal-transition-enter-active {
+        opacity: 1;
+        transform: scale(1);
+        transition: all 300ms ease-out;
+    }
+    .modal-transition-exit {
+        opacity: 1;
+        transform: scale(1);
+    }
+    .modal-transition-exit-active {
+        opacity: 0;
+        transform: scale(0.95);
+        transition: all 200ms ease-in;
+    }
+</style>
 <script>
     window.dompetSantriDataUrl = "{{ route('keuangan.dompet.santri.index') }}";
     window.dompetTopupUrl = "{{ route('keuangan.dompet.santri.topup') }}";
@@ -160,9 +184,8 @@
                             </div>
                         </div>                        <!-- Dompet Information -->
                         <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
-                            <!-- Show if santri has dompet -->
-                            <div x-show="selectedSantri?.dompet" class="divide-y divide-gray-200">
-                                <div class="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <!-- All santri have dompet now -->
+                            <div class="divide-y divide-gray-200"><div class="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                     <div>
                                         <h3 class="text-lg font-medium text-gray-900 flex items-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
@@ -173,17 +196,19 @@
                                         <p class="text-sm text-gray-500 mt-1">Kelola saldo dan transaksi dompet santri</p>
                                     </div>
                                     <div class="flex items-center space-x-2">
-                                        <button @click="openTopupModal()" 
+                                        <button @click="showTopupForm = !showTopupForm; showWithdrawForm = false" 
                                                 x-show="walletStatus === 'active'"
-                                                class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center gap-2">
+                                                class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center gap-2 active:bg-green-800 active:shadow-inner"
+                                                :class="showTopupForm ? 'ring-2 ring-green-500 ring-offset-2' : ''">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                                 <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                                             </svg>
                                             Top Up
                                         </button>
-                                        <button @click="openWithdrawModal()" 
+                                        <button @click="showWithdrawForm = !showWithdrawForm; showTopupForm = false" 
                                                 x-show="walletStatus === 'active'"
-                                                class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center gap-2">
+                                                class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center gap-2 active:bg-red-800 active:shadow-inner"
+                                                :class="showWithdrawForm ? 'ring-2 ring-red-500 ring-offset-2' : ''">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                                 <path fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
                                             </svg>
@@ -200,9 +225,8 @@
                                             <span x-text="walletStatus === 'active' ? 'Nonaktifkan' : 'Aktifkan'"></span>
                                         </button>
                                     </div>
-                                </div>                                </div>
-                                <div class="p-6">
-                                    <!-- Dompet Balance Card -->
+                                </div></div>
+                                <div class="p-6">                                    <!-- Dompet Balance Card -->
                                     <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 border border-green-100 mb-6">
                                         <div class="flex items-center justify-between">
                                             <div>
@@ -222,215 +246,223 @@
                                             </div>
                                         </div>
                                     </div>
+                                      <!-- Top Up Form -->
+                                    <div x-show="showTopupForm" 
+                                         x-transition:enter="transition ease-out duration-300"
+                                         x-transition:enter-start="opacity-0 transform scale-95"
+                                         x-transition:enter-end="opacity-100 transform scale-100"
+                                         x-transition:leave="transition ease-in duration-200"
+                                         x-transition:leave-start="opacity-100 transform scale-100"
+                                         x-transition:leave-end="opacity-0 transform scale-95"
+                                         class="bg-white border-2 border-green-200 rounded-lg p-4 mb-6">
+                                         
+                                        <div class="flex items-center justify-between mb-4">
+                                            <div class="flex items-center space-x-3">
+                                                <div class="flex-shrink-0 bg-green-100 rounded-full p-2">
+                                                    <svg class="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v12m8-8H4" />
+                                                    </svg>
+                                                </div>
+                                                <h3 class="text-lg font-medium text-gray-900">Top Up Dompet</h3>
+                                            </div>
+                                            <button @click="showTopupForm = false" class="text-gray-400 hover:text-gray-600">
+                                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Jumlah Top Up</label>
+                                                <input type="number" 
+                                                    x-model="topupAmount"
+                                                    @input="topupAmount = Math.max(0, topupAmount)"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                                    placeholder="Masukkan jumlah"
+                                                    min="0">
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Keterangan (Opsional)</label>
+                                                <input type="text" 
+                                                    x-model="topupKeterangan" 
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                                    placeholder="Keterangan...">
+                                            </div>
+                                            
+                                            <div>
+                                                <button @click="processTopup()" 
+                                                    :disabled="!topupAmount || topupAmount <= 0"
+                                                    class="w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                    <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v12m8-8H4" />
+                                                    </svg>
+                                                    Proses Top Up
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div x-show="topupAmount > 0" class="mt-3 p-3 bg-gray-50 rounded-md">
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-sm font-medium text-gray-700">Saldo Setelah Top Up:</span>
+                                                <span class="text-lg font-bold text-green-600" x-text="formatRupiah(walletBalance + (parseFloat(topupAmount) || 0))"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                      <!-- Withdraw Form -->
+                                    <div x-show="showWithdrawForm" 
+                                         x-transition:enter="transition ease-out duration-300"
+                                         x-transition:enter-start="opacity-0 transform scale-95"
+                                         x-transition:enter-end="opacity-100 transform scale-100"
+                                         x-transition:leave="transition ease-in duration-200"
+                                         x-transition:leave-start="opacity-100 transform scale-100"
+                                         x-transition:leave-end="opacity-0 transform scale-95"
+                                         class="bg-white border-2 border-red-200 rounded-lg p-4 mb-6">
+                                         
+                                        <div class="flex items-center justify-between mb-4">
+                                            <div class="flex items-center space-x-3">
+                                                <div class="flex-shrink-0 bg-red-100 rounded-full p-2">
+                                                    <svg class="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                                    </svg>
+                                                </div>
+                                                <h3 class="text-lg font-medium text-gray-900">Tarik Saldo Dompet</h3>
+                                            </div>
+                                            <button @click="showWithdrawForm = false" class="text-gray-400 hover:text-gray-600">
+                                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Jumlah Penarikan</label>
+                                                <input type="number" 
+                                                    x-model="withdrawAmount"
+                                                    @input="withdrawAmount = Math.max(0, Math.min(walletBalance, withdrawAmount))"
+                                                    :max="walletBalance"
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                                    placeholder="Masukkan jumlah"
+                                                    min="0">
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">Keterangan (Opsional)</label>
+                                                <input type="text" 
+                                                    x-model="withdrawKeterangan" 
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                                                    placeholder="Keterangan...">
+                                            </div>
+                                            
+                                            <div>
+                                                <button @click="processWithdraw()" 
+                                                    :disabled="!withdrawAmount || withdrawAmount <= 0 || withdrawAmount > walletBalance"
+                                                    class="w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                                                    <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                                    </svg>
+                                                    Proses Penarikan
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div x-show="withdrawAmount > 0" class="mt-3 p-3 bg-gray-50 rounded-md">
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-sm font-medium text-gray-700">Saldo Setelah Penarikan:</span>
+                                                <span class="text-lg font-bold text-red-600" x-text="formatRupiah(Math.max(0, walletBalance - (parseFloat(withdrawAmount) || 0)))"></span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div x-show="withdrawAmount > walletBalance" class="mt-3 p-3 bg-red-50 rounded-md">
+                                            <div class="flex items-center text-red-800">
+                                                <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                                </svg>
+                                                <span class="text-sm">Jumlah penarikan melebihi saldo yang tersedia</span>
+                                            </div>
+                                        </div>
+                                    </div>
 
                                     <!-- Transaction History -->
-                                    <div class="mb-6">
-                                        <h4 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                                    <div class="mb-6">                                        <h4 class="text-lg font-medium text-gray-900 mb-4 flex items-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
                                                 <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
                                             </svg>
                                             Riwayat Transaksi
                                         </h4>
-                                        
-                                        <div class="space-y-3">
-                                            <template x-for="transaction in transactions" :key="transaction.id">
-                                                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                                                    <div class="flex items-center justify-between">
-                                                        <div class="flex items-center space-x-3">
-                                                            <div class="flex-shrink-0">
-                                                                <div class="w-10 h-10 rounded-full flex items-center justify-center"
-                                                                     :class="transaction.type === 'credit' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                                        <path x-show="transaction.type === 'credit'" fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                                                                        <path x-show="transaction.type === 'debit'" fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
-                                                                    </svg>
+                                          <!-- Table format for more compact display -->
+                                        <div x-show="transactions.length > 0" class="overflow-x-auto shadow ring-1 ring-black ring-opacity-5 rounded-lg">
+                                            <table class="min-w-full bg-white">
+                                                <thead class="bg-gray-50">
+                                                    <tr>
+                                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
+                                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Keterangan</th>
+                                                        <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah</th>
+                                                        <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Saldo</th>
+                                                        <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                                        <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Oleh</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="bg-white divide-y divide-gray-200">
+                                                    <template x-for="transaction in transactions" :key="transaction.id">
+                                                        <tr class="hover:bg-gray-50 transition-colors">
+                                                            <td class="px-3 py-3 whitespace-nowrap">
+                                                                <div class="flex items-center">
+                                                                    <div class="w-6 h-6 rounded-full flex items-center justify-center mr-2"
+                                                                         :class="transaction.type === 'credit' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'">
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                                                            <path x-show="transaction.type === 'credit'" fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                                                                            <path x-show="transaction.type === 'debit'" fill-rule="evenodd" d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
+                                                                        </svg>
+                                                                    </div>
+                                                                    <span class="text-xs font-medium"
+                                                                          :class="transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'"
+                                                                          x-text="transaction.type === 'credit' ? 'Masuk' : 'Keluar'">
+                                                                    </span>
                                                                 </div>
-                                                            </div>
-                                                            <div>
-                                                                <div class="font-medium text-gray-900" x-text="transaction.description"></div>
-                                                                <div class="text-sm text-gray-500" x-text="formatDate(transaction.date)"></div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="text-right">
-                                                            <div class="font-medium" 
-                                                                 :class="transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'"
-                                                                 x-text="(transaction.type === 'credit' ? '+' : '-') + formatRupiah(transaction.amount)">
-                                                            </div>
-                                                            <div class="text-xs text-gray-500">Saldo: <span x-text="formatRupiah(transaction.balance)"></span></div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </template>
-                                            
-                                            <!-- Empty state -->
-                                            <div x-show="transactions.length === 0" class="text-center py-8">
+                                                            </td>
+                                                            <td class="px-3 py-3">
+                                                                <div class="text-sm text-gray-900 font-medium" x-text="transaction.description"></div>
+                                                                <div class="text-xs text-gray-500" x-text="transaction.kode_transaksi"></div>
+                                                            </td>
+                                                            <td class="px-3 py-3 whitespace-nowrap text-right">
+                                                                <span class="text-sm font-semibold" 
+                                                                     :class="transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'"
+                                                                     x-text="(transaction.type === 'credit' ? '+' : '-') + formatRupiah(transaction.amount)">
+                                                                </span>
+                                                            </td>
+                                                            <td class="px-3 py-3 whitespace-nowrap text-right">
+                                                                <span class="text-sm font-medium text-gray-900" x-text="formatRupiah(transaction.balance)"></span>
+                                                            </td>
+                                                            <td class="px-3 py-3 whitespace-nowrap text-center">
+                                                                <div class="text-xs text-gray-900" x-text="transaction.created_at"></div>
+                                                            </td>
+                                                            <td class="px-3 py-3 whitespace-nowrap text-center">
+                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800" x-text="transaction.created_by || 'System'"></span>
+                                                            </td>
+                                                        </tr>
+                                                    </template>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        
+                                        <!-- Empty state -->
+                                        <div x-show="transactions.length === 0" class="text-center py-8">
                                                 <div class="text-gray-400 mb-2">
                                                     <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                                     </svg>
                                                 </div>
                                                 <h3 class="text-lg font-medium text-gray-900 mb-1">Belum Ada Transaksi</h3>
-                                                <p class="text-gray-500">Transaksi dompet akan muncul di sini</p>
-                                            </div>
+                                                <p class="text-gray-500">Transaksi dompet akan muncul di sini</p>                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Show if santri doesn't have dompet -->
-                            <div x-show="!selectedSantri?.dompet" class="p-6">
-                                <div class="text-center py-16">
-                                    <div class="text-gray-400 mb-4">
-                                        <svg class="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 0h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v2M7 7h10" />
-                                        </svg>
-                                    </div>
-                                    <h3 class="text-xl font-medium text-gray-900 mb-2">Belum Memiliki Dompet Digital</h3>
-                                    <p class="text-gray-500 mb-6">Santri ini belum memiliki dompet digital. Silakan buat dompet terlebih dahulu.</p>
-                                    <a :href="'{{ route('keuangan.dompet.santri.create') }}?santri_id=' + selectedSantri?.id" 
-                                       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                                        </svg>
-                                        Buat Dompet Digital
-                                    </a>
-                                </div>
-                            </div>                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Top Up Modal -->
-    <div x-show="showTopupModal" 
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 overflow-y-auto" 
-         style="display: none;">
-        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showTopupModal = false"></div>
-            
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10">
-                            <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v12m8-8H4" />
-                            </svg>
-                        </div>
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                                Top Up Dompet
-                            </h3>
-                            
-                            <div class="mb-4">
-                                <div class="bg-green-50 p-3 rounded-md mb-4">
-                                    <p class="text-sm text-green-800">Saldo Saat Ini: <span class="font-bold" x-text="formatRupiah(walletBalance)"></span></p>
-                                </div>
-                                
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Jumlah Top Up</label>
-                                <input type="number" 
-                                       x-model="topupAmount"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                       placeholder="Masukkan jumlah top up">
-                                       
-                                <div x-show="topupAmount > 0" class="mt-3 p-3 bg-gray-50 rounded-md">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm font-medium text-gray-700">Saldo Setelah Top Up:</span>
-                                        <span class="text-lg font-bold text-green-600" x-text="formatRupiah(walletBalance + (topupAmount || 0))"></span>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button @click="processTopup()" 
-                            :disabled="!topupAmount || topupAmount <= 0"
-                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                        Proses Top Up
-                    </button>
-                    <button @click="showTopupModal = false; topupAmount = 0;" 
-                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                        Batal
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Withdraw Modal -->
-    <div x-show="showWithdrawModal" 
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 overflow-y-auto" 
-         style="display: none;">
-        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showWithdrawModal = false"></div>
-            
-            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                            <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
-                            </svg>
-                        </div>
-                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                                Tarik Saldo Dompet
-                            </h3>
-                            
-                            <div class="mb-4">
-                                <div class="bg-red-50 p-3 rounded-md mb-4">
-                                    <p class="text-sm text-red-800">Saldo Tersedia: <span class="font-bold" x-text="formatRupiah(walletBalance)"></span></p>
-                                </div>
-                                
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Jumlah Penarikan</label>
-                                <input type="number" 
-                                       x-model="withdrawAmount"
-                                       :max="walletBalance"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                                       placeholder="Masukkan jumlah penarikan">
-                                       
-                                <div x-show="withdrawAmount > 0" class="mt-3 p-3 bg-gray-50 rounded-md">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm font-medium text-gray-700">Saldo Setelah Penarikan:</span>
-                                        <span class="text-lg font-bold text-red-600" x-text="formatRupiah(Math.max(0, walletBalance - (withdrawAmount || 0)))"></span>
-                                    </div>
-                                </div>
-                                
-                                <div x-show="withdrawAmount > walletBalance" class="mt-3 p-3 bg-red-50 rounded-md">
-                                    <div class="flex items-center text-red-800">
-                                        <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                        </svg>
-                                        <span class="text-sm">Jumlah penarikan melebihi saldo yang tersedia</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button @click="processWithdraw()" 
-                            :disabled="!withdrawAmount || withdrawAmount <= 0 || withdrawAmount > walletBalance"
-                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                        Proses Penarikan
-                    </button>
-                    <button @click="showWithdrawModal = false; withdrawAmount = 0;" 
-                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                        Batal
-                    </button>
                 </div>
             </div>
         </div>
@@ -447,16 +479,13 @@ function dompetSantri() {
         walletNumber: '',
         walletStatus: 'active',
         transactionLimit: 500000,
-        transactions: [],
-        showTopupModal: false,
-        showWithdrawModal: false,
+        transactions: [],        showTopupForm: false,
+        showWithdrawForm: false,
         topupAmount: 0,
         withdrawAmount: 0,
-
-        init() {
-            console.log('Dompet Santri initialized');
-            console.log('Santri list:', this.santriList);
-            console.log('Total santri:', this.santriList.length);
+        topupKeterangan: '',
+        withdrawKeterangan: '',        init() {
+            // Component initialized
         },
 
         formatRupiah(number) {
@@ -498,17 +527,21 @@ function dompetSantri() {
                 );
             }
             return filtered;
-        },
-
-        selectSantri(santri) {
+        },        selectSantri(santri) {
             this.selectedSantri = santri;
             this.loadWalletData(santri.id);
+            // Reset form state
+            this.showTopupForm = false;
+            this.showWithdrawForm = false;
+            this.topupAmount = 0;
+            this.withdrawAmount = 0;
+            this.topupKeterangan = '';
+            this.withdrawKeterangan = '';
         },        async loadWalletData(santriId) {
             try {
                 // If the santri has a dompet, load it from the santri data
                 if (this.selectedSantri.dompet) {
-                    this.walletBalance = this.selectedSantri.dompet.saldo;
-                    this.walletNumber = this.selectedSantri.dompet.nomor_dompet;
+                    this.walletBalance = this.selectedSantri.dompet.saldo;                    this.walletNumber = this.selectedSantri.dompet.nomor_dompet;
                     this.walletStatus = this.selectedSantri.dompet.is_active ? 'active' : 'inactive';
                     this.transactionLimit = this.selectedSantri.dompet.limit_transaksi;
                     
@@ -525,15 +558,18 @@ function dompetSantri() {
             } catch (error) {
                 console.error('Error loading wallet data:', error);
                 this.transactions = [];
-            }
-        },
+            }        },
 
         async loadTransactionHistory(dompetId) {
             try {
-                const response = await fetch(`${window.dompetSantriDataUrl}?dompet_id=${dompetId}`, {
+                const url = `${window.dompetSantriDataUrl}?dompet_id=${dompetId}&_=${Date.now()}`;
+                
+                const response = await fetch(url, {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
                     }
                 });
                 
@@ -544,26 +580,25 @@ function dompetSantri() {
                     this.transactions = [];
                 }
             } catch (error) {
-                console.error('Error loading transaction history:', error);
                 this.transactions = [];
+            }        },
+
+        async processTopup() {
+            if (!this.selectedSantri) {
+                alert('Pilih santri terlebih dahulu');
+                return;
             }
-        },
 
-        openTopupModal() {
-            this.showTopupModal = true;
-            this.topupAmount = 0;
-        },
-
-        openWithdrawModal() {
-            this.showWithdrawModal = true;
-            this.withdrawAmount = 0;
-        },        async processTopup() {
-            if (!this.selectedSantri || !this.selectedSantri.dompet) {
-                alert('Santri belum memiliki dompet digital');
+            if (!this.topupAmount || parseFloat(this.topupAmount) <= 0) {
+                alert('Masukkan jumlah top up yang valid');
                 return;
             }
 
             try {
+                // Generate kode transaksi: TP-{timestamp}-{santri_id}
+                const timestamp = new Date().getTime();
+                const kodeTransaksi = `TP-${timestamp}-${this.selectedSantri.id}`;
+                
                 const response = await fetch(window.dompetTopupUrl, {
                     method: 'POST',
                     headers: {
@@ -572,55 +607,75 @@ function dompetSantri() {
                         'Accept': 'application/json'
                     },
                     body: JSON.stringify({
-                        dompet_id: this.selectedSantri.dompet.id,
-                        jumlah: parseFloat(this.topupAmount),
-                        keterangan: 'Top up saldo dompet'
+                        dompet_id: this.selectedSantri.dompet.id,                        jumlah: parseFloat(this.topupAmount),
+                        keterangan: this.topupKeterangan || 'Top up saldo dompet',
+                        kode_transaksi: kodeTransaksi
                     })
                 });
-
+                
                 const data = await response.json();
-
+                
                 if (data.success) {
                     // Update balance
                     this.walletBalance = data.saldo_baru;
                     this.selectedSantri.dompet.saldo = data.saldo_baru;
                     
+                    // Add small delay to ensure database transaction is committed
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
                     // Reload transaction history
                     await this.loadTransactionHistory(this.selectedSantri.dompet.id);
 
-                    // Close modal and reset
-                    this.showTopupModal = false;
+                    // Reset and hide form
+                    this.showTopupForm = false;
                     this.topupAmount = 0;
+                    this.topupKeterangan = '';
                     
                     alert('Top up berhasil!');
                 } else {
-                    alert('Gagal memproses top up: ' + data.message);
+                    console.error('Top up error details:', data);
+                    alert('Gagal memproses top up: ' + (data.message || 'Terjadi kesalahan'));
                 }
             } catch (error) {
                 console.error('Error processing top up:', error);
-                alert('Gagal memproses top up');
+                alert('Gagal memproses top up: ' + error.message);
+            }        },
+
+        async processWithdraw() {
+            if (!this.selectedSantri) {
+                alert('Pilih santri terlebih dahulu');
+                return;
             }
-        },        async processWithdraw() {
-            if (!this.selectedSantri || !this.selectedSantri.dompet) {
-                alert('Santri belum memiliki dompet digital');
+
+            if (!this.withdrawAmount || parseFloat(this.withdrawAmount) <= 0) {
+                alert('Masukkan jumlah penarikan yang valid');
+                return;
+            }
+
+            if (parseFloat(this.withdrawAmount) > this.walletBalance) {
+                alert('Jumlah penarikan melebihi saldo dompet');
                 return;
             }
 
             try {
+                // Generate kode transaksi: WD-{timestamp}-{santri_id}
+                const timestamp = new Date().getTime();
+                const kodeTransaksi = `WD-${timestamp}-${this.selectedSantri.id}`;
+                
                 const response = await fetch(window.dompetWithdrawUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                         'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
+                    },                    body: JSON.stringify({
                         dompet_id: this.selectedSantri.dompet.id,
                         jumlah: parseFloat(this.withdrawAmount),
-                        keterangan: 'Penarikan saldo dompet'
+                        keterangan: this.withdrawKeterangan || 'Penarikan saldo dompet',
+                        kode_transaksi: kodeTransaksi
                     })
                 });
-
+                
                 const data = await response.json();
 
                 if (data.success) {
@@ -631,22 +686,23 @@ function dompetSantri() {
                     // Reload transaction history
                     await this.loadTransactionHistory(this.selectedSantri.dompet.id);
 
-                    // Close modal and reset
-                    this.showWithdrawModal = false;
+                    // Reset and hide form
+                    this.showWithdrawForm = false;
                     this.withdrawAmount = 0;
+                    this.withdrawKeterangan = '';
                     
                     alert('Penarikan berhasil!');
                 } else {
-                    alert('Gagal memproses penarikan: ' + data.message);
+                    console.error('Withdraw error details:', data);
+                    alert('Gagal memproses penarikan: ' + (data.message || 'Terjadi kesalahan'));
                 }
             } catch (error) {
                 console.error('Error processing withdraw:', error);
-                alert('Gagal memproses penarikan');
-            }        },
-
-        async toggleWalletStatus() {
-            if (!this.selectedSantri || !this.selectedSantri.dompet) {
-                alert('Santri belum memiliki dompet digital');
+                alert('Gagal memproses penarikan: ' + error.message);
+            }
+        },        async toggleWalletStatus() {
+            if (!this.selectedSantri) {
+                alert('Pilih santri terlebih dahulu');
                 return;
             }
 

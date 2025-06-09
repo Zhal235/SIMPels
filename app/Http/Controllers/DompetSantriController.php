@@ -50,41 +50,50 @@ class DompetSantriController extends Controller
                 ];
             });
 
-        // Handle AJAX request for santri data
-        if ($request->ajax()) {
-            return response()->json([
-                'santri' => $santriList
-            ]);
-        }
-
         // Handle AJAX request for transaction history by dompet_id
         if ($request->has('dompet_id')) {
-            $dompet = Dompet::with('santri')->find($request->dompet_id);
+            $dompetId = $request->dompet_id;
+            $dompet = Dompet::with('santri')->find($dompetId);
             
             if (!$dompet) {
                 return response()->json(['error' => 'Dompet tidak ditemukan'], 404);
             }
 
             // Get transaksi history
-            $transaksi = TransaksiDompet::where('dompet_id', $dompet->id)
+            $transaksiQuery = TransaksiDompet::with('creator')
+                ->where('dompet_id', $dompetId)
                 ->orderBy('created_at', 'desc')
-                ->limit(20)
-                ->get()
+                ->limit(20);
+            
+            $transaksi = $transaksiQuery->get()
                 ->map(function ($t) {
+                    $amount = floatval($t->jumlah ?? 0);
+                    $balance = floatval($t->saldo_sesudah ?? 0);
+                    
                     return [
                         'id' => $t->id,
-                        'type' => $t->jenis_transaksi === 'masuk' ? 'credit' : 'debit',
-                        'description' => $t->keterangan,
-                        'amount' => $t->jumlah,
-                        'balance' => $t->saldo_sesudah,
-                        'date' => $t->created_at->format('Y-m-d'),
-                        'time' => $t->created_at->format('H:i'),
-                        'created_at' => $t->created_at->format('d/m/Y H:i'),
+                        'type' => in_array($t->jenis_transaksi, ['top_up', 'transfer_masuk']) ? 'credit' : 'debit',
+                        'description' => $t->keterangan ?? 'Transaksi',
+                        'amount' => $amount,
+                        'balance' => $balance,
+                        'date' => $t->created_at ? $t->created_at->format('Y-m-d') : date('Y-m-d'),
+                        'time' => $t->created_at ? $t->created_at->format('H:i') : date('H:i'),
+                        'created_at' => $t->created_at ? $t->created_at->format('d/m/Y H:i') : date('d/m/Y H:i'),
+                        'jenis_transaksi' => $t->jenis_transaksi,
+                        'kode_transaksi' => $t->kode_transaksi ?? '',
+                        'created_by' => $t->creator ? $t->creator->name : 'System',
                     ];
                 });
 
             return response()->json([
                 'transaksi' => $transaksi
+            ]);
+        }
+
+        // Handle AJAX request for santri data
+        if ($request->ajax()) {
+            return response()->json([
+                'santri' => $santriList
             ]);
         }
 
@@ -142,10 +151,10 @@ class DompetSantriController extends Controller
                 'transaksi' => $transaksi,
                 'statistik' => [
                     'total_masuk' => TransaksiDompet::where('dompet_id', $santri->dompet->id)
-                        ->where('jenis_transaksi', 'masuk')
+                        ->whereIn('jenis_transaksi', ['top_up', 'transfer_masuk'])
                         ->sum('jumlah'),
                     'total_keluar' => TransaksiDompet::where('dompet_id', $santri->dompet->id)
-                        ->where('jenis_transaksi', 'keluar')
+                        ->whereIn('jenis_transaksi', ['pembelian', 'transfer_keluar', 'penarikan'])
                         ->sum('jumlah'),
                     'transaksi_bulan_ini' => TransaksiDompet::where('dompet_id', $santri->dompet->id)
                         ->whereMonth('created_at', now()->month)
@@ -328,7 +337,9 @@ class DompetSantriController extends Controller
 
         DB::beginTransaction();
         try {
-            $dompet = Dompet::findOrFail($request->dompet_id);
+            $dompet = Dompet::with('santri')
+                ->where('jenis_pemilik', 'santri')
+                ->findOrFail($request->dompet_id);
             $saldoSebelum = $dompet->saldo;
             $jumlah = $request->jumlah;
             
@@ -336,16 +347,71 @@ class DompetSantriController extends Controller
             $dompet->saldo += $jumlah;
             $dompet->save();
 
+            // Cari buku kas dompet santri
+            $bukuKasDompet = BukuKas::where('nama_kas', 'LIKE', '%Dompet Santri%')->first();
+            $transaksiKasId = null;
+            
+            if ($bukuKasDompet) {
+                // Get nama santri dengan query langsung jika relasi gagal
+                $namaSantri = 'Santri Tidak Diketahui';
+                
+                if ($dompet->santri) {
+                    $namaSantri = $dompet->santri->nama_santri;
+                } else {
+                    // Fallback: ambil langsung dari database
+                    $santri = Santri::find($dompet->pemilik_id);
+                    if ($santri) {
+                        $namaSantri = $santri->nama_santri;
+                    } else {
+                        // Check if there's a santri with matching dompet
+                        $santriWithDompet = \DB::table('dompet')
+                            ->join('santris', 'dompet.pemilik_id', '=', 'santris.id')
+                            ->where('dompet.id', $dompet->id)
+                            ->select('santris.nama_santri')
+                            ->first();
+                        
+                        if ($santriWithDompet) {
+                            $namaSantri = $santriWithDompet->nama_santri;
+                        }
+                    }
+                }
+                
+                // Buat transaksi kas dengan pola yang sama seperti pembayaran santri
+                $transaksiKas = TransaksiKas::create([
+                    'buku_kas_id' => $bukuKasDompet->id,
+                    'jenis_transaksi' => 'pemasukan',
+                    'kategori' => 'Top Up Dompet Santri',
+                    'kode_transaksi' => TransaksiKas::generateKodeTransaksi('pemasukan'),
+                    'jumlah' => $jumlah,
+                    'keterangan' => 'Top up dompet santri' . ($request->keterangan ? ' - ' . $request->keterangan : ''),
+                    'nama_pemohon' => $namaSantri,
+                    'metode_pembayaran' => 'Tunai',
+                    'tanggal_transaksi' => now(),
+                    'created_by' => Auth::id(),
+                    'status' => 'approved'
+                ]);
+
+                // Update saldo buku kas
+                $bukuKasDompet->saldo_saat_ini += $jumlah;
+                $bukuKasDompet->save();
+                
+                $transaksiKasId = $transaksiKas->id;
+            }
+
             // Catat transaksi
-            TransaksiDompet::create([
+            $transaksiDompet = TransaksiDompet::create([
                 'dompet_id' => $dompet->id,
-                'jenis_transaksi' => 'masuk',
+                'kode_transaksi' => $request->kode_transaksi ?? TransaksiDompet::generateKodeTransaksi('top_up'),
+                'jenis_transaksi' => 'top_up',
+                'kategori' => 'Top Up',
                 'jumlah' => $jumlah,
                 'saldo_sebelum' => $saldoSebelum,
                 'saldo_sesudah' => $dompet->saldo,
                 'keterangan' => $request->keterangan ?? 'Top-up saldo dompet',
+                'transaksi_kas_id' => $transaksiKasId,
                 'tanggal_transaksi' => now(),
-                'user_id' => auth()->id(),
+                'created_by' => auth()->id(),
+                'status' => 'approved',
             ]);
 
             DB::commit();
@@ -378,7 +444,9 @@ class DompetSantriController extends Controller
 
         DB::beginTransaction();
         try {
-            $dompet = Dompet::findOrFail($request->dompet_id);
+            $dompet = Dompet::with('santri')
+                ->where('jenis_pemilik', 'santri')
+                ->findOrFail($request->dompet_id);
             $saldoSebelum = $dompet->saldo;
             $jumlah = $request->jumlah;
             
@@ -394,16 +462,59 @@ class DompetSantriController extends Controller
             $dompet->saldo -= $jumlah;
             $dompet->save();
 
+            // Cari buku kas dompet santri
+            $bukuKasDompet = BukuKas::where('nama_kas', 'LIKE', '%Dompet Santri%')->first();
+            $transaksiKasId = null;
+            
+            if ($bukuKasDompet) {
+                // Get nama santri dengan query langsung jika relasi gagal
+                $namaSantri = 'Santri Tidak Diketahui';
+                if ($dompet->santri) {
+                    $namaSantri = $dompet->santri->nama_santri;
+                } else {
+                    // Fallback: ambil langsung dari database
+                    $santri = Santri::find($dompet->pemilik_id);
+                    if ($santri) {
+                        $namaSantri = $santri->nama_santri;
+                    }
+                }
+                
+                // Buat transaksi kas (pengeluaran dari buku kas dompet)
+                $transaksiKas = TransaksiKas::create([
+                    'buku_kas_id' => $bukuKasDompet->id,
+                    'jenis_transaksi' => 'pengeluaran',
+                    'kategori' => 'Penarikan Dompet Santri',
+                    'kode_transaksi' => TransaksiKas::generateKodeTransaksi('pengeluaran'),
+                    'jumlah' => $jumlah,
+                    'keterangan' => 'Penarikan dompet santri' . ($request->keterangan ? ' - ' . $request->keterangan : ''),
+                    'nama_pemohon' => $namaSantri,
+                    'metode_pembayaran' => 'Tunai',
+                    'tanggal_transaksi' => now(),
+                    'created_by' => Auth::id(),
+                    'status' => 'approved'
+                ]);
+
+                // Update saldo buku kas
+                $bukuKasDompet->saldo_saat_ini -= $jumlah;
+                $bukuKasDompet->save();
+                
+                $transaksiKasId = $transaksiKas->id;
+            }
+
             // Catat transaksi
             TransaksiDompet::create([
                 'dompet_id' => $dompet->id,
-                'jenis_transaksi' => 'keluar',
+                'kode_transaksi' => $request->kode_transaksi ?? TransaksiDompet::generateKodeTransaksi('penarikan'),
+                'jenis_transaksi' => 'penarikan',
+                'kategori' => 'Penarikan',
                 'jumlah' => $jumlah,
                 'saldo_sebelum' => $saldoSebelum,
                 'saldo_sesudah' => $dompet->saldo,
                 'keterangan' => $request->keterangan ?? 'Penarikan saldo dompet',
+                'transaksi_kas_id' => $transaksiKasId,
                 'tanggal_transaksi' => now(),
-                'user_id' => auth()->id(),
+                'created_by' => auth()->id(),
+                'status' => 'approved',
             ]);
 
             DB::commit();
