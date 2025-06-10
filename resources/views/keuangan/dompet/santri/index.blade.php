@@ -44,14 +44,6 @@
             </h1>
             <p class="text-sm text-gray-500 mt-1">Kelola dompet digital dan transaksi santri pesantren.</p>
         </div>
-        <div class="flex items-center gap-2 w-full sm:w-auto">
-            <button @click="exportData()" 
-                    class="inline-flex items-center px-4 py-2 bg-gray-500 text-white text-sm font-medium rounded-md opacity-50 cursor-not-allowed"
-                    disabled>
-                <span class="material-icons-outlined mr-2">file_download</span>
-                Export (Belum Tersedia)
-            </button>
-        </div>
     </div>    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <!-- Sidebar - Daftar Santri (Right Side) -->
         <div class="lg:col-span-1 lg:order-2">
@@ -484,7 +476,9 @@ function dompetSantri() {
         topupAmount: 0,
         withdrawAmount: 0,
         topupKeterangan: '',
-        withdrawKeterangan: '',        init() {
+        withdrawKeterangan: '',
+
+        init() {
             // Component initialized
         },
 
@@ -527,7 +521,9 @@ function dompetSantri() {
                 );
             }
             return filtered;
-        },        selectSantri(santri) {
+        },
+
+        selectSantri(santri) {
             this.selectedSantri = santri;
             this.loadWalletData(santri.id);
             // Reset form state
@@ -736,10 +732,6 @@ function dompetSantri() {
                 console.error('Error toggling wallet status:', error);
                 alert('Gagal mengubah status dompet');
             }
-        },
-
-        exportData() {
-            alert('Fitur export belum tersedia');
         }
     }
 }

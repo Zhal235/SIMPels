@@ -165,6 +165,7 @@ Route::middleware(['auth'])->group(function () {
             Route::post('topup', [App\Http\Controllers\DompetSantriController::class, 'topup'])->name('topup');
             Route::post('withdraw', [App\Http\Controllers\DompetSantriController::class, 'withdraw'])->name('withdraw');
             Route::post('aktivasi', [App\Http\Controllers\DompetSantriController::class, 'aktivasi'])->name('aktivasi');
+            Route::post('bulk-update-limit', [App\Http\Controllers\DompetSantriController::class, 'bulkUpdateLimit'])->name('bulk-update-limit');
         });
 
         // Dompet Asatidz

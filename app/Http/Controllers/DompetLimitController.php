@@ -231,20 +231,18 @@ class DompetLimitController extends Controller
      */
     public function bulkUpdate(Request $request)
     {
-        $request->validate([
-            'dompet_ids' => 'required|array',
-            'dompet_ids.*' => 'exists:dompets,id',
-            'action' => 'required|in:set_limit,clear_limit,activate_all,deactivate_all',
-            'limit_amount' => 'nullable|numeric|min:0'
-        ]);
-
-        $dompetIds = $request->dompet_ids;
-        $action = $request->action;
-        $limitAmount = $request->limit_amount;
-
-        DB::beginTransaction();
-        
         try {
+            $request->validate([
+                'dompet_ids' => 'required|array',
+                'dompet_ids.*' => 'exists:dompet,id',
+                'new_limit' => 'required|numeric|min:0'
+            ]);
+
+            $dompetIds = $request->dompet_ids;
+            $newLimit = $request->new_limit;
+
+            DB::beginTransaction();
+            
             $successCount = 0;
             
             foreach ($dompetIds as $dompetId) {
@@ -254,76 +252,34 @@ class DompetLimitController extends Controller
                     continue;
                 }
 
-                switch ($action) {
-                    case 'set_limit':
-                        $dompetLimit = DompetLimit::updateOrCreate(
-                            ['dompet_id' => $dompetId],
-                            [
-                                'limit_harian' => $limitAmount,
-                                'is_active' => true
-                            ]
-                        );
-                        $successCount++;
-                        break;
-                        
-                    case 'clear_limit':
-                        $dompetLimit = DompetLimit::updateOrCreate(
-                            ['dompet_id' => $dompetId],
-                            [
-                                'limit_harian' => 0,
-                                'is_active' => false
-                            ]
-                        );
-                        $successCount++;
-                        break;
-                        
-                    case 'activate_all':
-                        $updated = DompetLimit::where('dompet_id', $dompetId)
-                            ->where('limit_harian', '>', 0)
-                            ->update([
-                                'is_active' => true
-                            ]);
-                        if ($updated > 0) {
-                            $successCount++;
-                        }
-                        break;
-                        
-                    case 'deactivate_all':
-                        $updated = DompetLimit::where('dompet_id', $dompetId)
-                            ->update([
-                                'is_active' => false
-                            ]);
-                        if ($updated > 0) {
-                            $successCount++;
-                        }
-                        break;
-                }
+                // Update or create limit
+                DompetLimit::updateOrCreate(
+                    ['dompet_id' => $dompetId],
+                    [
+                        'limit_harian' => $newLimit,
+                        'is_active' => true
+                    ]
+                );
+                
+                $successCount++;
             }
 
             DB::commit();
 
-            $message = '';
-            switch ($action) {
-                case 'set_limit':
-                    $message = "Berhasil mengatur limit harian Rp " . number_format($limitAmount, 0, ',', '.') . " untuk {$successCount} santri";
-                    break;
-                case 'clear_limit':
-                    $message = "Berhasil menghapus limit harian untuk {$successCount} santri";
-                    break;
-                case 'activate_all':
-                    $message = "Berhasil mengaktifkan limit untuk {$successCount} santri";
-                    break;
-                case 'deactivate_all':
-                    $message = "Berhasil menonaktifkan limit untuk {$successCount} santri";
-                    break;
-            }
+            $message = "Berhasil mengatur limit harian Rp " . number_format($newLimit, 0, ',', '.') . " untuk {$successCount} santri";
 
             return response()->json([
                 'success' => true,
                 'message' => $message,
-                'processed_count' => $successCount
+                'updated_count' => $successCount
             ]);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak valid: ' . implode(', ', array_flatten($e->errors()))
+            ], 422);
+            
         } catch (\Exception $e) {
             DB::rollBack();
             

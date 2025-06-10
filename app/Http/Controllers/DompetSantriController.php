@@ -561,4 +561,52 @@ class DompetSantriController extends Controller
             'is_active' => $dompet->is_active
         ]);
     }
+
+    /**
+     * Bulk update limit transaksi for multiple dompet
+     */
+    public function bulkUpdateLimit(Request $request)
+    {
+        $request->validate([
+            'dompet_ids' => 'required|array',
+            'dompet_ids.*' => 'exists:dompet,id',
+            'new_limit' => 'required|numeric|min:0'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Update all selected dompet
+            $updated = Dompet::whereIn('id', $request->dompet_ids)
+                ->update([
+                    'limit_transaksi' => $request->new_limit,
+                    'updated_at' => now()
+                ]);
+
+            // Log the bulk update activity
+            foreach ($request->dompet_ids as $dompetId) {
+                $dompet = Dompet::with('santri')->find($dompetId);
+                if ($dompet) {
+                    // You can add logging here if needed
+                    // Log::info("Bulk update limit untuk dompet {$dompet->nomor_dompet} (Santri: {$dompet->santri->nama_santri}) dari " . $dompet->limit_transaksi . " ke " . $request->new_limit);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Berhasil mengubah limit transaksi untuk {$updated} dompet",
+                'updated_count' => $updated
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengubah limit transaksi: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

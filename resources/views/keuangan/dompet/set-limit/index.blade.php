@@ -1,12 +1,263 @@
 @extends('layouts.admin')
 
 @section('content')
+<script>
+    function showBulkEditModal() {
+        document.getElementById('bulkEditModal').classList.remove('hidden');
+        loadFilterOptions();
+    }
+
+    function hideBulkEditModal() {
+        document.getElementById('bulkEditModal').classList.add('hidden');
+        // Reset form
+        document.getElementById('bulkNewLimit').value = '';
+        document.getElementById('bulkKelas').value = '';
+        document.getElementById('bulkStatus').value = '';
+        document.getElementById('selectAllSantri').checked = false;
+        // Re-enable dropdowns
+        document.getElementById('bulkKelas').disabled = false;
+        document.getElementById('bulkStatus').disabled = false;
+        updatePreview();
+    }
+
+    function loadFilterOptions() {
+        const rows = document.querySelectorAll('tbody tr');
+        const kelasSet = new Set();
+        
+        rows.forEach(row => {
+            const kelasCell = row.querySelector('td:nth-child(4) span');
+            if (kelasCell && kelasCell.textContent.trim() !== '-') {
+                kelasSet.add(kelasCell.textContent.trim());
+            }
+        });
+
+        const kelasSelect = document.getElementById('bulkKelas');
+        kelasSelect.innerHTML = '<option value="">Semua Kelas</option>';
+        [...kelasSet].sort().forEach(kelas => {
+            const option = document.createElement('option');
+            option.value = kelas;
+            option.textContent = kelas;
+            kelasSelect.appendChild(option);
+        });
+
+        updatePreview();
+    }
+
+    function updatePreview() {
+        const selectAll = document.getElementById('selectAllSantri').checked;
+        const kelas = document.getElementById('bulkKelas').value;
+        const status = document.getElementById('bulkStatus').value;
+        const previewContainer = document.getElementById('previewContainer');
+        
+        // Disable/enable filter dropdowns based on selectAll
+        document.getElementById('bulkKelas').disabled = selectAll;
+        document.getElementById('bulkStatus').disabled = selectAll;
+        
+        const rows = document.querySelectorAll('tbody tr');
+        let filteredCount = 0;
+        let previewHTML = '';
+
+        rows.forEach(row => {
+            let include = selectAll;
+            
+            if (!selectAll) {
+                include = true;
+                
+                // Filter by kelas
+                if (kelas) {
+                    const kelasCell = row.querySelector('td:nth-child(4) span');
+                    const rowKelas = kelasCell ? kelasCell.textContent.trim() : '';
+                    if (rowKelas !== kelas) include = false;
+                }
+                
+                // Filter by status
+                if (status) {
+                    const statusCell = row.querySelector('td:nth-child(6) span');
+                    const isActive = statusCell && statusCell.textContent.includes('Aktif');
+                    if (status === 'active' && !isActive) include = false;
+                    if (status === 'inactive' && isActive) include = false;
+                }
+            }
+            
+            if (include) {
+                filteredCount++;
+                const nama = row.querySelector('td:nth-child(2)').textContent.trim();
+                const nis = row.querySelector('td:nth-child(3)').textContent.trim();
+                const currentLimit = row.querySelector('.limit-input').value;
+                
+                previewHTML += `
+                    <div class="flex justify-between items-center p-3 border-b border-gray-100 last:border-b-0">
+                        <div>
+                            <div class="font-medium text-sm">${nama}</div>
+                            <div class="text-xs text-gray-500">${nis}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-gray-500">Limit Saat Ini:</div>
+                            <div class="text-sm font-medium">Rp ${parseInt(currentLimit || 0).toLocaleString('id-ID')}</div>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        if (filteredCount === 0) {
+            previewHTML = '<div class="p-4 text-center text-gray-500">Tidak ada santri yang sesuai dengan filter</div>';
+        }
+
+        previewContainer.innerHTML = previewHTML;
+        document.getElementById('previewCount').textContent = filteredCount + ' santri';
+        document.getElementById('updateButton').textContent = `Update ${filteredCount} Santri`;
+        document.getElementById('updateButton').disabled = filteredCount === 0;
+    }
+
+    async function processBulkEdit() {
+        const newLimit = document.getElementById('bulkNewLimit').value;
+        if (!newLimit || newLimit <= 0) {
+            alert('Masukkan limit harian yang valid');
+            return;
+        }
+
+        const selectAll = document.getElementById('selectAllSantri').checked;
+        const kelas = document.getElementById('bulkKelas').value;
+        const status = document.getElementById('bulkStatus').value;
+        
+        // Get filtered dompet IDs
+        const rows = document.querySelectorAll('tbody tr');
+        const dompetIds = [];
+
+        rows.forEach(row => {
+            let include = selectAll;
+            
+            if (!selectAll) {
+                include = true;
+                
+                if (kelas) {
+                    const kelasCell = row.querySelector('td:nth-child(4) span');
+                    const rowKelas = kelasCell ? kelasCell.textContent.trim() : '';
+                    if (rowKelas !== kelas) include = false;
+                }
+                
+                if (status) {
+                    const statusCell = row.querySelector('td:nth-child(6) span');
+                    const isActive = statusCell && statusCell.textContent.includes('Aktif');
+                    if (status === 'active' && !isActive) include = false;
+                    if (status === 'inactive' && isActive) include = false;
+                }
+            }
+            
+            if (include) {
+                const limitInput = row.querySelector('.limit-input');
+                const dompetId = limitInput ? limitInput.getAttribute('data-dompet-id') : null;
+                
+                if (dompetId) {
+                    dompetIds.push(parseInt(dompetId));
+                }
+            }
+        });
+
+        if (dompetIds.length === 0) {
+            alert('Tidak ada santri yang akan diubah');
+            return;
+        }
+
+        const filterText = selectAll ? 'SEMUA SANTRI' : `${dompetIds.length} santri yang dipilih`;
+        const confirmation = confirm(`Apakah Anda yakin ingin mengubah limit harian untuk ${filterText} menjadi Rp ${parseInt(newLimit).toLocaleString('id-ID')}?`);
+        if (!confirmation) return;
+
+        try {
+            const button = document.getElementById('updateButton');
+            button.textContent = 'Memproses...';
+            button.disabled = true;
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const url = '{{ route("keuangan.dompet.set-limit.bulk-update") }}';
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    dompet_ids: dompetIds,
+                    new_limit: parseFloat(newLimit)
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                dompetIds.forEach(dompetId => {
+                    const input = document.querySelector(`[data-dompet-id="${dompetId}"]`);
+                    if (input) {
+                        input.value = newLimit;
+                        input.dispatchEvent(new Event('change'));
+                    }
+                });
+
+                hideBulkEditModal();
+                showAlert('success', `Berhasil mengubah limit harian untuk ${data.updated_count} santri`);
+            } else {
+                showAlert('error', 'Gagal mengubah limit harian: ' + (data.message || 'Terjadi kesalahan pada server'));
+            }
+        } catch (error) {
+            showAlert('error', 'Gagal mengubah limit harian: ' + error.message);
+        } finally {
+            const button = document.getElementById('updateButton');
+            if (button) {
+                button.textContent = 'Update Santri';
+                button.disabled = false;
+            }
+        }
+    }
+
+    function showAlert(type, message) {
+        // Create alert element
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `fixed top-4 right-4 z-50 p-4 rounded shadow-lg ${type === 'success' ? 'bg-green-100 border-l-4 border-green-500 text-green-700' : 'bg-red-100 border-l-4 border-red-500 text-red-700'}`;
+        alertDiv.innerHTML = `
+            <div class="flex items-center">
+                <span class="material-icons-outlined mr-2">${type === 'success' ? 'check_circle' : 'error'}</span>
+                <p>${message}</p>
+            </div>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 3000);
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('bulkKelas')?.addEventListener('change', updatePreview);
+        document.getElementById('bulkStatus')?.addEventListener('change', updatePreview);
+        document.getElementById('selectAllSantri')?.addEventListener('change', updatePreview);
+    });
+</script>
 <div class="container mx-auto px-4 py-6">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
         <div>
             <h1 class="text-3xl font-bold text-gray-900">Set Limit Dompet Santri</h1>
             <p class="text-gray-600 mt-2">Atur batas transaksi harian untuk aplikasi EPOS khusus santri</p>
+        </div>
+        <div class="flex items-center gap-2 mt-4 sm:mt-0">
+            <button onclick="showBulkEditModal()" 
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Bulk Edit Limit
+            </button>
         </div>
     </div>
 
@@ -225,175 +476,124 @@
     box-shadow: 0 0 0 1px #f59e0b;
 }
 </style>
-@endsection
 
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    let changedFields = {};
-    
-    // Detect changes in limit inputs
-    document.querySelectorAll('.limit-input').forEach(input => {
-        input.addEventListener('input', function() {
-            const dompetId = this.getAttribute('data-dompet-id');
-            const field = this.getAttribute('data-field');
-            const value = this.value;
-            
-            // Mark as changed
-            this.classList.add('changed');
-            
-            // Store changed value
-            if (!changedFields[dompetId]) {
-                changedFields[dompetId] = {};
-            }
-            changedFields[dompetId][field] = value;
-            
-            // Show save button
-            const saveBtn = document.querySelector(`.save-limit-btn[data-dompet-id="${dompetId}"]`);
-            if (saveBtn) {
-                saveBtn.style.display = 'block';
-            }
-        });
-    });
-    
-    // Save limit changes
-    document.querySelectorAll('.save-limit-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const dompetId = this.getAttribute('data-dompet-id');
-            const data = changedFields[dompetId];
-            
-            if (!data) {
-                return;
-            }
-            
-            // Show loading modal
-            document.getElementById('loadingModal').classList.remove('hidden');
-            
-            fetch(`{{ url('keuangan/dompet/set-limit') }}/${dompetId}/update-limit`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    limit_harian: data.limit_harian
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Hide loading modal
-                document.getElementById('loadingModal').classList.add('hidden');
+<!-- Bulk Edit Modal -->
+<div id="bulkEditModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <!-- Modal Header -->
+        <div class="flex justify-between items-center pb-4 border-b">
+            <h3 class="text-lg font-semibold text-gray-900">Bulk Edit Limit Harian Dompet</h3>
+            <button onclick="hideBulkEditModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="mt-4">
+            <!-- Filter Section -->
+            <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                <h4 class="font-medium text-gray-900 mb-3">Filter Santri</h4>
                 
-                if (data.success) {
-                    // Remove changed styling
-                    document.querySelectorAll(`.limit-input[data-dompet-id="${dompetId}"]`).forEach(input => {
-                        input.classList.remove('changed');
-                    });
-                    
-                    // Hide save button
-                    const saveBtn = document.querySelector(`.save-limit-btn[data-dompet-id="${dompetId}"]`);
-                    if (saveBtn) {
-                        saveBtn.style.display = 'none';
-                    }
-                    
-                    // Clear changed fields
-                    delete changedFields[dompetId];
-                    
-                    // Update status if needed
-                    const statusBadge = document.querySelector(`#row-${dompetId} .bg-gray-100`);
-                    if (statusBadge) {
-                        statusBadge.classList.remove('bg-gray-100', 'text-gray-800');
-                        statusBadge.classList.add('bg-green-100', 'text-green-800');
-                        statusBadge.textContent = 'Aktif';
-                    }
-                    
-                    // Show success message
-                    showAlert('success', data.message);
-                } else {
-                    showAlert('error', data.message || 'Terjadi kesalahan saat menyimpan data.');
-                }
-            })
-            .catch(error => {
-                document.getElementById('loadingModal').classList.add('hidden');
-                showAlert('error', 'Terjadi kesalahan saat menyimpan data.');
-                console.error('Error:', error);
-            });
-        });
-    });
-    
-    // Toggle status limit
-    document.querySelectorAll('.toggle-status-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const limitId = this.getAttribute('data-limit-id');
-            const currentStatus = this.getAttribute('data-current-status') === '1';
-            
-            fetch(`{{ url('keuangan/dompet/set-limit') }}/${limitId}/toggle-status`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update button icon and data
-                    const newStatus = data.is_active;
-                    this.setAttribute('data-current-status', newStatus ? '1' : '0');
-                    
-                    const icon = this.querySelector('.material-icons-outlined');
-                    if (newStatus) {
-                        icon.textContent = 'toggle_on';
-                        // Update status badge
-                        const row = this.closest('tr');
-                        const statusBadge = row.querySelector('.bg-gray-100, .bg-green-100');
-                        if (statusBadge) {
-                            statusBadge.classList.remove('bg-gray-100', 'text-gray-800');
-                            statusBadge.classList.add('bg-green-100', 'text-green-800');
-                            statusBadge.textContent = 'Aktif';
-                        }
-                    } else {
-                        icon.textContent = 'toggle_off';
-                        // Update status badge
-                        const row = this.closest('tr');
-                        const statusBadge = row.querySelector('.bg-green-100, .bg-gray-100');
-                        if (statusBadge) {
-                            statusBadge.classList.remove('bg-green-100', 'text-green-800');
-                            statusBadge.classList.add('bg-gray-100', 'text-gray-800');
-                            statusBadge.textContent = 'Belum Diatur';
-                        }
-                    }
-                    
-                    showAlert('success', data.message);
-                } else {
-                    showAlert('error', data.message || 'Terjadi kesalahan saat mengubah status.');
-                }
-            })
-            .catch(error => {
-                showAlert('error', 'Terjadi kesalahan saat mengubah status.');
-                console.error('Error:', error);
-            });
-        });
-    });
-    
-    function showAlert(type, message) {
-        // Create alert element
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `fixed top-4 right-4 z-50 p-4 rounded shadow-lg ${type === 'success' ? 'bg-green-100 border-l-4 border-green-500 text-green-700' : 'bg-red-100 border-l-4 border-red-500 text-red-700'}`;
-        alertDiv.innerHTML = `
-            <div class="flex items-center">
-                <span class="material-icons-outlined mr-2">${type === 'success' ? 'check_circle' : 'error'}</span>
-                <p>${message}</p>
+                <!-- Pilih Semua Checkbox -->
+                <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="selectAllSantri" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                        <span class="ml-2 text-sm font-medium text-blue-800">✓ Pilih Semua Santri (Abaikan Filter di Bawah)</span>
+                    </label>
+                    <p class="text-xs text-blue-600 mt-1 ml-6">Centang untuk mengubah limit semua santri sekaligus</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Filter by Kelas -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
+                        <select id="bulkKelas" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+                            <option value="">Semua Kelas</option>
+                        </select>
+                    </div>
+
+                    <!-- Filter by Status -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status Limit</label>
+                        <select id="bulkStatus" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+                            <option value="">Semua Status</option>
+                            <option value="active">Aktif</option>
+                            <option value="inactive">Belum Diatur</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-        `;
-        
-        document.body.appendChild(alertDiv);
-        
-        // Remove after 3 seconds
-        setTimeout(() => {
-            alertDiv.remove();
-        }, 3000);
-    }
-});
-</script>
-@endpush
+
+            <!-- New Limit Input -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Limit Harian Baru</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Rp</span>
+                    <input type="number" 
+                           id="bulkNewLimit"
+                           min="0" 
+                           step="1000"
+                           placeholder="0"
+                           class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <!-- Quick Limit Buttons -->
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <button type="button" onclick="document.getElementById('bulkNewLimit').value = 50000" 
+                            class="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors">
+                        Rp 50.000
+                    </button>
+                    <button type="button" onclick="document.getElementById('bulkNewLimit').value = 100000" 
+                            class="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors">
+                        Rp 100.000
+                    </button>
+                    <button type="button" onclick="document.getElementById('bulkNewLimit').value = 150000" 
+                            class="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors">
+                        Rp 150.000
+                    </button>
+                    <button type="button" onclick="document.getElementById('bulkNewLimit').value = 200000" 
+                            class="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors">
+                        Rp 200.000
+                    </button>
+                    <button type="button" onclick="document.getElementById('bulkNewLimit').value = 500000" 
+                            class="px-3 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-md transition-colors">
+                        Rp 500.000
+                    </button>
+                </div>
+                
+                <p class="text-xs text-gray-500 mt-2">Masukkan limit harian dalam rupiah (tanpa titik/koma) atau pilih dari tombol di atas</p>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="font-medium text-gray-900">Preview Santri yang Akan Diubah</h4>
+                    <span id="previewCount" class="text-sm text-gray-500">0 santri</span>
+                </div>
+                
+                <div class="max-h-48 overflow-y-auto border border-gray-200 rounded-md">
+                    <div id="previewContainer">
+                        <div class="p-4 text-center text-gray-500">Pilih filter untuk melihat preview</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="flex justify-end space-x-3 pt-4 border-t">
+            <button onclick="hideBulkEditModal()" 
+                    class="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors">
+                Batal
+            </button>
+            <button id="updateButton" onclick="processBulkEdit()" 
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                Update Santri
+            </button>
+        </div>
+    </div>
+</div>
+
+<meta name="csrf-token" content="{{ csrf_token() }}">
+@endsection
