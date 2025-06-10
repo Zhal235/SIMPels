@@ -206,6 +206,60 @@
             </div>
         </div>
 
+        <!-- Kepegawaian Menu -->
+        <div x-data="{ open: {{ request()->is('kepegawaian*') ? 'true' : 'false' }} }" class="space-y-1" x-cloak>
+            <button @click="open = !open"
+                    class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold uppercase tracking-wider hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-all duration-200 ease-in-out group">
+                <div class="flex items-center space-x-3">
+                    <span class="material-icons-outlined text-xl opacity-80 group-hover:opacity-100 text-blue-400">work</span>
+                    <span class="menu-label">Kepegawaian</span>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform transition-transform duration-200 text-slate-500 group-hover:text-white"
+                    :class="{ 'rotate-90': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+           </button>
+            <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-2" class="ml-4 pl-3 border-l border-slate-700 space-y-1">
+                <a href="{{ route('kepegawaian.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('kepegawaian') && !request()->is('kepegawaian/*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('kepegawaian') && !request()->is('kepegawaian/*') ? 'text-white' : 'text-blue-400' }}">dashboard</span>
+                    <span class="menu-label">Dashboard</span>
+                </a>
+                <a href="{{ route('kepegawaian.pegawai.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('kepegawaian/pegawai*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('kepegawaian/pegawai*') ? 'text-white' : 'text-blue-400' }}">person_add</span>
+                    <span class="menu-label">Data Pegawai</span>
+                </a>
+                <a href="{{ route('kepegawaian.data-kepegawaian') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('kepegawaian/data-kepegawaian*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('kepegawaian/data-kepegawaian*') ? 'text-white' : 'text-blue-400' }}">folder_shared</span>
+                    <span class="menu-label">Jabatan</span>
+                </a>
+                <a href="{{ route('kepegawaian.kelola-struktur') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('kepegawaian/kelola-struktur*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('kepegawaian/kelola-struktur*') ? 'text-white' : 'text-blue-400' }}">account_tree</span>
+                    <span class="menu-label">Divisi/Bagian</span>
+                </a>
+                <!-- Sub-menu tambahan yang akan dikembangkan nanti -->
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group text-slate-500 cursor-not-allowed">
+                    <span class="material-icons-outlined text-lg opacity-50 text-slate-500">schedule</span>
+                    <span class="menu-label opacity-50">Absensi (Coming Soon)</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group text-slate-500 cursor-not-allowed">
+                    <span class="material-icons-outlined text-lg opacity-50 text-slate-500">payments</span>
+                    <span class="menu-label opacity-50">Penggajian (Coming Soon)</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group text-slate-500 cursor-not-allowed">
+                    <span class="material-icons-outlined text-lg opacity-50 text-slate-500">event_available</span>
+                    <span class="menu-label opacity-50">Cuti & Izin (Coming Soon)</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group text-slate-500 cursor-not-allowed">
+                    <span class="material-icons-outlined text-lg opacity-50 text-slate-500">assessment</span>
+                    <span class="menu-label opacity-50">Penilaian Kinerja (Coming Soon)</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group text-slate-500 cursor-not-allowed">
+                    <span class="material-icons-outlined text-lg opacity-50 text-slate-500">corporate_fare</span>
+                    <span class="menu-label opacity-50">Struktur Organisasi (Coming Soon)</span>
+                </a>
+            </div>
+        </div>
+
         <!-- User Management -->
         @if(Auth::check() && Auth::user()->hasRole('admin')) {{-- Assuming Spatie/laravel-permission --}}
         <div x-data="{ open: {{ request()->is('users*') || request()->is('roles*') ? 'true' : 'false' }} }" class="space-y-1">

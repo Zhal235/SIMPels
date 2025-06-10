@@ -14,6 +14,8 @@ use App\Http\Controllers\PembayaranSantriController;
 use App\Http\Controllers\JenisTagihanController;
 use App\Http\Controllers\TahunAjaranController;
 use App\Http\Controllers\BukuKasController;
+use App\Http\Controllers\KepegawaianController;
+use App\Http\Controllers\PegawaiController;
 use Illuminate\Http\Request;
 
 
@@ -204,6 +206,17 @@ Route::middleware(['auth'])->group(function () {
     // User Management
     Route::resource('users', \App\Http\Controllers\UserController::class)->middleware(['role:admin']);
     Route::resource('roles', \App\Http\Controllers\RoleController::class)->middleware(['role:admin']);
+
+    // Modul Kepegawaian
+    Route::prefix('kepegawaian')->name('kepegawaian.')->middleware(['auth'])->group(function () {
+        Route::get('/', [\App\Http\Controllers\KepegawaianController::class, 'index'])->name('index');
+        Route::get('tambah-pegawai', [\App\Http\Controllers\KepegawaianController::class, 'tambahPegawai'])->name('tambah-pegawai');
+        Route::get('data-kepegawaian', [\App\Http\Controllers\KepegawaianController::class, 'dataKepegawaian'])->name('data-kepegawaian');
+        Route::get('kelola-struktur', [\App\Http\Controllers\KepegawaianController::class, 'kelolaStruktur'])->name('kelola-struktur');
+        
+        // Resource routes for Pegawai
+        Route::resource('pegawai', \App\Http\Controllers\PegawaiController::class);
+    });
 
     // API untuk mengambil data santri dengan asrama untuk modal pindah
     Route::get('/api/santris-with-asrama', [AsramaController::class, 'getSantrisWithAsrama'])->name('api.santris-with-asrama');
