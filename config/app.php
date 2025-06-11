@@ -123,4 +123,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | ePOS System Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Konfigurasi untuk integrasi dengan sistem ePOS
+    |
+    */
+
+    'epos_system_key' => env('EPOS_SYSTEM_KEY', 'EPOS_SIMPELS_2025'),
+    'epos_system_secret' => env('EPOS_SYSTEM_SECRET', 'EPOS_SECRET_KEY_SIMPELS'),
+    'epos_base_url' => env('EPOS_BASE_URL', 'http://localhost/epos-system'),
+
 ];

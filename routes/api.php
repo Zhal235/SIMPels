@@ -89,3 +89,33 @@ Route::prefix('keuangan/categories')->group(function () {
 Route::prefix('keuangan/transaksi-kas')->group(function () {
     Route::get('/{id}', [App\Http\Controllers\TransaksiKasController::class, 'apiShow']);
 });
+
+// =================================================================
+// API untuk Integrasi dengan Sistem ePOS
+// =================================================================
+
+// Auth API untuk ePOS
+Route::prefix('epos/auth')->group(function () {
+    Route::post('/authenticate', [App\Http\Controllers\API\EPOSAuthController::class, 'authenticate']);
+    Route::post('/refresh', [App\Http\Controllers\API\EPOSAuthController::class, 'refreshToken'])->middleware('auth:sanctum');
+    Route::post('/logout', [App\Http\Controllers\API\EPOSAuthController::class, 'logout'])->middleware('auth:sanctum');
+    Route::get('/check', [App\Http\Controllers\API\EPOSAuthController::class, 'checkToken'])->middleware('auth:sanctum');
+    Route::get('/config', [App\Http\Controllers\API\EPOSAuthController::class, 'getConfig'])->middleware(\App\Http\Middleware\EPOSApiMiddleware::class);
+});
+
+// API Santri untuk ePOS (dengan autentikasi khusus)
+Route::prefix('epos/santri')->middleware(\App\Http\Middleware\EPOSApiMiddleware::class)->group(function () {
+    Route::get('/rfid/{tag}', [App\Http\Controllers\API\SantriEPOSController::class, 'getByRfid']);
+    Route::get('/{santriId}/saldo', [App\Http\Controllers\API\SantriEPOSController::class, 'getSaldo']);
+    Route::post('/{santriId}/deduct-saldo', [App\Http\Controllers\API\SantriEPOSController::class, 'deductSaldo']);
+    Route::post('/{santriId}/topup-saldo', [App\Http\Controllers\API\SantriEPOSController::class, 'topUpSaldo']);
+    Route::get('/{santriId}/transactions', [App\Http\Controllers\API\SantriEPOSController::class, 'getTransactionHistory']);
+});
+
+// API Transaksi untuk ePOS
+Route::prefix('epos/transactions')->middleware(\App\Http\Middleware\EPOSApiMiddleware::class)->group(function () {
+    Route::post('/sync', [App\Http\Controllers\API\TransaksiEPOSController::class, 'syncFromEPOS']);
+    Route::get('/santri/{santriId}', [App\Http\Controllers\API\TransaksiEPOSController::class, 'getTransactionHistory']);
+    Route::post('/cancel', [App\Http\Controllers\API\TransaksiEPOSController::class, 'cancelTransaction']);
+    Route::get('/statistics', [App\Http\Controllers\API\TransaksiEPOSController::class, 'getStatistics']);
+});
