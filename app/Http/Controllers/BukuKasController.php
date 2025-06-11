@@ -272,18 +272,31 @@ class BukuKasController extends BaseKeuanganController
      */
     public function destroy(BukuKas $bukuKas)
     {
-        $deleteCheck = $this->keuanganService->canDeleteBukuKas($bukuKas);
-        
-        if (!$deleteCheck['can_delete']) {
-            return $this->errorResponse(
-                'Tidak dapat menghapus buku kas: ' . implode(', ', $deleteCheck['messages']),
-                400
-            );
+        try {
+            // Check if can delete
+            $deleteCheck = $this->keuanganService->canDeleteBukuKas($bukuKas);
+            
+            if (!$deleteCheck['can_delete']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak dapat menghapus buku kas: ' . implode(', ', $deleteCheck['messages'])
+                ], 400);
+            }
+
+            // Delete the record
+            $bukuKas->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Buku kas berhasil dihapus!'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
         }
-
-        $bukuKas->delete();
-
-        return $this->successJsonResponse('Buku kas berhasil dihapus!');
     }
 
     /**

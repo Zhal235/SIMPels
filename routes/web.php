@@ -126,16 +126,33 @@ Route::middleware(['auth'])->group(function () {
         Route::post('transaksi-kas/{id}/approve', [\App\Http\Controllers\TransaksiKasController::class, 'approve'])->name('transaksi-kas.approve')->middleware(['role:admin|bendahara']);
         Route::post('transaksi-kas/{id}/reject', [\App\Http\Controllers\TransaksiKasController::class, 'reject'])->name('transaksi-kas.reject')->middleware(['role:admin|bendahara']);
         
-        // Debug route for testing
+        // Debug routes for testing
         Route::get('debug/buku-kas/{id}', function($id) {
             $bukuKas = \App\Models\BukuKas::findOrFail($id);
             return response()->json([
-                'success' => true,
-                'data' => $bukuKas,
-                'debug' => 'This is debug route'
+                'id' => $bukuKas->id,
+                'nama_kas' => $bukuKas->nama_kas,
+                'can_delete' => true
             ]);
         })->name('debug.buku-kas');
         
+        // Test delete route - bypass service validation
+        Route::delete('test/buku-kas/{id}', function($id) {
+            try {
+                $bukuKas = \App\Models\BukuKas::findOrFail($id);
+                $bukuKas->delete();
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Test delete berhasil!'
+                ]);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error: ' . $e->getMessage()
+                ], 500);
+            }
+        })->name('test.delete.buku-kas');
+
         // Tagihan Santri
         Route::middleware(['role:admin|bendahara'])->group(function() {
             Route::get('tagihan-santri', [App\Http\Controllers\TagihanSantriController::class, 'index'])->name('tagihan-santri.index');

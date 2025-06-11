@@ -138,7 +138,7 @@
                                 <button onclick="openEditModal({{ $kas->id }})" class="text-blue-600 hover:text-blue-900" title="Edit">
                                     <span class="material-icons-outlined text-sm">edit</span>
                                 </button>
-                                <button onclick="deleteBukuKas({{ $kas->id }})" class="text-red-600 hover:text-red-900" title="Hapus">
+                                <button onclick="testDeleteBukuKas({{ $kas->id }})" class="text-red-600 hover:text-red-900" title="Hapus">
                                     <span class="material-icons-outlined text-sm">delete</span>
                                 </button>
                             </div>
@@ -683,8 +683,10 @@ function submitEdit(event) {
     });
 }
 
-// Delete Function - Simplified
+// Delete Function - Improved with better error handling
 function deleteBukuKas(kasId) {
+    console.log('Delete function called for ID:', kasId);
+    
     Swal.fire({
         title: 'Konfirmasi Hapus',
         text: "Apakah Anda yakin ingin menghapus data buku kas ini?",
@@ -696,6 +698,8 @@ function deleteBukuKas(kasId) {
         cancelButtonText: 'Batal'
     }).then((result) => {
         if (result.isConfirmed) {
+            console.log('User confirmed delete');
+            
             // Show loading state
             Swal.fire({
                 title: 'Menghapus...',
@@ -706,21 +710,39 @@ function deleteBukuKas(kasId) {
                 }
             });
             
+            const deleteUrl = `/keuangan/test/buku-kas/${kasId}`;
+            console.log('Sending DELETE request to:', deleteUrl);
+            
             // Send delete request
-            fetch(`/keuangan/buku-kas/${kasId}`, {
+            fetch(deleteUrl, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                // Check if response is ok
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        console.log('Error response text:', text);
+                        throw new Error(`HTTP ${response.status}: ${text}`);
+                    });
+                }
+                
+                return response.json();
+            })
             .then(data => {
+                console.log('Response data:', data);
                 if (data.success) {
                     Swal.fire({
                         icon: 'success',
                         title: 'Berhasil',
-                        text: 'Data buku kas berhasil dihapus',
+                        text: data.message || 'Data buku kas berhasil dihapus',
                         timer: 1500,
                         showConfirmButton: false
                     }).then(() => {
@@ -730,6 +752,70 @@ function deleteBukuKas(kasId) {
                     throw new Error(data.message || 'Gagal menghapus data');
                 }
             }).catch(error => {
+                console.error('Delete error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Menghapus',
+                    text: error.message || 'Terjadi kesalahan saat menghapus data buku kas.',
+                    footer: 'Periksa console untuk detail error'
+                });
+            });
+        }
+    });
+}
+
+// Delete Function for debugging
+function testDeleteBukuKas(kasId) {
+    Swal.fire({
+        title: 'Konfirmasi Hapus',
+        text: "Apakah Anda yakin ingin menghapus data buku kas ini?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Ya, Hapus',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading
+            Swal.fire({
+                title: 'Menghapus...',
+                text: 'Mohon tunggu sebentar',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            fetch(`/keuangan/test/buku-kas/${kasId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                Swal.fire({
+                    icon: data.success ? 'success' : 'error',
+                    title: data.success ? 'Berhasil' : 'Gagal',
+                    text: data.message,
+                    timer: data.success ? 1500 : undefined,
+                    showConfirmButton: !data.success
+                }).then(() => {
+                    if (data.success) location.reload();
+                });
+            })
+            .catch(error => {
+                console.error('Delete error:', error);
                 Swal.fire({
                     icon: 'error',
                     title: 'Gagal Menghapus',
@@ -1016,7 +1102,7 @@ window.openCreateModal = openCreateModal;
 window.closeCreateModal = closeCreateModal;
 window.openEditModal = openEditModal;
 window.closeEditModal = closeEditModal;
-window.deleteBukuKas = deleteBukuKas;
+window.testDeleteBukuKas = testDeleteBukuKas;
 window.showDetail = showDetail;
 </script>
 @endpush

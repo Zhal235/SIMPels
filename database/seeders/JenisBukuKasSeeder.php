@@ -83,6 +83,18 @@ class JenisBukuKasSeeder extends Seeder
                 'kode' => 'CAD',
                 'deskripsi' => 'Kas cadangan untuk keperluan darurat',
                 'is_active' => true
+            ],
+            [
+                'nama' => 'PSB',
+                'kode' => 'PSB',
+                'deskripsi' => 'Kas untuk penerimaan santri baru',
+                'is_active' => true
+            ],
+            [
+                'nama' => 'Dompet Digital',
+                'kode' => 'DOMPET',
+                'deskripsi' => 'Buku kas untuk mengelola dompet digital santri dan asatidz',
+                'is_active' => true
             ]
         ];
         
