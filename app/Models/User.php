@@ -46,4 +46,12 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Get the dompet associated with the user (asatidz).
+     */
+    public function dompet()
+    {
+        return $this->hasOne(\App\Models\Dompet::class, 'pemilik_id')->where('jenis_pemilik', 'asatidz');
+    }
 }

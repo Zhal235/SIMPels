@@ -42,7 +42,7 @@ class Dompet extends Model
     // Relasi ke user/asatidz (polymorphic)
     public function asatidz()
     {
-        return $this->belongsTo(User::class, 'pemilik_id');
+        return $this->belongsTo(Pegawai::class, 'pemilik_id');
     }
 
     // Relasi ke transaksi dompet
@@ -97,7 +97,7 @@ class Dompet extends Model
         if ($this->jenis_pemilik === 'santri') {
             return $this->santri?->nama_santri ?? 'Santri tidak ditemukan';
         } else {
-            return $this->asatidz?->name ?? 'Asatidz tidak ditemukan';
+            return $this->asatidz?->nama_pegawai ?? 'Asatidz tidak ditemukan';
         }
     }
 }

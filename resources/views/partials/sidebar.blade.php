@@ -76,9 +76,9 @@
                     <span class="menu-label">Dompet Santri</span>
                 </a>
                 
-                <a href="{{ route('keuangan.dompet.asatidz.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/dompet/asatidz*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                <a href="{{ route('keuangan.dompet.asatidz.main') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/dompet/asatidz*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
                     <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('keuangan/dompet/asatidz*') ? 'text-white' : 'text-blue-400' }}">manage_accounts</span>
-                    <span class="menu-label">Dompet Asatidz</span>
+                    <span class="menu-label">Dompet Pegawai</span>
                 </a>
                 
                 <a href="{{ route('keuangan.dompet.set-limit.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('keuangan/dompet/set-limit*') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">

@@ -72,4 +72,10 @@ class Pegawai extends Model
     {
         return $query->where('divisi', $divisi);
     }
+
+    // Relasi ke dompet (asatidz)
+    public function dompet()
+    {
+        return $this->hasOne(Dompet::class, 'pemilik_id')->where('jenis_pemilik', 'asatidz');
+    }
 }

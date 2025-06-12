@@ -190,6 +190,7 @@ Route::middleware(['auth'])->group(function () {
         // Dompet Asatidz
         Route::prefix('asatidz')->name('asatidz.')->group(function () {
             Route::get('/', [App\Http\Controllers\DompetAsatidzController::class, 'index'])->name('index');
+            Route::get('/main', [App\Http\Controllers\DompetAsatidzController::class, 'getAsatidzWithDompet'])->name('main');
             Route::get('create', [App\Http\Controllers\DompetAsatidzController::class, 'create'])->name('create');
             Route::post('/', [App\Http\Controllers\DompetAsatidzController::class, 'store'])->name('store');
             Route::get('{id}', [App\Http\Controllers\DompetAsatidzController::class, 'show'])->name('show');
@@ -198,6 +199,10 @@ Route::middleware(['auth'])->group(function () {
             Route::delete('{id}', [App\Http\Controllers\DompetAsatidzController::class, 'destroy'])->name('destroy');
             Route::get('{id}/top-up', [App\Http\Controllers\DompetAsatidzController::class, 'topUpForm'])->name('top-up.form');
             Route::post('{id}/top-up', [App\Http\Controllers\DompetAsatidzController::class, 'topUp'])->name('top-up');
+            // AJAX routes
+            Route::post('topup', [App\Http\Controllers\DompetAsatidzController::class, 'topupAjax'])->name('topup');
+            Route::post('withdraw', [App\Http\Controllers\DompetAsatidzController::class, 'withdrawAjax'])->name('withdraw');
+            Route::post('aktivasi', [App\Http\Controllers\DompetAsatidzController::class, 'toggleActivation'])->name('aktivasi');
         });
 
         // Set Limit

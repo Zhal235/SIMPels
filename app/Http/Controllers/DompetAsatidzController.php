@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Dompet;
-use App\Models\User;
+use App\Models\Pegawai;
 use App\Models\TransaksiDompet;
 use App\Models\TransaksiKas;
 use App\Models\BukuKas;
@@ -35,11 +35,11 @@ class DompetAsatidzController extends Controller
     public function create()
     {
         // Ambil asatidz yang belum punya dompet
-        $asatidzTanpaDompet = User::whereNotIn('id', function($query) {
+        $asatidzTanpaDompet = Pegawai::whereNotIn('id', function($query) {
             $query->select('pemilik_id')
                   ->from('dompet')
                   ->where('jenis_pemilik', 'asatidz');
-        })->get();
+        })->where('status_pegawai', 'Aktif')->get();
 
         return view('keuangan.dompet.asatidz.create', compact('asatidzTanpaDompet'));
     }
@@ -50,7 +50,7 @@ class DompetAsatidzController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'asatidz_id' => 'required|exists:users,id|unique:dompet,pemilik_id',
+            'asatidz_id' => 'required|exists:pegawais,id|unique:dompet,pemilik_id',
             'saldo_awal' => 'required|numeric|min:0',
             'limit_transaksi' => 'nullable|numeric|min:0'
         ]);
@@ -69,18 +69,20 @@ class DompetAsatidzController extends Controller
 
             // Jika ada saldo awal, buat transaksi kas dan transaksi dompet
             if ($request->saldo_awal > 0) {
-                // Cari buku kas dompet asatidz
-                $bukuKasDompet = BukuKas::where('nama_kas', 'LIKE', '%Dompet Asatidz%')->first();
+                // Cari buku kas dompet pegawai
+                $bukuKasDompet = BukuKas::where('nama_kas', 'LIKE', '%Dompet Pegawai%')
+                    ->orWhere('nama_kas', 'LIKE', '%Dompet Asatidz%')
+                    ->first();
                 
                 if ($bukuKasDompet) {
                     // Buat transaksi kas (pemasukan ke buku kas dompet)
                     $transaksiKas = TransaksiKas::create([
                         'buku_kas_id' => $bukuKasDompet->id,
                         'jenis_transaksi' => 'pemasukan',
-                        'kategori' => 'Top Up Dompet Asatidz',
+                        'kategori' => 'Top Up Dompet Pegawai',
                         'kode_transaksi' => TransaksiKas::generateKodeTransaksi('pemasukan'),
                         'jumlah' => $request->saldo_awal,
-                        'keterangan' => 'Saldo awal dompet asatidz: ' . $dompet->asatidz->name,
+                        'keterangan' => 'Saldo awal dompet pegawai: ' . $dompet->asatidz->nama_pegawai,
                         'metode_pembayaran' => 'Tunai',
                         'tanggal_transaksi' => now(),
                         'created_by' => Auth::id(),
@@ -101,7 +103,7 @@ class DompetAsatidzController extends Controller
                     'jumlah' => $request->saldo_awal,
                     'saldo_sebelum' => 0,
                     'saldo_sesudah' => $request->saldo_awal,
-                    'keterangan' => 'Saldo awal dompet asatidz',
+                    'keterangan' => 'Saldo awal dompet pegawai',
                     'transaksi_kas_id' => $transaksiKas->id ?? null,
                     'created_by' => Auth::id(),
                     'status' => 'approved',
@@ -112,7 +114,7 @@ class DompetAsatidzController extends Controller
             DB::commit();
 
             return redirect()->route('keuangan.dompet.asatidz.index')
-                ->with('success', 'Dompet asatidz berhasil dibuat');
+                ->with('success', 'Dompet pegawai berhasil dibuat');
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -221,10 +223,10 @@ class DompetAsatidzController extends Controller
             $transaksiKas = TransaksiKas::create([
                 'buku_kas_id' => $request->buku_kas_id,
                 'jenis_transaksi' => 'pemasukan',
-                'kategori' => 'Top Up Dompet Asatidz',
+                'kategori' => 'Top Up Dompet Pegawai',
                 'kode_transaksi' => TransaksiKas::generateKodeTransaksi('pemasukan'),
                 'jumlah' => $request->jumlah,
-                'keterangan' => $request->keterangan ?: 'Top up dompet asatidz: ' . $dompet->nama_pemilik,
+                'keterangan' => $request->keterangan ?: 'Top up dompet pegawai: ' . $dompet->nama_pemilik,
                 'metode_pembayaran' => $request->metode_pembayaran,
                 'tanggal_transaksi' => now(),
                 'created_by' => Auth::id(),
@@ -259,6 +261,291 @@ class DompetAsatidzController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
             return back()->with('error', 'Gagal melakukan top up: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get asatidz list with dompet data for main view
+     */
+    public function getAsatidzWithDompet(Request $request)
+    {
+        // Get all asatidz with their dompet
+        $asatidzList = Pegawai::with(['dompet'])
+            ->where('status_pegawai', 'Aktif')
+            ->orderBy('nama_pegawai')
+            ->get()
+            ->map(function ($asatidz) {
+                return [
+                    'id' => $asatidz->id,
+                    'nama' => $asatidz->nama_pegawai,
+                    'email' => $asatidz->email,
+                    'foto' => $asatidz->foto ? asset('storage/' . $asatidz->foto) : asset('img/default-avatar.png'),
+                    'dompet' => $asatidz->dompet ? [
+                        'id' => $asatidz->dompet->id,
+                        'nomor_dompet' => $asatidz->dompet->nomor_dompet,
+                        'saldo' => $asatidz->dompet->saldo,
+                        'is_active' => $asatidz->dompet->is_active,
+                        'limit_transaksi' => null, // Asatidz tidak ada limit
+                    ] : null
+                ];
+            });
+
+        // Handle AJAX request for transaction history by dompet_id
+        if ($request->has('dompet_id')) {
+            $dompetId = $request->dompet_id;
+            $dompet = Dompet::with('asatidz')->find($dompetId);
+            
+            if (!$dompet) {
+                return response()->json(['transaksi' => []], 404);
+            }
+
+            $transaksi = TransaksiDompet::where('dompet_id', $dompetId)
+                ->orderBy('tanggal_transaksi', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->limit(50)
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'kode_transaksi' => $item->kode_transaksi,
+                        'jenis_transaksi' => $item->jenis_transaksi,
+                        'kategori' => $item->kategori,
+                        'jumlah' => $item->jumlah,
+                        'saldo_sebelum' => $item->saldo_sebelum,
+                        'saldo_sesudah' => $item->saldo_sesudah,
+                        'keterangan' => $item->keterangan,
+                        'tanggal_transaksi' => $item->tanggal_transaksi,
+                        'created_at' => $item->created_at,
+                        'status' => $item->status,
+                    ];
+                });
+
+            return response()->json(['transaksi' => $transaksi]);
+        }
+
+        return view('keuangan.dompet.asatidz.main', compact('asatidzList'));
+    }
+
+    /**
+     * Process topup via AJAX
+     */
+    public function topupAjax(Request $request)
+    {
+        $request->validate([
+            'dompet_id' => 'required|exists:dompet,id',
+            'jumlah' => 'required|numeric|min:1000',
+            'keterangan' => 'nullable|string|max:255',
+            'kode_transaksi' => 'nullable|string|max:50'
+        ]);
+
+        $dompet = Dompet::findOrFail($request->dompet_id);
+
+        DB::beginTransaction();
+        try {
+            // Update saldo dompet
+            $saldoUpdate = $dompet->updateSaldo($request->jumlah, 'tambah');
+
+            // Cari buku kas dompet pegawai
+            $bukuKasDompet = BukuKas::where('nama_kas', 'LIKE', '%Dompet Pegawai%')
+                ->orWhere('nama_kas', 'LIKE', '%Dompet Asatidz%')
+                ->first();
+            $transaksiKasId = null;
+            
+            if ($bukuKasDompet) {
+                // Get nama pegawai
+                $namaPegawai = 'Pegawai Tidak Diketahui';
+                if ($dompet->asatidz) {
+                    $namaPegawai = $dompet->asatidz->nama_pegawai;
+                } else {
+                    // Fallback: ambil langsung dari database
+                    $pegawai = \App\Models\Pegawai::find($dompet->pemilik_id);
+                    if ($pegawai) {
+                        $namaPegawai = $pegawai->nama_pegawai;
+                    }
+                }
+                
+                // Buat transaksi kas (pemasukan ke buku kas dompet)
+                $transaksiKas = TransaksiKas::create([
+                    'buku_kas_id' => $bukuKasDompet->id,
+                    'jenis_transaksi' => 'pemasukan',
+                    'kategori' => 'Top Up Dompet Pegawai',
+                    'kode_transaksi' => TransaksiKas::generateKodeTransaksi('pemasukan'),
+                    'jumlah' => $request->jumlah,
+                    'keterangan' => 'Top up dompet pegawai' . ($request->keterangan ? ' - ' . $request->keterangan : ''),
+                    'nama_pemohon' => $namaPegawai,
+                    'metode_pembayaran' => 'Tunai',
+                    'tanggal_transaksi' => now(),
+                    'created_by' => Auth::id(),
+                    'status' => 'approved'
+                ]);
+
+                // Update saldo buku kas
+                $bukuKasDompet->saldo_saat_ini += $request->jumlah;
+                $bukuKasDompet->save();
+                
+                $transaksiKasId = $transaksiKas->id;
+            }
+
+            // Buat transaksi dompet
+            TransaksiDompet::create([
+                'kode_transaksi' => $request->kode_transaksi ?: TransaksiDompet::generateKodeTransaksi('top_up'),
+                'dompet_id' => $dompet->id,
+                'jenis_transaksi' => 'top_up',
+                'kategori' => 'Top Up',
+                'jumlah' => $request->jumlah,
+                'saldo_sebelum' => $saldoUpdate['saldo_sebelum'],
+                'saldo_sesudah' => $saldoUpdate['saldo_sesudah'],
+                'keterangan' => $request->keterangan ?: 'Top up saldo dompet pegawai',
+                'transaksi_kas_id' => $transaksiKasId,
+                'created_by' => Auth::id(),
+                'status' => 'approved',
+                'tanggal_transaksi' => now()
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Top up berhasil',
+                'saldo_baru' => $dompet->saldo
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal melakukan top up: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Process withdraw via AJAX
+     */
+    public function withdrawAjax(Request $request)
+    {
+        $request->validate([
+            'dompet_id' => 'required|exists:dompet,id',
+            'jumlah' => 'required|numeric|min:1000',
+            'keterangan' => 'nullable|string|max:255',
+            'kode_transaksi' => 'nullable|string|max:50'
+        ]);
+
+        $dompet = Dompet::findOrFail($request->dompet_id);
+
+        // Check if balance is sufficient
+        if ($dompet->saldo < $request->jumlah) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Saldo tidak mencukupi'
+            ], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Update saldo dompet
+            $saldoUpdate = $dompet->updateSaldo($request->jumlah, 'kurang');
+
+            // Cari buku kas dompet pegawai
+            $bukuKasDompet = BukuKas::where('nama_kas', 'LIKE', '%Dompet Pegawai%')
+                ->orWhere('nama_kas', 'LIKE', '%Dompet Asatidz%')
+                ->first();
+            $transaksiKasId = null;
+            
+            if ($bukuKasDompet) {
+                // Get nama pegawai
+                $namaPegawai = 'Pegawai Tidak Diketahui';
+                if ($dompet->asatidz) {
+                    $namaPegawai = $dompet->asatidz->nama_pegawai;
+                } else {
+                    // Fallback: ambil langsung dari database
+                    $pegawai = \App\Models\Pegawai::find($dompet->pemilik_id);
+                    if ($pegawai) {
+                        $namaPegawai = $pegawai->nama_pegawai;
+                    }
+                }
+                
+                // Buat transaksi kas (pengeluaran dari buku kas dompet)
+                $transaksiKas = TransaksiKas::create([
+                    'buku_kas_id' => $bukuKasDompet->id,
+                    'jenis_transaksi' => 'pengeluaran',
+                    'kategori' => 'Penarikan Dompet Pegawai',
+                    'kode_transaksi' => TransaksiKas::generateKodeTransaksi('pengeluaran'),
+                    'jumlah' => $request->jumlah,
+                    'keterangan' => 'Penarikan dompet pegawai' . ($request->keterangan ? ' - ' . $request->keterangan : ''),
+                    'nama_pemohon' => $namaPegawai,
+                    'metode_pembayaran' => 'Tunai',
+                    'tanggal_transaksi' => now(),
+                    'created_by' => Auth::id(),
+                    'status' => 'approved'
+                ]);
+
+                // Update saldo buku kas
+                $bukuKasDompet->saldo_saat_ini -= $request->jumlah;
+                $bukuKasDompet->save();
+                
+                $transaksiKasId = $transaksiKas->id;
+            }
+
+            // Buat transaksi dompet
+            TransaksiDompet::create([
+                'kode_transaksi' => $request->kode_transaksi ?: TransaksiDompet::generateKodeTransaksi('withdraw'),
+                'dompet_id' => $dompet->id,
+                'jenis_transaksi' => 'withdraw',
+                'kategori' => 'Penarikan',
+                'jumlah' => $request->jumlah,
+                'saldo_sebelum' => $saldoUpdate['saldo_sebelum'],
+                'saldo_sesudah' => $saldoUpdate['saldo_sesudah'],
+                'keterangan' => $request->keterangan ?: 'Penarikan saldo dompet pegawai',
+                'transaksi_kas_id' => $transaksiKasId,
+                'created_by' => Auth::id(),
+                'status' => 'approved',
+                'tanggal_transaksi' => now()
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Penarikan berhasil',
+                'saldo_baru' => $dompet->saldo
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal melakukan penarikan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Toggle wallet activation status
+     */
+    public function toggleActivation(Request $request)
+    {
+        $request->validate([
+            'dompet_id' => 'required|exists:dompet,id',
+            'is_active' => 'required|boolean'
+        ]);
+
+        $dompet = Dompet::findOrFail($request->dompet_id);
+
+        try {
+            $dompet->update(['is_active' => $request->is_active]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status dompet berhasil diubah',
+                'is_active' => $dompet->is_active
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengubah status dompet: ' . $e->getMessage()
+            ], 500);
         }
     }
 }
