@@ -13,14 +13,9 @@ class KepegawaianController extends Controller
     {
         return redirect()->route('kepegawaian.pegawai.index');
     }
-
-    public function dataKepegawaian()
-    {
-        return view('kepegawaian.data-kepegawaian.index');
-    }
-
+    
     public function kelolaStruktur()
     {
-        return view('kepegawaian.kelola-struktur.index');
+        return redirect()->route('kepegawaian.index')->with('info', 'Fitur Divisi/Bagian telah dihapus');
     }
 }

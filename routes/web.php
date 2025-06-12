@@ -234,7 +234,6 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('kepegawaian')->name('kepegawaian.')->middleware(['auth'])->group(function () {
         Route::get('/', [\App\Http\Controllers\KepegawaianController::class, 'index'])->name('index');
         Route::get('tambah-pegawai', [\App\Http\Controllers\KepegawaianController::class, 'tambahPegawai'])->name('tambah-pegawai');
-        Route::get('data-kepegawaian', [\App\Http\Controllers\KepegawaianController::class, 'dataKepegawaian'])->name('data-kepegawaian');
         Route::get('kelola-struktur', [\App\Http\Controllers\KepegawaianController::class, 'kelolaStruktur'])->name('kelola-struktur');
         
         // Resource routes for Pegawai
@@ -243,6 +242,10 @@ Route::middleware(['auth'])->group(function () {
         // Resource routes for Jabatan
         Route::resource('jabatan', \App\Http\Controllers\JabatanController::class);
         Route::post('jabatan/{jabatan}/toggle-status', [\App\Http\Controllers\JabatanController::class, 'toggleStatus'])->name('jabatan.toggle-status');
+        
+        // Resource routes for Bidang (tersembunyi dari UI)
+        Route::resource('bidang', \App\Http\Controllers\BidangController::class);
+        Route::post('bidang/{bidang}/toggle-status', [\App\Http\Controllers\BidangController::class, 'toggleStatus'])->name('bidang.toggle-status');
     });
 
     // API untuk mengambil data santri dengan asrama untuk modal pindah
