@@ -24,6 +24,10 @@ class DatabaseSeeder extends Seeder
             AsramaAnggotaSeeder::class,
             BukuKasSeeder::class,
             JenisBukuKasSeeder::class,
+            BidangSeeder::class,
+            JabatanSeeder::class,
+            PegawaiFormasi2024Seeder::class,
+            PegawaiTambahanSeeder::class,
             // TagihanSantriSeederWithoutTruncate::class, // Commented out for manual generation
         ]);
     }

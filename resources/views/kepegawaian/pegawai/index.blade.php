@@ -1,5 +1,9 @@
 @extends('layouts.admin')
 
+@push('scripts')
+<script src="{{ asset('js/pegawai.js') }}"></script>
+@endpush
+
 @section('content')
 <div class="container mx-auto px-4 py-6">
     <!-- Header -->
@@ -71,20 +75,24 @@
                     </select>
                 </div>
                 <div class="w-full lg:w-48">
-                    <label for="jabatan" class="block text-sm font-medium text-gray-700 mb-2">Jabatan</label>
-                    <select name="jabatan" id="jabatan" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <label for="jabatan_id" class="block text-sm font-medium text-gray-700 mb-2">Jabatan</label>
+                    <select name="jabatan_id" id="jabatan_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <option value="">Semua Jabatan</option>
                         @foreach($jabatanOptions as $jabatan)
-                            <option value="{{ $jabatan }}" {{ request('jabatan') == $jabatan ? 'selected' : '' }}>{{ $jabatan }}</option>
+                            <option value="{{ $jabatan->id }}" {{ request('jabatan_id') == $jabatan->id ? 'selected' : '' }}>
+                                {{ $jabatan->nama_jabatan }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
                 <div class="w-full lg:w-48">
-                    <label for="divisi" class="block text-sm font-medium text-gray-700 mb-2">Divisi</label>
-                    <select name="divisi" id="divisi" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">Semua Divisi</option>
-                        @foreach($divisiOptions as $divisi)
-                            <option value="{{ $divisi }}" {{ request('divisi') == $divisi ? 'selected' : '' }}>{{ $divisi }}</option>
+                    <label for="bidang_id" class="block text-sm font-medium text-gray-700 mb-2">Bidang</label>
+                    <select name="bidang_id" id="bidang_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Semua Bidang</option>
+                        @foreach($bidangOptions as $bidang)
+                            <option value="{{ $bidang->id }}" {{ request('bidang_id') == $bidang->id ? 'selected' : '' }}>
+                                {{ $bidang->nama_bidang }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -158,9 +166,48 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="text-sm">
-                                <div class="font-medium text-gray-900">{{ $pegawai->jabatan ?: '-' }}</div>
-                                <div class="text-gray-500">{{ $pegawai->divisi ?: '-' }}</div>
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                                @if($pegawai->jabatan_utama && is_object($pegawai->jabatan_utama))
+                                    <div class="font-medium text-gray-900">{{ $pegawai->jabatan_utama->nama_jabatan }}</div>
+                                    <div class="text-gray-500">{{ $pegawai->jabatan_utama->bidang ? $pegawai->jabatan_utama->bidang->nama_bidang : $pegawai->divisi }}</div>
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                        {{ $pegawai->jabatan_utama->kategori_nama }}
+                                    </span>
+                                    
+                                    @if($pegawai->jabatansAktif && $pegawai->jabatansAktif->count() > 1)
+                                    <div class="mt-1">
+                                        <button type="button" 
+                                                onclick="toggleJabatanList('jabatan-list-{{ $pegawai->id }}')" 
+                                                class="text-xs text-blue-600 hover:text-blue-800 flex items-center">
+                                            <span class="material-icons-outlined text-xs mr-1">add</span>
+                                            {{ $pegawai->jabatansAktif->count() - 1 }} jabatan lainnya
+                                        </button>
+                                        <div id="jabatan-list-{{ $pegawai->id }}" class="hidden mt-1 pl-2 border-l-2 border-gray-200">
+                                            @foreach($pegawai->jabatansAktif->filter(function($j) { 
+                                                return $j->pivot && isset($j->pivot->is_jabatan_utama) && $j->pivot->is_jabatan_utama == false; 
+                                            }) as $jabatanTambahan)
+                                                <div class="text-xs text-gray-600 my-1">{{ $jabatanTambahan->nama_jabatan }}</div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    @endif
+                                @elseif($pegawai->jabatan && is_object($pegawai->jabatan))
+                                    <div class="font-medium text-gray-900">{{ $pegawai->jabatan->nama_jabatan }}</div>
+                                    <div class="text-gray-500">{{ $pegawai->jabatan->bidang ? $pegawai->jabatan->bidang->nama_bidang : $pegawai->divisi }}</div>
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                        {{ $pegawai->jabatan->kategori_nama }}
+                                    </span>
+                                @elseif(is_string($pegawai->jabatan) && $pegawai->jabatan)
+                                    <div class="font-medium text-gray-900">{{ $pegawai->jabatan }}</div>
+                                    <div class="text-gray-500">{{ $pegawai->divisi ?: '-' }}</div>
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                        Staff
+                                    </span>
+                                @else
+                                    <div class="font-medium text-gray-900">-</div>
+                                    <div class="text-gray-500">{{ $pegawai->divisi ?: '-' }}</div>
+                                @endif
+                                
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-1
                                     {{ $pegawai->jenis_pegawai == 'Tetap' ? 'bg-green-100 text-green-800' : 
                                        ($pegawai->jenis_pegawai == 'Kontrak' ? 'bg-yellow-100 text-yellow-800' : 
                                         ($pegawai->jenis_pegawai == 'Honorer' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800')) }}">
@@ -299,5 +346,10 @@ document.getElementById('deleteModal').addEventListener('click', function(e) {
         closeDeleteModal();
     }
 });
+
+function toggleJabatanList(pegawaiId) {
+    const element = document.getElementById('jabatan-list-' + pegawaiId);
+    element.classList.toggle('hidden');
+}
 </script>
 @endsection

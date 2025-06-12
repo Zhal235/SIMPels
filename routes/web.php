@@ -16,6 +16,7 @@ use App\Http\Controllers\TahunAjaranController;
 use App\Http\Controllers\BukuKasController;
 use App\Http\Controllers\KepegawaianController;
 use App\Http\Controllers\PegawaiController;
+use App\Http\Controllers\JabatanController;
 use Illuminate\Http\Request;
 
 
@@ -238,6 +239,10 @@ Route::middleware(['auth'])->group(function () {
         
         // Resource routes for Pegawai
         Route::resource('pegawai', \App\Http\Controllers\PegawaiController::class);
+        
+        // Resource routes for Jabatan
+        Route::resource('jabatan', \App\Http\Controllers\JabatanController::class);
+        Route::post('jabatan/{jabatan}/toggle-status', [\App\Http\Controllers\JabatanController::class, 'toggleStatus'])->name('jabatan.toggle-status');
     });
 
     // API untuk mengambil data santri dengan asrama untuk modal pindah
