@@ -284,6 +284,31 @@
             </div>
         </div>
         @endif
+
+        <!-- Wali Santri Menu -->
+        <div x-data="{ open: {{ request()->is('wali-santri*') ? 'true' : 'false' }} }" class="space-y-1" x-cloak>
+            <button @click="open = !open"
+                    class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold uppercase tracking-wider hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-all duration-200 ease-in-out group">
+                <div class="flex items-center space-x-3">
+                    <span class="material-icons-outlined text-xl opacity-80 group-hover:opacity-100 text-blue-400">family_restroom</span>
+                    <span class="menu-label">Wali Santri</span>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform transition-transform duration-200 text-slate-500 group-hover:text-white"
+                    :class="{ 'rotate-90': open }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+           </button>
+            <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-2" class="ml-4 pl-3 border-l border-slate-700 space-y-1">
+                <a href="{{ route('wali-santri.index') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('wali-santri') && !request()->is('wali-santri/create') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('wali-santri') && !request()->is('wali-santri/create') ? 'text-white' : 'text-blue-400' }}">group</span>
+                    <span class="menu-label">Daftar Wali Santri</span>
+                </a>
+                <a href="{{ route('wali-santri.create') }}" class="flex items-center space-x-3 px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out group {{ request()->is('wali-santri/create') ? 'bg-blue-600 text-white shadow-sm' : 'hover:bg-slate-800 hover:text-white text-slate-400' }}">
+                    <span class="material-icons-outlined text-lg opacity-80 group-hover:opacity-100 {{ request()->is('wali-santri/create') ? 'text-white' : 'text-blue-400' }}">person_add</span>
+                    <span class="menu-label">Tambah Wali Santri</span>
+                </a>
+            </div>
+        </div>
     </nav>
 
     <!-- Logout fixed bottom -->

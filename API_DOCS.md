@@ -789,38 +789,183 @@ Authorization: Bearer {your_token}
   }
   ```
 
-## Kode Status HTTP
+## Dompet Santri
 
-- `200 OK`: Permintaan berhasil
-- `201 Created`: Sumber daya berhasil dibuat
-- `400 Bad Request`: Kesalahan pada permintaan
-- `401 Unauthorized`: Autentikasi gagal
-- `403 Forbidden`: Tidak memiliki izin
-- `404 Not Found`: Sumber daya tidak ditemukan
-- `422 Unprocessable Entity`: Validasi gagal
-- `500 Internal Server Error`: Kesalahan server
+### 1. Mendapatkan Informasi Dompet
 
-## Fitur yang Belum Diimplementasikan
+- **URL**: `/dompet`
+- **Metode**: `GET`
+- **Deskripsi**: Mendapatkan informasi dompet (saldo) untuk semua santri yang terhubung dengan wali santri.
+- **Headers**:
+  - `Authorization`: `Bearer {token}`
+- **Respons Sukses**:
+  - **Kode**: `200 OK`
+  - **Contoh**:
+  ```json
+  {
+    "success": true,
+    "data": [
+      {
+        "id": 1,
+        "santri_id": 123,
+        "santri_nama": "Ahmad Santoso",
+        "santri_nis": "123456",
+        "saldo": 500000,
+        "status": "Aktif",
+        "created_at": "2025-01-15 08:30:00",
+        "updated_at": "2025-06-10 14:25:00"
+      },
+      {
+        "id": 2,
+        "santri_id": 124,
+        "santri_nama": "Budi Prakoso",
+        "santri_nis": "123457",
+        "saldo": 250000,
+        "status": "Aktif",
+        "created_at": "2025-01-15 08:30:00",
+        "updated_at": "2025-06-12 10:15:00"
+      }
+    ]
+  }
+  ```
 
-Beberapa fitur yang disebutkan dalam desain awal mungkin memerlukan pengembangan lebih lanjut:
+### 2. Mendapatkan Transaksi Dompet
 
-1. **Akademik**: Detail nilai/rapor santri
-2. **Akademik**: Jadwal pelajaran
-3. **Kesehatan**: Riwayat kunjungan UKS/klinik pesantren
-4. **Komunikasi**: Forum diskusi wali santri
-5. **Kegiatan**: Kalender kegiatan dan dokumentasi kegiatan
-6. **Pembayaran Online**: Integrasi payment gateway
+- **URL**: `/dompet/transaksi` atau `/dompet/transaksi/{santri_id}`
+- **Metode**: `GET`
+- **Deskripsi**: Mendapatkan riwayat transaksi dompet untuk semua santri atau santri tertentu.
+- **Headers**:
+  - `Authorization`: `Bearer {token}`
+- **Parameter URL**:
+  - `santri_id` (opsional): ID santri untuk memfilter transaksi.
+- **Respons Sukses**:
+  - **Kode**: `200 OK`
+  - **Contoh**:
+  ```json
+  {
+    "success": true,
+    "data": [
+      {
+        "id": 123,
+        "dompet_id": 1,
+        "santri_nama": "Ahmad Santoso",
+        "santri_nis": "123456",
+        "jenis": "kredit",
+        "jumlah": 100000,
+        "keterangan": "Top up dari orang tua",
+        "tanggal": "2025-06-10 14:25:00"
+      },
+      {
+        "id": 124,
+        "dompet_id": 1,
+        "santri_nama": "Ahmad Santoso",
+        "santri_nis": "123456",
+        "jenis": "debit",
+        "jumlah": 15000,
+        "keterangan": "Pembelian di kantin",
+        "tanggal": "2025-06-11 12:30:00"
+      }
+    ],
+    "pagination": {
+      "current_page": 1,
+      "last_page": 2,
+      "per_page": 15,
+      "total": 25
+    }
+  }
+  ```
 
-Fitur-fitur ini akan diimplementasikan dalam fase pengembangan berikutnya.
+### 3. Mendapatkan Ringkasan Dompet
 
-## Catatan Pengembangan
+- **URL**: `/dompet/summary` atau `/dompet/summary/{santri_id}`
+- **Metode**: `GET`
+- **Deskripsi**: Mendapatkan ringkasan transaksi dompet per bulan untuk semua santri atau santri tertentu.
+- **Headers**:
+  - `Authorization`: `Bearer {token}`
+- **Parameter URL**:
+  - `santri_id` (opsional): ID santri untuk memfilter ringkasan.
+- **Respons Sukses**:
+  - **Kode**: `200 OK`
+  - **Contoh**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "total_saldo": 735000,
+      "monthly_summary": [
+        {
+          "bulan": "Jan 2025",
+          "total_kredit": 500000,
+          "total_debit": 150000,
+          "net": 350000
+        },
+        {
+          "bulan": "Feb 2025",
+          "total_kredit": 400000,
+          "total_debit": 200000,
+          "net": 200000
+        },
+        {
+          "bulan": "Mar 2025",
+          "total_kredit": 300000,
+          "total_debit": 250000,
+          "net": 50000
+        },
+        {
+          "bulan": "Apr 2025",
+          "total_kredit": 350000,
+          "total_debit": 200000,
+          "net": 150000
+        },
+        {
+          "bulan": "May 2025",
+          "total_kredit": 400000,
+          "total_debit": 300000,
+          "net": 100000
+        },
+        {
+          "bulan": "Jun 2025",
+          "total_kredit": 200000,
+          "total_debit": 315000,
+          "net": -115000
+        }
+      ]
+    }
+  }
+  ```
 
-1. Pastikan untuk menambahkan kolom `user_id` pada tabel `santris` yang merujuk ke tabel `users` untuk mengaitkan santri dengan akun wali santri.
-   
-2. Untuk fitur perizinan, perlu dibuat tabel baru `perizinan` karena belum ada dalam struktur database yang ada.
+### 4. Update Limit Harian Dompet
 
-3. Pastikan peran (role) 'wali_santri' sudah didaftarkan dalam sistem permission yang digunakan oleh aplikasi.
-
-4. Sebaiknya tambahkan kolom `email_orangtua` pada tabel `santris` untuk memudahkan relasi antara santri dengan akun wali santri.
-
-**Catatan**: Untuk panduan pengembangan lebih detail tentang fitur-fitur yang belum ada di SIMPels, silakan lihat file `DEVELOPMENT_GUIDE.md`.
+- **URL**: `/dompet/limit/{id}`
+- **Metode**: `PUT`
+- **Deskripsi**: Memperbarui limit harian dompet santri.
+- **Parameter Path**: `id` - ID santri
+- **Headers**:
+  - `Authorization`: `Bearer {token}`
+- **Body**:
+  ```json
+  {
+    "limit_harian": 50000
+  }
+  ```
+- **Respons Sukses**:
+  ```json
+  {
+    "success": true,
+    "message": "Limit harian berhasil diperbarui",
+    "data": {
+      "id": 1,
+      "jenis": "harian",
+      "nominal": 50000,
+      "periode": "harian",
+      "status": "aktif"
+    }
+  }
+  ```
+- **Respons Gagal**:
+  ```json
+  {
+    "success": false,
+    "message": "Santri tidak ditemukan atau Anda tidak memiliki akses"
+  }
+  ```

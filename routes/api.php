@@ -14,10 +14,21 @@ use App\Http\Controllers\API\TransaksiController;
 use App\Http\Controllers\API\AkademikController;
 use App\Http\Controllers\API\AsramaController as APIAsramaController;
 use App\Http\Controllers\API\PerizinanController;
+use App\Http\Controllers\API\WaliSantriDompetController;
+use App\Http\Controllers\API\DompetController;
+use App\Http\Controllers\API\DompetSantriController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
+
+// Handle OPTIONS requests for CORS preflight
+Route::options('/{any}', function() {
+    return response('', 200)
+        ->header('Access-Control-Allow-Origin', '*')
+        ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN');
+})->where('any', '.*');
 
 // API untuk PWA Wali Santri
 Route::prefix('wali-santri')->group(function() {
@@ -30,6 +41,25 @@ Route::prefix('wali-santri')->group(function() {
         // User profile
         Route::get('/user', [AuthController::class, 'user']);
         Route::post('/logout', [AuthController::class, 'logout']);
+        
+        // PWA API Endpoints - sesuai BACKEND_API_REQUIREMENTS.md
+        Route::get('/santri', [WaliSantriController::class, 'getSantri']);
+        Route::get('/tagihan', [WaliSantriController::class, 'getTagihan']);
+        Route::get('/perizinan', [WaliSantriController::class, 'getPerizinan']);
+        Route::post('/perizinan', [WaliSantriController::class, 'createPerizinan']);
+        Route::put('/perizinan/{id}', [WaliSantriController::class, 'updatePerizinan']);
+        Route::delete('/perizinan/{id}', [WaliSantriController::class, 'deletePerizinan']);
+        
+        // Edit Data Santri
+        Route::put('/santri/{id}', [WaliSantriController::class, 'updateSantri']);
+        
+        // Dompet Management
+        Route::get('/dompet', [WaliSantriController::class, 'getDompetInfo']);
+        Route::post('/dompet/topup', [WaliSantriController::class, 'topUpSaldo']);
+        Route::put('/dompet/limit/{santriId}', [WaliSantriController::class, 'updateLimitHarian']);
+        
+        // Pembayaran Tagihan
+        Route::post('/tagihan/bayar', [WaliSantriController::class, 'bayarTagihan']);
         
         // Santri profile
         Route::prefix('santri')->group(function () {
@@ -44,6 +74,16 @@ Route::prefix('wali-santri')->group(function() {
             Route::get('/tunggakan', [TagihanController::class, 'getTunggakanList']);
             Route::get('/tunggakan/{id}', [TagihanController::class, 'getTunggakanDetail']);
             Route::get('/{id}', [TagihanController::class, 'getTagihanDetail']);
+        });
+        
+        // Dompet Santri
+        Route::prefix('dompet')->group(function () {
+            Route::get('/', [DompetSantriController::class, 'getDompetInfo']);
+            Route::get('/transaksi', [DompetSantriController::class, 'getDompetTransaksi']);
+            Route::get('/transaksi/{santriId}', [DompetSantriController::class, 'getDompetTransaksi']);
+            Route::get('/summary', [DompetSantriController::class, 'getDompetSummary']);
+            Route::get('/summary/{santriId}', [DompetSantriController::class, 'getDompetSummary']);
+            Route::put('/limit/{id}', [WaliSantriDompetController::class, 'updateLimitHarian']);
         });
         
         // Transaksi
@@ -76,6 +116,45 @@ Route::prefix('wali-santri')->group(function() {
             Route::put('/{id}', [PerizinanController::class, 'updatePerizinan']);
             Route::delete('/{id}', [PerizinanController::class, 'deletePerizinan']);
         });
+        
+        // Dompet Santri
+        Route::prefix('dompet')->group(function () {
+            Route::get('/', [DompetController::class, 'getDompetInfo']);
+            Route::get('/{id}', [DompetController::class, 'getDompetDetail']);
+            Route::get('/{id}/transaksi', [DompetController::class, 'getTransaksiDompet']);
+        });
+    });
+});
+
+// Authentication routes for Wali Santri
+Route::prefix('wali-santri')->group(function () {
+    Route::post('/login', [App\Http\Controllers\API\AuthWaliSantriController::class, 'login']);
+    Route::post('/register', [App\Http\Controllers\API\AuthWaliSantriController::class, 'register']);
+    
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/user', [App\Http\Controllers\API\AuthWaliSantriController::class, 'user']);
+        Route::post('/logout', [App\Http\Controllers\API\AuthWaliSantriController::class, 'logout']);
+        Route::put('/profile', [App\Http\Controllers\API\AuthWaliSantriController::class, 'updateProfile']);
+        Route::put('/change-password', [App\Http\Controllers\API\AuthWaliSantriController::class, 'changePassword']);
+        
+        // Santri management
+        Route::get('/santri', [App\Http\Controllers\API\WaliSantriController::class, 'getSantri']);
+        Route::put('/santri/{id}', [App\Http\Controllers\API\WaliSantriController::class, 'updateSantri']);
+        
+        // Dompet management
+        Route::get('/dompet', [App\Http\Controllers\API\WaliSantriController::class, 'getDompetInfo']);
+        Route::post('/dompet/topup', [App\Http\Controllers\API\WaliSantriController::class, 'topUpSaldo']);
+        Route::put('/dompet/limit/{santriId}', [App\Http\Controllers\API\WaliSantriController::class, 'updateLimitHarian']);
+        
+        // Tagihan management
+        Route::get('/tagihan', [App\Http\Controllers\API\WaliSantriController::class, 'getTagihan']);
+        Route::post('/tagihan/bayar', [App\Http\Controllers\API\WaliSantriController::class, 'bayarTagihan']);
+        
+        // Perizinan management
+        Route::get('/perizinan', [App\Http\Controllers\API\WaliSantriController::class, 'getPerizinan']);
+        Route::post('/perizinan', [App\Http\Controllers\API\WaliSantriController::class, 'createPerizinan']);
+        Route::put('/perizinan/{id}', [App\Http\Controllers\API\WaliSantriController::class, 'updatePerizinan']);
+        Route::delete('/perizinan/{id}', [App\Http\Controllers\API\WaliSantriController::class, 'deletePerizinan']);
     });
 });
 

@@ -17,6 +17,7 @@ use App\Http\Controllers\BukuKasController;
 use App\Http\Controllers\KepegawaianController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\JabatanController;
+use App\Http\Controllers\WaliSantriController;
 use Illuminate\Http\Request;
 
 
@@ -250,6 +251,11 @@ Route::middleware(['auth'])->group(function () {
 
     // API untuk mengambil data santri dengan asrama untuk modal pindah
     Route::get('/api/santris-with-asrama', [AsramaController::class, 'getSantrisWithAsrama'])->name('api.santris-with-asrama');
+
+    // Modul Wali Santri
+    Route::resource('wali-santri', WaliSantriController::class)->middleware(['role:admin']);
+    Route::get('wali-santri/{id}/reset-password', [WaliSantriController::class, 'resetPassword'])->name('wali-santri.reset-password')->middleware(['role:admin']);
+    Route::put('wali-santri/{id}/update-password', [WaliSantriController::class, 'updatePassword'])->name('wali-santri.update-password')->middleware(['role:admin']);
 }); // Close auth middleware group
 
 // Include route keringanan tagihan

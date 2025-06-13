@@ -15,12 +15,15 @@ class Perizinan extends Model
     protected $fillable = [
         'santri_id',
         'jenis_izin',
+        'keperluan',
         'tanggal_mulai',
         'tanggal_selesai',
         'keterangan',
         'bukti',
+        'lampiran',
         'status',
         'alasan_ditolak',
+        'catatan_admin',
         'created_by',
         'approved_by',
         'approved_at'
@@ -30,6 +33,11 @@ class Perizinan extends Model
         'tanggal_mulai' => 'datetime',
         'tanggal_selesai' => 'datetime',
         'approved_at' => 'datetime',
+    ];
+
+    protected $appends = [
+        'durasi_hari',
+        'santri_nama'
     ];
 
     /**
@@ -99,5 +107,25 @@ class Perizinan extends Model
 
         $today = Carbon::today();
         return $today->between($this->tanggal_mulai->startOfDay(), $this->tanggal_selesai->endOfDay());
+    }
+
+    /**
+     * Mendapatkan durasi izin dalam hari
+     */
+    public function getDurasiHariAttribute()
+    {
+        if ($this->tanggal_mulai && $this->tanggal_selesai) {
+            return $this->tanggal_mulai->diffInDays($this->tanggal_selesai) + 1;
+        }
+        
+        return 1; // Default 1 hari jika tanggal tidak lengkap
+    }
+
+    /**
+     * Mendapatkan nama santri
+     */
+    public function getSantriNamaAttribute()
+    {
+        return $this->santri ? $this->santri->nama_santri : null;
     }
 }

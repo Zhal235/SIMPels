@@ -1,0 +1,25 @@
+# PWA Configuration Guide
+# This file contains settings that should be included in your .env file
+# for proper communication between PWA and the SIMPels API
+
+# Laravel API URL
+VITE_API_BASE_URL=http://localhost:8000/api
+
+# API Endpoints
+VITE_API_LOGIN_ENDPOINT=/wali-santri/login
+VITE_API_REGISTER_ENDPOINT=/wali-santri/register
+VITE_API_USER_ENDPOINT=/wali-santri/user
+VITE_API_LOGOUT_ENDPOINT=/wali-santri/logout
+VITE_API_SANTRI_LIST_ENDPOINT=/wali-santri/santri
+VITE_API_TAGIHAN_LIST_ENDPOINT=/wali-santri/tagihan
+VITE_API_PERIZINAN_ENDPOINT=/wali-santri/perizinan
+VITE_API_DOMPET_ENDPOINT=/wali-santri/dompet
+VITE_API_DOMPET_TRANSAKSI_ENDPOINT=/wali-santri/dompet/transaksi
+VITE_API_DOMPET_SUMMARY_ENDPOINT=/wali-santri/dompet/summary
+VITE_API_DOMPET_LIMIT_ENDPOINT=/wali-santri/dompet/limit
+
+# Storage URL for accessing uploaded files
+VITE_STORAGE_URL=http://localhost:8000/storage
+
+# App settings
+VITE_APP_NAME=SIMPels Wali Santri
