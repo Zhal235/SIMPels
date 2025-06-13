@@ -6,10 +6,78 @@ use App\Models\Santri;
 use App\Models\KelasAnggota;
 use App\Http\Controllers\AsramaController;
 use App\Http\Controllers\BukuKasController;
+use App\Http\Controllers\API\WaliSantriController;
+use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\ProfileController;
+use App\Http\Controllers\API\TagihanController;
+use App\Http\Controllers\API\TransaksiController;
+use App\Http\Controllers\API\AkademikController;
+use App\Http\Controllers\API\AsramaController as APIAsramaController;
+use App\Http\Controllers\API\PerizinanController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
+
+// API untuk PWA Wali Santri
+Route::prefix('wali-santri')->group(function() {
+    // Public routes
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register']);
+    
+    // Protected routes
+    Route::middleware('auth:sanctum')->group(function () {
+        // User profile
+        Route::get('/user', [AuthController::class, 'user']);
+        Route::post('/logout', [AuthController::class, 'logout']);
+        
+        // Santri profile
+        Route::prefix('santri')->group(function () {
+            Route::get('/', [ProfileController::class, 'getSantriList']);
+            Route::get('/{id}', [ProfileController::class, 'getSantriDetail']);
+        });
+        
+        // Tagihan & Pembayaran
+        Route::prefix('tagihan')->group(function () {
+            Route::get('/', [TagihanController::class, 'getTagihanList']);
+            Route::get('/summary', [TagihanController::class, 'getTagihanSummary']);
+            Route::get('/tunggakan', [TagihanController::class, 'getTunggakanList']);
+            Route::get('/tunggakan/{id}', [TagihanController::class, 'getTunggakanDetail']);
+            Route::get('/{id}', [TagihanController::class, 'getTagihanDetail']);
+        });
+        
+        // Transaksi
+        Route::prefix('transaksi')->group(function () {
+            Route::get('/', [TransaksiController::class, 'getTransaksiList']);
+            Route::get('/{id}', [TransaksiController::class, 'getTransaksiDetail']);
+        });
+        
+        // Keringanan
+        Route::prefix('keringanan')->group(function () {
+            Route::get('/', [TagihanController::class, 'getKeringananList']);
+            Route::get('/{id}', [TagihanController::class, 'getKeringananDetail']);
+        });
+        
+        // Akademik
+        Route::prefix('akademik')->group(function () {
+            Route::get('/info', [AkademikController::class, 'getAkademikInfo']);
+        });
+        
+        // Asrama
+        Route::prefix('asrama')->group(function () {
+            Route::get('/info', [APIAsramaController::class, 'getAsramaInfo']); 
+        });
+        
+        // Perizinan
+        Route::prefix('perizinan')->group(function () {
+            Route::get('/', [PerizinanController::class, 'getPerizinanList']);
+            Route::post('/', [PerizinanController::class, 'createPerizinan']);
+            Route::get('/{id}', [PerizinanController::class, 'getPerizinanDetail']);
+            Route::put('/{id}', [PerizinanController::class, 'updatePerizinan']);
+            Route::delete('/{id}', [PerizinanController::class, 'deletePerizinan']);
+        });
+    });
+});
 
 // API untuk mengambil data santri dengan asrama untuk modal pindah
 Route::get('/santris-with-asrama', [AsramaController::class, 'getSantrisWithAsrama']);

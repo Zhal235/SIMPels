@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             PegawaiFormasi2024Seeder::class,
             PegawaiTambahanSeeder::class,
             // TagihanSantriSeederWithoutTruncate::class, // Commented out for manual generation
+            WaliSantriRoleSeeder::class,
         ]);
     }
 }

@@ -18,15 +18,23 @@ class Santri extends Model
         'jumlah_saudara', 'alamat', 'provinsi', 'kabupaten', 'kecamatan',
         'desa', 'kode_pos', 'no_kk', 'nama_ayah', 'nik_ayah', 'pendidikan_ayah',
         'pekerjaan_ayah', 'hp_ayah', 'nama_ibu', 'nik_ibu', 'pendidikan_ibu',
-        'pekerjaan_ibu', 'hp_ibu', 'no_bpjs', 'no_pkh', 'no_kip',
+        'pekerjaan_ibu', 'hp_ibu', 'email_orangtua', 'no_bpjs', 'no_pkh', 'no_kip',
         'npsn_sekolah', 'no_blanko_skhu', 'no_seri_ijazah', 'status',
-        'total_nilai_un', 'tanggal_kelulusan', 'foto', 'asrama_id', 'kelas_id',// ← WAJIB
+        'total_nilai_un', 'tanggal_kelulusan', 'foto', 'asrama_id', 'kelas_id', 'user_id',// ← WAJIB
     ];
 
     protected $casts = [
         'tanggal_lahir' => 'date',
         'tanggal_kelulusan' => 'date',
     ];
+
+    /**
+     * Get the user that owns the santri.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function pekerjaanAyah()
     {
