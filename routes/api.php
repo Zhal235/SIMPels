@@ -14,7 +14,7 @@ use App\Http\Controllers\API\TransaksiController;
 use App\Http\Controllers\API\AkademikController;
 use App\Http\Controllers\API\AsramaController as APIAsramaController;
 use App\Http\Controllers\API\PerizinanController;
-use App\Http\Controllers\API\WaliSantriDompetController;
+// use App\Http\Controllers\API\WaliSantriDompetController; // Controller not found
 use App\Http\Controllers\API\DompetController;
 use App\Http\Controllers\API\DompetSantriController;
 
@@ -83,7 +83,7 @@ Route::prefix('wali-santri')->group(function() {
             Route::get('/transaksi/{santriId}', [DompetSantriController::class, 'getDompetTransaksi']);
             Route::get('/summary', [DompetSantriController::class, 'getDompetSummary']);
             Route::get('/summary/{santriId}', [DompetSantriController::class, 'getDompetSummary']);
-            Route::put('/limit/{id}', [WaliSantriDompetController::class, 'updateLimitHarian']);
+            // Route::put('/limit/{id}', [WaliSantriDompetController::class, 'updateLimitHarian']); // Controller not found
         });
         
         // Transaksi

@@ -5,6 +5,7 @@
     window.pembayaranSantriProcessUrl = "{{ route('keuangan.pembayaran-santri.process') }}";
     window.pembayaranSantriDataUrl = "{{ url('keuangan/pembayaran-santri') }}";
 </script>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <div x-data="pembayaranSantri()">
     
     {{-- Header + Actions --}}
@@ -165,7 +166,7 @@
                                                     <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
                                                 </svg>
                                                 Tagihan Rutin
-                                                <span class="ml-2 bg-blue-100 text-blue-700 py-0.5 px-2 rounded-full text-xs" x-text="payments.filter(p => (p.kategori_tagihan === 'Rutin' || p.is_bulanan) && p.status !== 'lunas').length"></span>
+                                                <span class="ml-2 bg-blue-100 text-blue-700 py-0.5 px-2 rounded-full text-xs" x-text="payments.length"></span>
                                             </button>
                                         </li>
                                         <li class="mr-2">
@@ -176,7 +177,7 @@
                                                     <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd" />
                                                 </svg>
                                                 Tagihan Insidentil
-                                                <span class="ml-2 bg-purple-100 text-purple-700 py-0.5 px-2 rounded-full text-xs" x-text="payments.filter(p => p.kategori_tagihan === 'Insidental' && p.status !== 'lunas').length"></span>
+                                                <span class="ml-2 bg-purple-100 text-purple-700 py-0.5 px-2 rounded-full text-xs" x-text="insidentilPayments.length"></span>
                                             </button>
                                         </li>
                                         <li class="mr-2">
@@ -191,14 +192,14 @@
                                             </button>
                                         </li>
                                         <li class="mr-2">
-                                            <button @click="activeTab = 'lunas'; selectedPayments = []; selectAll = false;" 
+                                            <button @click="activeTab = 'lunas'; selectedPayments = []; selectAll = false; loadPaidPayments();" 
                                                     :class="{'text-green-600 border-green-600': activeTab === 'lunas', 'text-gray-500 hover:text-gray-600 border-transparent': activeTab !== 'lunas'}"
                                                     class="inline-flex items-center p-4 border-b-2 rounded-t-lg group">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" :class="{'text-green-600': activeTab === 'lunas', 'text-gray-400': activeTab !== 'lunas'}" viewBox="0 0 20 20" fill="currentColor">
                                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                                                 </svg>
                                                 Sudah Dibayar
-                                                <span class="ml-2 bg-green-100 text-green-700 py-0.5 px-2 rounded-full text-xs" x-text="payments.filter(p => p.status === 'lunas').length"></span>
+                                                <span class="ml-2 bg-green-100 text-green-700 py-0.5 px-2 rounded-full text-xs" x-text="paidPayments.length"></span>
                                             </button>
                                         </li>
                                     </ul>
@@ -322,9 +323,21 @@
                                     
                                     <!-- Tab Content: Tagihan Insidentil -->
                                     <div x-show="activeTab === 'insidentil'">
-                                        <!-- Payment Boxes for Unpaid Insidentil -->
-                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                            <template x-for="payment in payments.filter(p => p.status !== 'lunas' && p.kategori_tagihan === 'Insidental')" :key="payment.id">
+                                        <!-- Check if we have insidentil payments data -->
+                                        <div x-show="insidentilPayments.length === 0" class="text-center py-8">
+                                            <div class="text-gray-400 mb-4">
+                                                <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                            </div>
+                                            <h3 class="text-lg font-medium text-gray-900 mb-2">Tidak Ada Tagihan Insidentil</h3>
+                                            <p class="text-gray-500">Santri ini tidak memiliki tagihan insidentil</p>
+                                        </div>
+
+                                        <!-- Insidentil Payment Boxes -->
+                                        <div x-show="insidentilPayments.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                            <template x-for="payment in insidentilPayments" :key="payment.id">
+                                                <div class="border rounded-lg overflow-hidden shadow-sm">
                                                 <div class="border rounded-lg overflow-hidden shadow-sm">
                                                     <!-- Payment Header -->
                                                     <div class="bg-purple-50 px-4 py-3 border-b flex justify-between items-center">
@@ -340,24 +353,24 @@
                                                     </div>
                                                     
                                                     <!-- Payment Content -->
-                                                    <div class="p-4" :class="payment.status === 'sebagian' ? 'bg-yellow-50' : ''">
+                                                    <div class="p-4">
                                                         <!-- Payment Details -->
                                                         <div class="space-y-1 text-sm">
                                                             <div class="flex justify-between">
                                                                 <span class="text-gray-600">Tagihan:</span>
-                                                                <span class="font-medium" x-text="formatRupiah(payment.tagihan)"></span>
+                                                                <span class="font-medium" x-text="formatRupiah(payment.nominal_tagihan)"></span>
                                                             </div>
                                                             <div class="flex justify-between">
                                                                 <span class="text-gray-600">Dibayar:</span>
-                                                                <span class="font-medium" x-text="formatRupiah(payment.dibayar)"></span>
+                                                                <span class="font-medium" x-text="formatRupiah(payment.nominal_dibayar)"></span>
                                                             </div>
                                                             <div class="flex justify-between">
                                                                 <span class="text-gray-600">Sisa:</span>
-                                                                <span class="font-medium text-red-600" x-text="formatRupiah(payment.sisa)"></span>
+                                                                <span class="font-medium text-red-600" x-text="formatRupiah(payment.sisa_tagihan)"></span>
                                                             </div>
-                                                            <div class="flex justify-between pt-2 border-t border-gray-200">
+                                                            <div x-show="payment.bulan" class="flex justify-between pt-2 border-t border-gray-200">
                                                                 <span class="text-gray-600">Bulan:</span>
-                                                                <span class="font-medium" x-text="payment.bulan"></span>
+                                                                <span class="font-medium" x-text="formatMonthDisplay(payment.bulan)"></span>
                                                             </div>
                                                             <!-- Tanggal Jatuh Tempo -->
                                                             <div x-show="payment.tanggal_jatuh_tempo" class="flex justify-between pt-1">
@@ -382,26 +395,15 @@
                                                             <!-- Badge Status Pembayaran -->
                                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-full justify-center"
                                                                 :class="{
-                                                                    'bg-red-100 text-red-800': payment.status === 'belum_bayar',
-                                                                    'bg-yellow-100 text-yellow-800': payment.status === 'sebagian'
+                                                                    'bg-red-100 text-red-800': payment.status_pembayaran === 'belum_bayar',
+                                                                    'bg-yellow-100 text-yellow-800': payment.status_pembayaran === 'sebagian'
                                                                 }"
-                                                                x-text="payment.status === 'sebagian' ? 'Sebagian' : 'Belum Bayar'">
+                                                                x-text="payment.status_pembayaran === 'sebagian' ? 'Sebagian' : 'Belum Bayar'">
                                                             </span>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </template>
-                                        </div>
-                                        
-                                        <!-- Empty state if no insidentil payments -->
-                                        <div x-show="!payments.some(p => p.status !== 'lunas' && p.kategori_tagihan === 'Insidental')" class="text-center py-12">
-                                            <div class="text-gray-400 mb-4">
-                                                <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                            </div>
-                                            <h3 class="text-lg font-medium text-gray-900 mb-2">Tidak Ada Tagihan Insidentil</h3>
-                                            <p class="text-gray-500">Tidak ada tagihan insidentil yang belum dibayar</p>
                                         </div>
                                     </div>
                                     
@@ -520,80 +522,44 @@
                                     
                                     <!-- Tab Content: Sudah Dibayar -->
                                     <div x-show="activeTab === 'lunas'">
-                                        <!-- Monthly Payment Boxes for Paid -->
-                                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                            <template x-for="month in ['2024-07', '2024-08', '2024-09', '2024-10', '2024-11', '2024-12', '2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06'].filter(m => payments.some(p => p.bulan === m && p.status === 'lunas'))" :key="month">
-                                                <div class="border rounded-lg overflow-hidden shadow-sm">
-                                                    <!-- Month Header -->
-                                                    <div class="bg-green-50 px-4 py-3 border-b">
-                                                        <h3 class="font-medium text-gray-900" x-text="formatMonthDisplay(month)"></h3>
-                                                        <p class="text-xs text-green-600 mt-1" x-text="payments.filter(p => p.bulan === month && p.status === 'lunas').length + ' tagihan lunas'"></p>
-                                                    </div>
-                                                    
-                                                    <!-- Month Payments (Only Paid) -->
-                                                    <div class="divide-y divide-gray-200">
-                                                        <template x-for="payment in payments.filter(p => p.bulan === month && p.status === 'lunas')" :key="payment.id">
-                                                            <div class="p-4 bg-green-50">
-                                                                <div class="flex justify-between items-start mb-2">
-                                                                    <div>
-                                                                        <div class="font-medium text-gray-900" x-text="payment.jenis_tagihan"></div>
-                                                                        <div class="text-xs font-medium" 
-                                                                             :class="{'text-blue-600': payment.kategori_tagihan === 'Rutin' || payment.is_bulanan, 'text-purple-600': payment.kategori_tagihan === 'Insidental'}"
-                                                                             x-text="payment.kategori_tagihan || (payment.is_bulanan ? 'Rutin' : 'Lainnya')"></div>
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                <!-- Payment Details -->
-                                                                <div class="mt-2 space-y-1 text-sm">
-                                                                    <div class="flex justify-between">
-                                                                        <span class="text-gray-600">Tagihan:</span>
-                                                                        <span class="font-medium" x-text="formatRupiah(payment.tagihan)"></span>
-                                                                    </div>
-                                                                    <div class="flex justify-between">
-                                                                        <span class="text-gray-600">Dibayar:</span>
-                                                                        <span class="font-medium text-green-600" x-text="formatRupiah(payment.dibayar)"></span>
-                                                                    </div>
-                                                                    
-                                                                    <!-- Payment Receipt Details -->
-                                                                    <div class="mt-3 pt-2 border-t border-gray-100">
-                                                                        <div class="flex justify-between text-xs">
-                                                                            <span class="text-gray-600">Tanggal Pembayaran:</span>
-                                                                            <span class="font-medium" x-text="payment.tanggal_bayar || '10 Juli 2024'"></span>
-                                                                        </div>
-                                                                        <div class="flex justify-between text-xs mt-1">
-                                                                            <span class="text-gray-600">Admin:</span>
-                                                                            <span class="font-medium" x-text="payment.admin_penerima || 'Ahmad Fauzi'"></span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                
-                                                                <!-- Status Badge -->
-                                                                <div class="mt-3">
-                                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium w-full justify-center bg-green-100 text-green-800">
-                                                                        Lunas
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </template>
-                                                        
-                                                        <!-- Empty state if no paid payments for this month -->
-                                                        <div x-show="!payments.some(p => p.bulan === month && p.status === 'lunas')" class="p-4 text-center text-gray-500 text-sm">
-                                                            Belum ada tagihan yang lunas di bulan ini
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </template>
-                                        </div>
-                                        
-                                        <!-- Empty state if no paid payments at all -->
-                                        <div x-show="!payments.some(p => p.status === 'lunas')" class="text-center py-12">
+                                        <!-- Check if we have paid payments data -->
+                                        <div x-show="paidPayments.length === 0" class="text-center py-8">
                                             <div class="text-gray-400 mb-4">
                                                 <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
                                             </div>
                                             <h3 class="text-lg font-medium text-gray-900 mb-2">Belum Ada Pembayaran</h3>
-                                            <p class="text-gray-500">Belum ada tagihan yang dibayar lunas</p>
+                                            <p class="text-gray-500">Santri ini belum memiliki riwayat pembayaran yang tercatat</p>
+                                        </div>
+
+                                        <!-- Paid Payments List -->
+                                        <div x-show="paidPayments.length > 0" class="space-y-4">
+                                            <template x-for="payment in paidPayments" :key="payment.id">
+                                                <div class="border rounded-lg p-4 bg-green-50 border-green-200">
+                                                    <div class="flex justify-between items-start">
+                                                        <div class="flex-1">
+                                                            <h4 class="font-medium text-gray-900" x-text="payment.jenis_tagihan"></h4>
+                                                            <p class="text-sm text-gray-600" x-text="payment.bulan ? formatMonthDisplay(payment.bulan) : 'Tanpa bulan'"></p>
+                                                            <p class="text-sm text-gray-600" x-text="payment.tahun_ajaran"></p>
+                                                        </div>
+                                                        <div class="text-right">
+                                                            <p class="font-semibold text-green-600" x-text="formatRupiah(payment.nominal_dibayar)"></p>
+                                                            <p class="text-xs text-gray-500" x-text="formatDate(payment.tanggal_pembayaran)"></p>
+                                                            <p class="text-xs text-gray-500" x-text="payment.metode_pembayaran || 'Tunai'"></p>
+                                                            <button @click="deletePaidPayment(payment.id)" class="mt-2 px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors" title="Hapus pembayaran">
+                                                                Hapus
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div x-show="payment.keterangan" class="mt-2 pt-2 border-t border-green-300">
+                                                        <p class="text-sm text-gray-600" x-text="payment.keterangan"></p>
+                                                    </div>
+                                                    <div class="mt-2 pt-2 border-t border-green-300">
+                                                        <p class="text-xs text-gray-500">Admin: <span x-text="payment.admin_name"></span></p>
+                                                    </div>
+                                                </div>
+                                            </template>
                                         </div>
                                     </div>
                                 </div>
@@ -863,8 +829,39 @@ togglePaymentSelection(paymentId) {
 },
 
         updateSelectAll() {
-            // Function to update selectAll state - placeholder for consistency
+            // Function to update selectAll state based on current tab and selections
             console.log('[updateSelectAll] Called');
+            
+            // Determine which data source to use based on active tab
+            let dataSource = [];
+            if (this.activeTab === 'tunggakan') {
+                dataSource = this.tunggakanPayments;
+            } else if (this.activeTab === 'insidentil') {
+                dataSource = this.insidentilPayments;
+            } else if (this.activeTab === 'lunas') {
+                dataSource = this.paidPayments;
+            } else {
+                dataSource = this.payments; // default untuk tab rutin
+            }
+            
+            // Get selectable payment IDs
+            const selectablePaymentIds = dataSource
+                .filter(p => p.status !== 'lunas' && p.status_pembayaran !== 'lunas')
+                .map(p => Number(p.id));
+                
+            if (selectablePaymentIds.length === 0) {
+                this.selectAll = false;
+                return;
+            }
+            
+            // Check if all selectable items are selected
+            const allSelected = selectablePaymentIds.every(id => 
+                this.selectedPayments.includes(Number(id))
+            );
+            
+            // Update selectAll state
+            this.selectAll = allSelected && selectablePaymentIds.length > 0;
+            console.log('[updateSelectAll] New state:', this.selectAll);
         },
         
         init() {
@@ -914,10 +911,29 @@ togglePaymentSelection(paymentId) {
         console.log('[Watcher selectedPayments] Total updated:', this.totalSelectedAmount);
     });
     
+    // Watch for changes in activeTab to load appropriate data
+    this.$watch('activeTab', (newTab) => {
+        console.log('[Watcher activeTab] Tab changed to:', newTab);
+        // Reset selections
+        this.selectedPayments = [];
+        this.selectAll = false;
+        
+        // Load data based on active tab
+        if (newTab === 'lunas') {
+            this.loadPaidPayments();
+        } else if (newTab === 'tunggakan') {
+            this.loadTunggakanData();
+        } else if (newTab === 'insidentil') {
+            this.loadInsidentilPayments();
+        }
+    });
+    
     console.log('[Alpine init] Initial selectAll (likely false as payments might not be loaded):', this.selectAll);
 },
         payments: [],
         tunggakanPayments: [],
+        insidentilPayments: [],
+        paidPayments: [],
         santriList: @json($santris),
         jenisTagihans: @json($jenisTagihans),
         activeTab: 'rutin',
@@ -1011,7 +1027,7 @@ togglePaymentSelection(paymentId) {
                 dataSource = this.tunggakanPayments;
             } else if (this.activeTab === 'insidentil') {
                 dataSource = this.insidentilPayments;
-            } else if (this.activeTab === 'sudah_dibayar') {
+            } else if (this.activeTab === 'lunas') {
                 dataSource = this.paidPayments;
             } else {
                 dataSource = this.payments; // default untuk tab rutin
@@ -1045,9 +1061,40 @@ togglePaymentSelection(paymentId) {
             this.selectedSantri = santri;
             this.selectedPayments = [];
             this.selectAll = false;
-            this.loadPaymentData(santri.id);
-            // Also load tunggakan data when selecting santri
-            this.loadTunggakanData();
+            // Load all payment data for this santri
+            this.refreshAllPaymentData();
+        },
+
+        // Method untuk refresh semua data pembayaran
+        async refreshAllPaymentData() {
+            if (!this.selectedSantri) {
+                console.warn('No santri selected for data refresh');
+                return;
+            }
+
+            console.log('[refreshAllPaymentData] Refreshing all payment data for santri:', this.selectedSantri.id);
+
+            try {
+                // Load all types of payment data in parallel
+                await Promise.all([
+                    this.loadPaymentData(this.selectedSantri.id),
+                    this.loadTunggakanData(),
+                    this.loadPaidPayments(),
+                    this.loadInsidentilPayments()
+                ]);
+
+               
+
+                console.log('[refreshAllPaymentData] All payment data refreshed successfully');
+            } catch (error) {
+                console.error('[refreshAllPaymentData] Error refreshing payment data:', error);
+                await Swal.fire({
+                    title: 'Error!',
+                    text: 'Gagal memuat data pembayaran: ' + error.message,
+                    icon: 'error',
+                    confirmButtonText: 'Ok'
+                });
+            }
         },
 
         async loadPaymentData(santriId) {
@@ -1057,9 +1104,18 @@ togglePaymentSelection(paymentId) {
                 this.selectedPayments = [];
                 this.selectAll = false;
 
+                console.log('[loadPaymentData] Loading data for santri:', santriId);
+                console.log('[loadPaymentData] Using URL:', `${window.pembayaranSantriDataUrl}/data/${santriId}`);
+
                 // Fetch payment data from API (TagihanSantri)
                 const response = await fetch(`${window.pembayaranSantriDataUrl}/data/${santriId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data = await response.json();
+                console.log('[loadPaymentData] Received data:', data);
                 
                 if (data && data.length > 0) {
                     this.payments = data.map((item, index) => {
@@ -1084,14 +1140,30 @@ togglePaymentSelection(paymentId) {
                         
                         return payment;
                     });
+                    
+                    console.log('Loaded payment data:', this.payments.length, 'items');
                 } else {
-                    // Generate sample data langsung tanpa logging berlebihan
-                    this.generateSamplePaymentData();
+                    // No payment data found
+                    console.log('No payment data found for santri:', santriId);
+                    this.payments = [];
                 }
             } catch (error) {
                 console.error('Error loading payment data:', error);
-                // Generate sample data jika ada error
-                this.generateSamplePaymentData();
+                console.error('Error details:', {
+                    message: error.message,
+                    santriId: santriId,
+                    url: `${window.pembayaranSantriDataUrl}/data/${santriId}`
+                });
+                // Reset to empty array if error occurs
+                this.payments = [];
+                
+                // Show user-friendly error message
+                await Swal.fire({
+                    title: 'Error!',
+                    text: 'Gagal memuat data pembayaran: ' + error.message,
+                    icon: 'error',
+                    confirmButtonText: 'Ok'
+                });
             }
         },
 
@@ -1156,6 +1228,126 @@ togglePaymentSelection(paymentId) {
             } catch (error) {
                 console.error('Error loading tunggakan data:', error);
                 this.tunggakanPayments = [];
+            }
+        },
+
+        async loadPaidPayments() {
+            if (!this.selectedSantri) {
+                console.warn('No santri selected for paid payments data');
+                return;
+            }
+
+            try {
+                // Reset paid payments data
+                this.paidPayments = [];
+
+                console.log('Loading paid payments data for santri:', this.selectedSantri.id);
+
+                // Fetch paid payments data from API
+                const url = `{{ url('keuangan/pembayaran-santri/paid') }}/${this.selectedSantri.id}`;
+                console.log('Fetching from URL:', url);
+                
+                const response = await fetch(url);
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Paid payments API response:', data);
+                
+                if (data && data.length > 0) {
+                    this.paidPayments = data.map((item) => {
+                        const payment = {
+                            id: Number(item.id),
+                            tagihan_santri_id: Number(item.tagihan_santri_id),
+                            bulan: item.bulan,
+                            jenis_tagihan: item.jenis_tagihan,
+                            jenis_tagihan_id: Number(item.jenis_tagihan_id),
+                            tahun_ajaran: item.tahun_ajaran,
+                            tahun_ajaran_id: Number(item.tahun_ajaran_id),
+                            kategori_tagihan: item.kategori_tagihan || 'Rutin',
+                            is_bulanan: item.is_bulanan || false,
+                            nominal_tagihan: this.formatNumberSafe(item.nominal_tagihan),
+                            nominal_dibayar: this.formatNumberSafe(item.nominal_dibayar),
+                            tanggal_pembayaran: item.tanggal_pembayaran,
+                            metode_pembayaran: item.metode_pembayaran,
+                            keterangan: item.keterangan,
+                            admin_name: item.admin_name
+                        };
+                        console.log('[Paid] Mapped payment ID:', payment.id, 'Type:', typeof payment.id);
+                        return payment;
+                    });
+                    console.log('Mapped paid payments:', this.paidPayments.length);
+                } else {
+                    this.paidPayments = [];
+                    console.log('No paid payments data found');
+                }
+            } catch (error) {
+                console.error('Error loading paid payments data:', error);
+                this.paidPayments = [];
+            }
+        },
+
+        async loadInsidentilPayments() {
+            if (!this.selectedSantri) {
+                console.warn('No santri selected for insidentil payments data');
+                return;
+            }
+
+            try {
+                // Reset insidentil payments data
+                this.insidentilPayments = [];
+
+                console.log('Loading insidentil payments data for santri:', this.selectedSantri.id);
+
+                // Fetch insidentil payments data from API
+                const url = `{{ url('keuangan/pembayaran-santri/insidentil') }}/${this.selectedSantri.id}`;
+                console.log('Fetching from URL:', url);
+                
+                const response = await fetch(url);
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Insidentil payments API response:', data);
+                
+                if (data && data.length > 0) {
+                    this.insidentilPayments = data.map((item) => {
+                        const payment = {
+                            id: Number(item.id),
+                            bulan: item.bulan,
+                            jenis_tagihan: item.jenis_tagihan,
+                            jenis_tagihan_id: Number(item.jenis_tagihan_id),
+                            tahun_ajaran: item.tahun_ajaran,
+                            tahun_ajaran_id: Number(item.tahun_ajaran_id),
+                            kategori_tagihan: item.kategori_tagihan || 'Insidentil',
+                            is_bulanan: item.is_bulanan || false,
+                            nominal_tagihan: this.formatNumberSafe(item.nominal_tagihan),
+                            nominal_dibayar: this.formatNumberSafe(item.nominal_dibayar),
+                            nominal_keringanan: this.formatNumberSafe(item.nominal_keringanan),
+                            sisa_tagihan: this.formatNumberSafe(item.sisa_tagihan),
+                            status_pembayaran: item.status_pembayaran,
+                            tanggal_jatuh_tempo: item.tanggal_jatuh_tempo,
+                            is_jatuh_tempo: item.is_jatuh_tempo,
+                            keterangan: item.keterangan,
+                            transaksis: item.transaksis || []
+                        };
+                        console.log('[Insidentil] Mapped payment ID:', payment.id, 'Type:', typeof payment.id);
+                        return payment;
+                    });
+                    console.log('Mapped insidentil payments:', this.insidentilPayments.length);
+                } else {
+                    this.insidentilPayments = [];
+                    console.log('No insidentil payments data found');
+                }
+            } catch (error) {
+                console.error('Error loading insidentil payments data:', error);
+                this.insidentilPayments = [];
             }
         },
 
@@ -1288,11 +1480,11 @@ togglePaymentSelection(paymentId) {
             if (kategori === 'rutin') {
                 monthPayments = this.payments
                     .filter(payment => payment.bulan === month && payment.status !== 'lunas' && (payment.kategori_tagihan === 'Rutin' || payment.is_bulanan))
-                    .map(payment => payment.id);
+                    .map(payment => Number(payment.id));
             } else if (kategori === 'insidentil') {
-                monthPayments = this.payments
-                    .filter(payment => payment.bulan === month && payment.status !== 'lunas' && payment.kategori_tagihan === 'Insidental')
-                    .map(payment => payment.id);
+                monthPayments = this.insidentilPayments
+                    .filter(payment => payment.bulan === month && payment.status_pembayaran !== 'lunas')
+                    .map(payment => Number(payment.id));
             } else {
                 // Untuk backward compatibility
                 monthPayments = this.payments
@@ -1326,16 +1518,16 @@ togglePaymentSelection(paymentId) {
             if (kategori === 'rutin') {
                 monthPayments = this.payments
                     .filter(payment => payment.bulan === month && payment.status !== 'lunas' && (payment.kategori_tagihan === 'Rutin' || payment.is_bulanan))
-                    .map(payment => payment.id);
+                    .map(payment => Number(payment.id));
             } else if (kategori === 'insidentil') {
-                monthPayments = this.payments
-                    .filter(payment => payment.bulan === month && payment.status !== 'lunas' && payment.kategori_tagihan === 'Insidentil')
-                    .map(payment => payment.id);
+                monthPayments = this.insidentilPayments
+                    .filter(payment => payment.bulan === month && payment.status_pembayaran !== 'lunas')
+                    .map(payment => Number(payment.id));
             } else {
                 // Untuk backward compatibility
                 monthPayments = this.payments
                     .filter(payment => payment.bulan === month && payment.status !== 'lunas')
-                    .map(payment => payment.id);
+                    .map(payment => Number(payment.id));
             }
             
             // Return true jika ada pembayaran dan semua dipilih
@@ -1350,7 +1542,7 @@ togglePaymentSelection(paymentId) {
             return availableMonths.some(month => {
                 const monthPayments = this.payments
                     .filter(payment => payment.bulan === month && payment.status !== 'lunas')
-                    .map(payment => payment.id);
+                    .map(payment => Number(payment.id));
                 
                 // Jika tidak ada pembayaran yang belum lunas di bulan ini, skip
                 if (monthPayments.length === 0) return false;
@@ -1386,6 +1578,27 @@ togglePaymentSelection(paymentId) {
         
         async processFullPayment() {
             try {
+                // Validate basic requirements
+                if (!this.selectedSantri) {
+                    await Swal.fire({
+                        title: 'Error!',
+                        text: 'Pilih santri terlebih dahulu',
+                        icon: 'error',
+                        confirmButtonText: 'Ok'
+                    });
+                    return;
+                }
+
+                if (!this.selectedPayments || this.selectedPayments.length === 0) {
+                    await Swal.fire({
+                        title: 'Peringatan!',
+                        text: 'Pilih tagihan yang akan dibayar terlebih dahulu',
+                        icon: 'warning',
+                        confirmButtonText: 'Ok'
+                    });
+                    return;
+                }
+
                 if (!this.fullPaymentAmount || this.fullPaymentAmount < this.totalSelectedAmount) {
                     await Swal.fire({
                         title: 'Peringatan!',
@@ -1411,23 +1624,97 @@ togglePaymentSelection(paymentId) {
                 let message = '';
                 const payments = [];
                 
+                // Determine data source based on active tab
+                let dataSource = [];
+                if (this.activeTab === 'tunggakan') {
+                    dataSource = this.tunggakanPayments;
+                } else if (this.activeTab === 'insidentil') {
+                    dataSource = this.insidentilPayments;
+                } else if (this.activeTab === 'lunas') {
+                    dataSource = this.paidPayments;
+                } else {
+                    dataSource = this.payments; // default untuk tab rutin
+                }
+                
+                console.log('[processFullPayment] Active tab:', this.activeTab);
+                console.log('[processFullPayment] Data source length:', dataSource.length);
+                console.log('[processFullPayment] Selected payments:', this.selectedPayments);
+                
                 // Process all selected payments
                 for (const paymentId of this.selectedPayments) {
-                    const payment = this.payments.find(p => p.id === paymentId);
+                    const id = Number(paymentId);
+                    const payment = dataSource.find(p => Number(p.id) === id);
+                    
+                    console.log('[processFullPayment] Processing payment ID:', id, 'Found:', !!payment);
+                    
                     if (payment) {
-                        const amountToPay = payment.sisa;
-                    payments.push({
-                        tagihan_santri_id: payment.id, // ini adalah ID dari TagihanSantri
-                        jenis_tagihan_id: payment.jenis_tagihan_id,
-                        jenis_tagihan: payment.jenis_tagihan,
-                        nominal: amountToPay,
-                        bulan: payment.bulan,
-                        keterangan: `Pembayaran ${payment.jenis_tagihan} - ${payment.bulan}`
-                    });
+                        // Use the correct field name based on data source
+                        const amountToPay = payment.sisa_tagihan || payment.sisa || 0;
+                        
+                        payments.push({
+                            tagihan_santri_id: payment.id, // ini adalah ID dari TagihanSantri
+                            jenis_tagihan_id: payment.jenis_tagihan_id,
+                            jenis_tagihan: payment.jenis_tagihan,
+                            nominal: amountToPay,
+                            bulan: payment.bulan,
+                            keterangan: `Pembayaran ${payment.jenis_tagihan} - ${payment.bulan}`
+                        });
                         
                         message += `- ${payment.jenis_tagihan} (${payment.bulan}): ${this.formatRupiah(amountToPay)} (Lunas)\n`;
                     }
                 }
+                
+                console.log('[processFullPayment] Prepared payments:', payments);
+                
+                // Validate that we have payments to process
+                if (payments.length === 0) {
+                    if (loadingSwal) {
+                        loadingSwal.close();
+                    }
+                    await Swal.fire({
+                        title: 'Error!',
+                        text: 'Tidak ada pembayaran yang ditemukan untuk diproses',
+                        icon: 'error',
+                        confirmButtonText: 'Ok'
+                    });
+                    return;
+                }
+                
+                // Validate payment data structure
+                for (const payment of payments) {
+                    if (!payment.tagihan_santri_id || !payment.nominal || payment.nominal <= 0) {
+                        await Swal.fire({
+                            title: 'Error!',
+                            text: 'Data pembayaran tidak valid: ' + JSON.stringify(payment),
+                            icon: 'error',
+                            confirmButtonText: 'Ok'
+                        });
+                        return;
+                    }
+                }
+
+                const requestData = {
+                    santri_id: this.selectedSantri.id,
+                    payments: payments,
+                    total_amount: this.totalSelectedAmount,
+                    received_amount: this.fullPaymentAmount,
+                    save_to_wallet: this.saveToWallet
+                };
+                
+                console.log('[processFullPayment] Sending request data:', requestData);
+
+                // Validate required URLs and CSRF token
+                if (!window.pembayaranSantriProcessUrl) {
+                    throw new Error('URL proses pembayaran tidak ditemukan');
+                }
+                
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                if (!csrfToken) {
+                    throw new Error('CSRF token tidak ditemukan');
+                }
+                
+                console.log('[processFullPayment] Using URL:', window.pembayaranSantriProcessUrl);
+                console.log('[processFullPayment] Using CSRF token:', csrfToken.substring(0, 10) + '...');
 
                 try {
                     // Send payment data to server
@@ -1435,21 +1722,20 @@ togglePaymentSelection(paymentId) {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json'
                         },
-                        body: JSON.stringify({
-                            santri_id: this.selectedSantri.id,
-                            payments: payments,
-                            total_amount: this.totalSelectedAmount,
-                            received_amount: this.fullPaymentAmount,
-                            save_to_wallet: this.saveToWallet
-                        })
+                        body: JSON.stringify(requestData)
                     });
 
                     const result = await response.json();
                     
+                    console.log('[processFullPayment] Response status:', response.status);
+                    console.log('[processFullPayment] Response data:', result);
+                    
                     // Check for validation errors (422)
                     if (response.status === 422) {
+                        console.error('[processFullPayment] Validation errors:', result.errors);
                         const errorMessage = result.errors ? 
                             Object.values(result.errors).flat().join(', ') : 
                             result.message || 'Validasi gagal';
@@ -1458,6 +1744,7 @@ togglePaymentSelection(paymentId) {
                     
                     // Check for other errors
                     if (!response.ok) {
+                        console.error('[processFullPayment] HTTP error:', response.status, result);
                         throw new Error(result.message || `Server error: ${response.status}`);
                     }
 
@@ -1467,8 +1754,8 @@ togglePaymentSelection(paymentId) {
                     }
 
                     if (result.success) {
-                        // Refresh payment data from server instead of updating locally
-                        await this.loadPaymentData(this.selectedSantri.id);
+                        // Refresh all payment data from server
+                        await this.refreshAllPaymentData();
 
                         // Show success message with SweetAlert2
                         await Swal.fire({
@@ -1495,13 +1782,18 @@ togglePaymentSelection(paymentId) {
                             reverseButtons: true
                         });
 
-                        // Reset form state only
+                        // Reset form state and switch to lunas tab
                         this.showFullPaymentModal = false;
                         this.fullPaymentAmount = 0;
                         this.fullPaymentChange =  0;
                         this.saveToWallet = false;
                         this.selectedPayments = [];
                         this.selectAll = false;
+                        
+                        // Switch to lunas tab to show paid items
+                        this.activeTab = 'lunas';
+                        
+                        console.log('[processFullPayment] Payment successful, switched to lunas tab');
                     } else {
                         throw new Error(result.message || 'Gagal memproses pembayaran');
                     }
@@ -1527,9 +1819,22 @@ togglePaymentSelection(paymentId) {
         
         // Method untuk membuka modal pembayaran sebagian dan mengisi prioritas list
         openPartialPaymentModal() {
+            // Determine data source based on active tab
+            let dataSource = [];
+            if (this.activeTab === 'tunggakan') {
+                dataSource = this.tunggakanPayments;
+            } else if (this.activeTab === 'insidentil') {
+                dataSource = this.insidentilPayments;
+            } else if (this.activeTab === 'lunas') {
+                dataSource = this.paidPayments;
+            } else {
+                dataSource = this.payments; // default untuk tab rutin
+            }
+            
             // Populate paymentPriorityList dari selectedPayments
             this.paymentPriorityList = this.selectedPayments.map(paymentId => {
-                const payment = this.payments.find(p => p.id === paymentId);
+                const id = Number(paymentId);
+                const payment = dataSource.find(p => Number(p.id) === id);
                 if (payment) {
                     return {
                         id: payment.id,
@@ -1537,7 +1842,7 @@ togglePaymentSelection(paymentId) {
                         jenis_tagihan_id: payment.jenis_tagihan_id,
                         bulan: payment.bulan,
                         kategori: payment.kategori || 'Tagihan Santri',
-                        sisa: payment.sisa,
+                        sisa: payment.sisa_tagihan || payment.sisa || 0,
                         willBePaidFull: false // Default tidak diprioritaskan
                     };
                 }
@@ -1570,6 +1875,27 @@ togglePaymentSelection(paymentId) {
         
         async processPartialPayment() {
             try {
+                // Validate basic requirements
+                if (!this.selectedSantri) {
+                    await Swal.fire({
+                        title: 'Error!',
+                        text: 'Pilih santri terlebih dahulu',
+                        icon: 'error',
+                        confirmButtonText: 'Ok'
+                    });
+                    return;
+                }
+
+                if (!this.selectedPayments || this.selectedPayments.length === 0) {
+                    await Swal.fire({
+                        title: 'Peringatan!',
+                        text: 'Pilih tagihan yang akan dibayar terlebih dahulu',
+                        icon: 'warning',
+                        confirmButtonText: 'Ok'
+                    });
+                    return;
+                }
+
                 if (!this.partialAmount || this.partialAmount <= 0) {
                     await Swal.fire({
                         title: 'Peringatan!',
@@ -1602,6 +1928,18 @@ togglePaymentSelection(paymentId) {
                     }
                 });
 
+                // Determine data source based on active tab
+                let dataSource = [];
+                if (this.activeTab === 'tunggakan') {
+                    dataSource = this.tunggakanPayments;
+                } else if (this.activeTab === 'insidentil') {
+                    dataSource = this.insidentilPayments;
+                } else if (this.activeTab === 'lunas') {
+                    dataSource = this.paidPayments;
+                } else {
+                    dataSource = this.payments; // default untuk tab rutin
+                }
+
                 let message = '';
                 const payments = [];
                 let remainingAmount = this.partialAmount;
@@ -1618,9 +1956,11 @@ togglePaymentSelection(paymentId) {
 
                 // Process prioritized payments first
                 for (const paymentId of prioritizedPayments) {
-                    const payment = this.payments.find(p => p.id === paymentId);
+                    const id = Number(paymentId);
+                    const payment = dataSource.find(p => Number(p.id) === id);
                     if (payment && remainingAmount > 0) {
-                        const amountToPay = Math.min(payment.sisa, remainingAmount);
+                        const sisaTagihan = payment.sisa_tagihan || payment.sisa || 0;
+                        const amountToPay = Math.min(sisaTagihan, remainingAmount);
                         
                         payments.push({
                             tagihan_santri_id: payment.id, // ini adalah ID dari TagihanSantri
@@ -1642,8 +1982,8 @@ togglePaymentSelection(paymentId) {
                 if (remainingAmount > 0 && nonPrioritizedPayments.length > 0) {
                     // Sort non-prioritized payments (SPP first, then by amount)
                     const sortedNonPrioritized = [...nonPrioritizedPayments].sort((aId, bId) => {
-                        const a = this.payments.find(p => p.id === aId);
-                        const b = this.payments.find(p => p.id === bId);
+                        const a = dataSource.find(p => Number(p.id) === Number(aId));
+                        const b = dataSource.find(p => Number(p.id) === Number(bId));
                         
                         if (!a || !b) return 0;
                         
@@ -1652,13 +1992,17 @@ togglePaymentSelection(paymentId) {
                         if (a.jenis_tagihan !== 'SPP' && b.jenis_tagihan === 'SPP') return 1;
                         
                         // Then by amount (smaller first)
-                        return a.sisa - b.sisa;
+                        const aSisa = a.sisa_tagihan || a.sisa || 0;
+                        const bSisa = b.sisa_tagihan || b.sisa || 0;
+                        return aSisa - bSisa;
                     });
 
                     for (const paymentId of sortedNonPrioritized) {
-                        const payment = this.payments.find(p => p.id === paymentId);
+                        const id = Number(paymentId);
+                        const payment = dataSource.find(p => Number(p.id) === id);
                         if (payment && remainingAmount > 0) {
-                            const amountToPay = Math.min(payment.sisa, remainingAmount);
+                            const sisaTagihan = payment.sisa_tagihan || payment.sisa || 0;
+                            const amountToPay = Math.min(sisaTagihan, remainingAmount);
                             
                             payments.push({
                                 tagihan_santri_id: payment.id, // ini adalah ID dari TagihanSantri
@@ -1677,33 +2021,76 @@ togglePaymentSelection(paymentId) {
                     }
                 }
 
+                // Validate that we have payments to process
+                if (payments.length === 0) {
+                    if (loadingSwal) {
+                        loadingSwal.close();
+                    }
+                    await Swal.fire({
+                        title: 'Error!',
+                        text: 'Tidak ada pembayaran yang ditemukan untuk diproses',
+                        icon: 'error',
+                        confirmButtonText: 'Ok'
+                    });
+                    return;
+                }
+
+                const requestData = {
+                    santri_id: this.selectedSantri.id,
+                    payments: payments,
+                    total_amount: this.partialAmount,
+                    received_amount: this.partialAmount,
+                    save_to_wallet: false
+                };
+                
+                console.log('[processPartialPayment] Sending request data:', requestData);
+
+                // Validate CSRF token exists
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                if (!csrfToken) {
+                    throw new Error('CSRF token tidak ditemukan');
+                }
+
                 try {
                     // Send payment data to server
                     const response = await fetch(window.pembayaranSantriProcessUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json'
                         },
-                        body: JSON.stringify({
-                            santri_id: this.selectedSantri.id,
-                            payments: payments,
-                            total_amount: this.partialAmount,
-                            received_amount: this.partialAmount,
-                            save_to_wallet: false
-                        })
+                        body: JSON.stringify(requestData)
                     });
 
                     const result = await response.json();
+                    
+                    console.log('[processPartialPayment] Response status:', response.status);
+                    console.log('[processPartialPayment] Response data:', result);
 
                     // Close loading state
                     if (loadingSwal) {
                         loadingSwal.close();
                     }
+                    
+                    // Check for validation errors (422)
+                    if (response.status === 422) {
+                        console.error('[processPartialPayment] Validation errors:', result.errors);
+                        const errorMessage = result.errors ? 
+                            Object.values(result.errors).flat().join(', ') : 
+                            result.message || 'Validasi gagal';
+                        throw new Error(errorMessage);
+                    }
+                    
+                    // Check for other errors
+                    if (!response.ok) {
+                        console.error('[processPartialPayment] HTTP error:', response.status, result);
+                        throw new Error(result.message || `Server error: ${response.status}`);
+                    }
 
                     if (result.success) {
-                        // Refresh payment data from server instead of updating locally
-                        await this.loadPaymentData(this.selectedSantri.id);
+                        // Refresh all payment data from server
+                        await this.refreshAllPaymentData();
 
                         // Show success message with SweetAlert2
                         await Swal.fire({
@@ -1730,7 +2117,7 @@ togglePaymentSelection(paymentId) {
                             reverseButtons: true
                         });
 
-                        // Reset the form
+                        // Reset the form and stay on current tab (since partial payment might leave remaining balance)
                         this.showPartialPaymentModal = false;
                         this.partialAmount = 0;
                         this.calculatedFullPayment = 0;
@@ -1739,8 +2126,9 @@ togglePaymentSelection(paymentId) {
                         this.selectedPayments = [];
                         this.selectAll = false;
 
-                        // Refresh payment data
-                        await this.loadPaymentData(this.selectedSantri.id);
+                        console.log('[processPartialPayment] Partial payment successful, staying on current tab');
+                        
+                        // Note: We don't switch tabs for partial payments since there might be remaining balances
                     } else {
                         throw new Error(result.message || 'Gagal memproses pembayaran');
                     }
@@ -1823,6 +2211,28 @@ togglePaymentSelection(paymentId) {
             ];
             
             return admins[Math.floor(Math.random() * admins.length)];
+        },
+
+        deletePaidPayment(transaksiId) {
+            if (!confirm('Yakin ingin menghapus pembayaran ini?')) return;
+            fetch(`/keuangan/pembayaran-santri/paid/${transaksiId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Pembayaran berhasil dihapus!');
+                    this.loadPaidPayments();
+                    this.refreshAllPaymentData(); // pastikan tab lain juga update
+                } else {
+                    alert('Gagal menghapus pembayaran: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(err => alert('Gagal menghapus pembayaran: ' + err));
         }
     }
 }

@@ -19,10 +19,60 @@ use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\JabatanController;
 use App\Http\Controllers\WaliSantriController;
 use Illuminate\Http\Request;
-
+use App\Models\WaliSantri;
+use App\Models\Santri;
 
 // Redirect root ke data santri
 Route::get('/', fn() => redirect()->route('santris.index'));
+
+// Route untuk membuat user test
+Route::get('/create-test-user', function() {
+    try {
+        // Buat santri test jika belum ada
+        $santri = Santri::firstOrCreate([
+            'nisn' => '1234567890'
+        ], [
+            'nama_santri' => 'Test Santri',
+            'tempat_lahir' => 'Jakarta',
+            'tanggal_lahir' => '2000-01-01',
+            'alamat' => 'Jl. Test No. 123',
+            'jenis_kelamin' => 'L',
+            'nomor_dompet' => 'DMP' . rand(100000, 999999),
+            'saldo_dompet' => 100000,
+            'limit_harian' => 50000,
+            'status' => 'aktif'
+        ]);
+
+        // Buat wali santri test
+        $waliSantri = WaliSantri::firstOrCreate([
+            'email' => 'test@walisan.com'
+        ], [
+            'name' => 'Test Wali Santri',
+            'password' => bcrypt('password123'),
+            'santri_id' => $santri->id,
+            'no_hp' => '081234567890'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User test berhasil dibuat!',
+            'data' => [
+                'santri' => $santri,
+                'wali_santri' => $waliSantri,
+                'login_info' => [
+                    'email' => 'test@walisan.com',
+                    'password' => 'password123'
+                ]
+            ]
+        ]);
+
+    } catch (Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error: ' . $e->getMessage()
+        ]);
+    }
+});
 
 Route::middleware(['auth'])->group(function () {
 
@@ -167,8 +217,11 @@ Route::middleware(['auth'])->group(function () {
             Route::get('pembayaran-santri', [PembayaranSantriController::class, 'index'])->name('pembayaran-santri.index');
             Route::get('pembayaran-santri/data/{santriId}', [PembayaranSantriController::class, 'getPaymentData'])->name('pembayaran-santri.data');
             Route::get('pembayaran-santri/tunggakan/{santriId}', [PembayaranSantriController::class, 'getTunggakanData'])->name('pembayaran-santri.tunggakan');
+            Route::get('pembayaran-santri/paid/{santriId}', [PembayaranSantriController::class, 'getPaidPayments'])->name('pembayaran-santri.paid');
+            Route::get('pembayaran-santri/insidentil/{santriId}', [PembayaranSantriController::class, 'getInsidentilPayments'])->name('pembayaran-santri.insidentil');
             Route::post('pembayaran-santri/process', [PembayaranSantriController::class, 'processPayment'])
                 ->name('pembayaran-santri.process');
+            Route::delete('pembayaran-santri/paid/{transaksiId}', [App\Http\Controllers\PembayaranSantriController::class, 'destroyPayment'])->name('pembayaran-santri.paid.delete');
         });
     });
 

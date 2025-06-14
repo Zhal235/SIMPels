@@ -438,6 +438,129 @@ class PembayaranSantriController extends Controller
     }
 
     /**
+     * Hapus transaksi pembayaran dan kembalikan status tagihan
+     */
+    public function destroyPayment($transaksiId)
+    {
+        try {
+            $transaksi = \App\Models\Transaksi::findOrFail($transaksiId);
+            $tagihan = $transaksi->tagihanSantri;
+
+            // Hapus TransaksiKas jika ada
+            if (method_exists($transaksi, 'transaksiKas')) {
+                foreach ($transaksi->transaksiKas as $kas) {
+                    $kas->delete();
+                }
+            }
+
+            // Hapus transaksi pembayaran
+            $transaksi->delete();
+
+            // Update ulang status/sisa tagihan
+            if ($tagihan) {
+                $tagihan->updatePembayaran();
+            }
+
+            return response()->json(['success' => true, 'message' => 'Pembayaran berhasil dihapus']);
+        } catch (\Exception $e) {
+            \Log::error('Error deleting payment:', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Gagal menghapus pembayaran: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get paid payments data for a specific santri
+     */
+    public function getPaidPayments($santriId)
+    {
+        try {
+            // Ambil data transaksi yang sudah dibayar untuk santri ini
+            $paidPayments = Transaksi::with(['tagihanSantri.jenisTagihan', 'tagihanSantri.tahunAjaran'])
+                ->whereHas('tagihanSantri', function($query) use ($santriId) {
+                    $query->where('santri_id', $santriId);
+                })
+                ->orderBy('tanggal_transaksi', 'desc')
+                ->get()
+                ->map(function($transaksi) {
+                    $tagihan = $transaksi->tagihanSantri;
+                    return [
+                        'id' => $transaksi->id,
+                        'tagihan_santri_id' => $tagihan->id,
+                        'bulan' => $tagihan->bulan,
+                        'jenis_tagihan' => $tagihan->jenisTagihan->nama ?? $tagihan->jenisTagihan->nama_tagihan ?? 'Tagihan',
+                        'jenis_tagihan_id' => $tagihan->jenis_tagihan_id,
+                        'tahun_ajaran' => $tagihan->tahunAjaran->nama ?? 'Unknown',
+                        'tahun_ajaran_id' => $tagihan->tahun_ajaran_id,
+                        'kategori_tagihan' => $tagihan->jenisTagihan->kategori_tagihan ?? 'Rutin',
+                        'is_bulanan' => $tagihan->jenisTagihan->is_bulanan ?? false,
+                        'nominal_tagihan' => $tagihan->nominal_tagihan,
+                        'nominal_dibayar' => $transaksi->nominal,
+                        'tanggal_pembayaran' => $transaksi->tanggal_transaksi,
+                        'metode_pembayaran' => $transaksi->metode_pembayaran,
+                        'keterangan' => $transaksi->keterangan,
+                        'admin_name' => $transaksi->admin_name ?? 'System'
+                    ];
+                });
+
+            return response()->json($paidPayments);
+        } catch (\Exception $e) {
+            \Log::error('Error in getPaidPayments:', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to load paid payments'], 500);
+        }
+    }
+
+    /**
+     * Get insidentil payments data for a specific santri
+     */
+    public function getInsidentilPayments($santriId)
+    {
+        try {
+            // Ambil data tagihan insidentil untuk santri ini
+            $insidentilPayments = TagihanSantri::with(['jenisTagihan', 'tahunAjaran'])
+                ->where('santri_id', $santriId)
+                ->whereHas('jenisTagihan', function($query) {
+                    $query->where('kategori_tagihan', 'Insidentil');
+                })
+                ->where('status', 'aktif')
+                ->orderBy('tanggal_jatuh_tempo', 'asc')
+                ->get()
+                ->map(function($tagihan) {
+                    return [
+                        'id' => $tagihan->id,
+                        'bulan' => $tagihan->bulan,
+                        'jenis_tagihan' => $tagihan->jenisTagihan->nama_tagihan,
+                        'jenis_tagihan_id' => $tagihan->jenis_tagihan_id,
+                        'tahun_ajaran' => $tagihan->tahunAjaran->nama ?? 'Unknown',
+                        'tahun_ajaran_id' => $tagihan->tahun_ajaran_id,
+                        'kategori_tagihan' => $tagihan->jenisTagihan->kategori_tagihan,
+                        'is_bulanan' => $tagihan->jenisTagihan->is_bulanan ?? false,
+                        'nominal_tagihan' => $tagihan->nominal_tagihan,
+                        'nominal_dibayar' => $tagihan->nominal_dibayar,
+                        'nominal_keringanan' => $tagihan->nominal_keringanan,
+                        'sisa_tagihan' => $tagihan->sisa_tagihan,
+                        'status_pembayaran' => $tagihan->status_pembayaran,
+                        'tanggal_jatuh_tempo' => $tagihan->tanggal_jatuh_tempo,
+                        'is_jatuh_tempo' => $tagihan->is_jatuh_tempo,
+                        'keterangan' => $tagihan->keterangan,
+                        'transaksis' => $tagihan->transaksis->map(function($t) {
+                            return [
+                                'id' => $t->id,
+                                'nominal' => $t->nominal,
+                                'tanggal_transaksi' => $t->tanggal_transaksi,
+                                'status' => $t->status
+                            ];
+                        })
+                    ];
+                });
+
+            return response()->json($insidentilPayments);
+        } catch (\Exception $e) {
+            \Log::error('Error in getInsidentilPayments:', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to load insidentil payments'], 500);
+        }
+    }
+
+    /**
      * Display the receipt page.
      */
     public function kwitansi()
